@@ -113,6 +113,7 @@ const NAME_COLORS = [
   [/bmw/i, '#1E5BC6'], [/jaguar/i, '#2E7D32'], [/stewart/i, '#C0C0C0']
 ];
 
+// Banderas por país (clave = nombre en inglés que devuelve la API)
 const FLAGS = {
   Australia:'🇦🇺', China:'🇨🇳', Japan:'🇯🇵', Bahrain:'🇧🇭', 'Saudi Arabia':'🇸🇦',
   USA:'🇺🇸', Italy:'🇮🇹', Monaco:'🇲🇨', Spain:'🇪🇸', Canada:'🇨🇦', Austria:'🇦🇹',
@@ -122,6 +123,48 @@ const FLAGS = {
   Turkey:'🇹🇷', India:'🇮🇳', Korea:'🇰🇷', 'South Africa':'🇿🇦', Malaysia:'🇲🇾',
   Russia:'🇷🇺', Morocco:'🇲🇦', Vietnam:'🇻🇳', Indonesia:'🇮🇩', Switzerland:'🇨🇭'
 };
+
+// Nombres de países en español
+const COUNTRY_ES = {
+  Australia:'Australia', Austria:'Austria', Azerbaijan:'Azerbaiyán', Bahrain:'Baréin',
+  Belgium:'Bélgica', Brazil:'Brasil', Canada:'Canadá', China:'China', Spain:'España',
+  UK:'Reino Unido', USA:'Estados Unidos', UAE:'Emiratos Árabes Unidos', Italy:'Italia',
+  Japan:'Japón', Mexico:'México', Monaco:'Mónaco', Netherlands:'Países Bajos',
+  Hungary:'Hungría', Qatar:'Catar', 'Saudi Arabia':'Arabia Saudí', Singapore:'Singapur',
+  Russia:'Rusia', Portugal:'Portugal', Turkey:'Turquía', Argentina:'Argentina',
+  Germany:'Alemania', France:'Francia', Sweden:'Suecia', Switzerland:'Suiza',
+  Korea:'Corea del Sur', 'South Africa':'Sudáfrica', Malaysia:'Malasia', India:'India',
+  Indonesia:'Indonesia', Morocco:'Marruecos', Vietnam:'Vietnam', Ireland:'Irlanda',
+  'New Zealand':'Nueva Zelanda', 'Czech Republic':'República Checa', 'Hong Kong':'Hong Kong',
+  Thailand:'Tailandia', Chile:'Chile', Peru:'Perú', Uruguay:'Uruguay', Colombia:'Colombia',
+  Denmark:'Dinamarca', Poland:'Polonia', Rhodesia:'Rodesia', Ukraine:'Ucrania',
+  Pakistan:'Pakistán', Greece:'Grecia', Finland:'Finlandia', Yugoslavia:'Yugoslavia'
+};
+
+// Nacionalidades (adjetivo) de pilotos en español
+const NAT_ES = {
+  British:'británico', German:'alemán', French:'francés', Argentine:'argentino',
+  Argentinian:'argentino', Austrian:'austríaco', Brazilian:'brasileño', Dutch:'neerlandés',
+  Italian:'italiano', Finnish:'finlandés', Spanish:'español', Australian:'australiano',
+  Mexican:'mexicano', Canadian:'canadiense', Monegasque:'monegasco', Polish:'polaco',
+  Danish:'danés', Swedish:'sueco', Swiss:'suizo', Belgian:'belga', Japanese:'japonés',
+  Chinese:'chino', Thai:'tailandés', Irish:'irlandés', 'New Zealander':'neozelandés',
+  Venezuelan:'venezolano', Hungarian:'húngaro', Russian:'ruso', American:'estadounidense',
+  'South African':'sudafricano', Indian:'indio', Colombian:'colombiano', Uruguayan:'uruguayo',
+  Rhodesian:'rodesiano', Czech:'checo', Portuguese:'portugués', Indonesian:'indonesio',
+  Malaysian:'malasio', Estonian:'estonio', Chilean:'chileno', Peruvian:'peruano',
+  Israeli:'israelí', Ukrainian:'ucraniano', Liechtensteiner:'liechtensteiniano',
+  Hong_Kong:'hongkonés'
+};
+
+const cty = c => COUNTRY_ES[c] || c || '—';
+// Nacionalidad en español, con la primera letra en mayúscula
+const natEs = n => {
+  const v = NAT_ES[n] || n || '';
+  return v ? v.charAt(0).toUpperCase() + v.slice(1) : '';
+};
+// Los nombres de carreras que llegan de la API dicen "Grand Prix": lo pasamos a "Gran Premio"
+const raceEs = n => String(n || '').replace(/Grand Prix/g, 'Gran Premio');
 
 const SESSION_NAMES = {
   FirstPractice: 'Práctica 1',
@@ -272,7 +315,7 @@ function parseCalendar(json) {
     return {
       round: +r.round,
       id: 'r' + r.round,
-      name: local?.name || r.raceName,
+      name: local?.name || raceEs(r.raceName),
       dateLabel: local?.date || fmtDate(r.date),
       start: r.date,
       when,
@@ -285,7 +328,7 @@ function parseCalendar(json) {
       locality: loc.locality,
       lat: +loc.lat,
       lon: +loc.long,
-      place: `${loc.locality}, ${loc.country}`,
+      place: `${loc.locality}, ${cty(loc.country)}`,
       sessions,
       done: new Date(when) < new Date()
     };
@@ -888,6 +931,22 @@ function compoundHTML(comp) {
   }).join('');
 }
 
+// Carga el safety car y los neumáticos en la ficha sin bloquear el resto
+async function loadSafetyInto(c) {
+  let s;
+  try { s = await getSafety(c); } catch (e) { console.warn(e); s = 'error'; }
+
+  const box = document.querySelector('#safetyBox');
+  if (box && box.dataset.cid === c.circuitId) box.innerHTML = safetyHTML(s);
+
+  const cb = document.querySelector('#compBox');
+  if (cb && cb.dataset.cid === c.circuitId) {
+    cb.innerHTML = s && s !== 'error' && s.races
+      ? compoundHTML(s.comp)
+      : '<p class="muted">Sin datos de neumáticos para este circuito.</p>';
+  }
+}
+
 /* ============ CIRCUITOS: VIGENTES / HISTORIAL ============ */
 function ensureCircTabs() {
   const view = $('#v-circuits');
@@ -928,7 +987,7 @@ async function renderCircuits() {
     const list = S.calendar.filter(r => r.circuitId && !seen.has(r.circuitId) && seen.add(r.circuitId));
     grid.innerHTML = list.map((c, i) => `
       <div class="glass circ" data-circ="${esc(c.circuitId)}" data-src="vig" style="animation-delay:${i * 60}ms">
-        <span class="eyebrow">${c.flag} ${esc(c.country)}</span>
+        <span class="eyebrow">${c.flag} ${esc(cty(c.country))}</span>
         <h3>${esc(c.circuit)}</h3>
         <div class="trk" data-trk="${esc(c.circuitId)}"><span class="trk-msg">Cargando trazado…</span></div>
         <div class="foot">
@@ -950,7 +1009,7 @@ async function renderCircuits() {
       const vig = current.has(c.id);
       return `
       <div class="glass circ" data-circ="${esc(c.id)}" data-src="hist" style="animation-delay:${Math.min(i, 20) * 30}ms">
-        <span class="eyebrow">${FLAGS[c.country] || '🏁'} ${esc(c.country)}</span>
+        <span class="eyebrow">${FLAGS[c.country] || '🏁'} ${esc(cty(c.country))}</span>
         <h3>${esc(c.name)}</h3>
         <div class="trk" data-trk="${esc(c.id)}"><span class="trk-msg">Cargando trazado…</span></div>
         <div class="foot">
@@ -1017,17 +1076,16 @@ async function openCircuitDetail(id, src) {
   const c = { circuitId: cid, locality, circuitName: name, country, lat: info.lat, lon: info.lon };
 
   openModal(`
-    <span class="eyebrow">${flag} ${esc(country)}</span>
+    <span class="eyebrow">${flag} ${esc(cty(country))}</span>
     <h3 class="display m-title">${esc(name)}</h3>
     <p class="muted">Cargando datos del circuito…</p>`);
 
-  const wantSafety = isVig && S.source === 'api';
-  const [wins, fast, first, track, safety] = await Promise.all([
+  // Primero lo rápido (API y trazado); la telemetría se completa después
+  const [wins, fast, first, track] = await Promise.all([
     getJSON(`/circuits/${cid}/results/1.json?limit=1000`).catch(() => null),
     getJSON(`/circuits/${cid}/fastest/1/results.json?limit=1000`).catch(() => null),
     getJSON(`/circuits/${cid}/results.json?limit=1`).catch(() => null),
-    getTrack(c).catch(() => null),
-    wantSafety ? getSafety(c).catch(() => 'error') : Promise.resolve(null)
+    getTrack(c).catch(() => null)
   ]);
 
   const w = wins ? winStats(wins) : null;
@@ -1038,17 +1096,17 @@ async function openCircuitDetail(id, src) {
     ? trackSVG(track)
     : `<p class="muted" style="text-align:center;padding:40px 10px">Trazado no disponible para este circuito.</p>`;
 
-  const safetyOK = safety && safety !== 'error' && safety.races;
+  const telemetryPending = isVig && S.source === 'api';
 
   $('#mBody').innerHTML = `
-    <span class="eyebrow">${flag} ${esc(country)}</span>
+    <span class="eyebrow">${flag} ${esc(cty(country))}</span>
     <h3 class="display m-title">${esc(name)}</h3>
     <div class="m-grid">
       <div class="svg-box">${trackBox}</div>
       <div class="box">
         <h4>📍 Ficha</h4>
         ${lineRow('Localidad', locality || '—')}
-        ${lineRow('País', country || '—')}
+        ${lineRow('País', cty(country))}
         ${isVig
           ? lineRow('Ronda 2026', `${info.round} · ${info.dateLabel}`)
           : lineRow('Estado', 'Ya no forma parte del calendario de F1')}
@@ -1069,23 +1127,27 @@ async function openCircuitDetail(id, src) {
       ${isVig ? `
       <div class="box">
         <h4>🚦 Safety car · 2023–2025</h4>
-        ${safetyHTML(safety)}
+        <div id="safetyBox" data-cid="${esc(cid)}">
+          ${telemetryPending ? '<p class="muted">Calculando datos de safety car…</p>' : '<p class="muted">Sin datos de safety car.</p>'}
+        </div>
       </div>` : ''}
     </div>
     ${isVig ? `
     <div class="box" style="margin-top:18px">
       <h4>🛞 Neumáticos más usados · 2023–2025</h4>
-      ${safetyOK ? compoundHTML(safety.comp) : '<p class="muted">Sin datos de neumáticos para este circuito.</p>'}
+      <div id="compBox" data-cid="${esc(cid)}">
+        ${telemetryPending ? '<p class="muted">Calculando…</p>' : '<p class="muted">Sin datos de neumáticos para este circuito.</p>'}
+      </div>
       <p class="muted" style="font-size:12px;line-height:1.6;margin-top:10px">Son los compuestos más usados en carrera, no una recomendación oficial.</p>
     </div>` : ''}`;
+
+  if (telemetryPending) loadSafetyInto(c);
 }
 
 /* ============ SALÓN DE LA FAMA ============ */
 function ensureHofTabs() {
   const view = $('#v-hof');
   if (view.querySelector('#hofTabs')) return;
-  view.querySelector('.sec-head p').textContent =
-    `Campeones por temporada desde ${CHAMP_FROM}, y todos los pilotos que alguna vez ganaron un título desde ${FIRST_SEASON}.`;
   view.querySelector('.sec-head').insertAdjacentHTML('afterend', `
     <div class="chips" id="hofTabs">
       <button class="chip on" data-ht="temp">Campeones por temporada</button>
@@ -1145,7 +1207,7 @@ function renderHofDrivers(grid) {
     <article class="glass dc" data-champ="${esc(d.id)}" style="animation-delay:${Math.min(i, 20) * 30}ms">
       <div class="dc-top"><span class="dc-num">${d.titles.length}</span><span class="dc-lbl">${d.titles.length === 1 ? 'título' : 'títulos'}</span></div>
       <h3>${esc(d.name)}</h3>
-      <p class="dc-nat">${esc(d.nat)}</p>
+      <p class="dc-nat">${esc(natEs(d.nat))}</p>
       <div class="yrs">${yrs.map(t => `<span class="yr" data-season="${t.season}">${t.season}</span>`).join('')}</div>
     </article>`;
   }).join('') + status;
@@ -1156,7 +1218,7 @@ function openChampDriver(id) {
   if (!list.length) return;
   const teams = [...new Set(list.map(c => c.team))];
   openModal(`
-    <span class="eyebrow">${esc(list[0].nat || 'Campeón del mundo')}</span>
+    <span class="eyebrow">${esc(natEs(list[0].nat) || 'Campeón del mundo')}</span>
     <h3 class="display m-title">${esc(list[0].name)}</h3>
     <div class="m-grid">
       <div class="svg-box" style="display:grid;place-items:center;text-align:center">
@@ -1230,7 +1292,7 @@ function seasonHTML(c, d) {
     : (() => {
         const r = d.rows[d.clinchIdx];
         const faltan = d.total - 1 - d.clinchIdx;
-        return `<b>Ronda ${r.round} · ${esc(r.name)}</b><br>
+        return `<b>Ronda ${r.round} · ${esc(raceEs(r.name))}</b><br>
           <span class="muted">${esc(fmtDateY(r.date))} · ${faltan === 0
             ? 'Se consagró en la última carrera de la temporada'
             : `Faltaban ${faltan} ${faltan === 1 ? 'carrera' : 'carreras'} para el final`}</span>`;
@@ -1243,7 +1305,7 @@ function seasonHTML(c, d) {
     return `
       <div class="rr ${isClinch ? 'is-clinch' : ''}" style="--c:${color}">
         <span class="rr-r">R${String(r.round).padStart(2, '0')}</span>
-        <span class="rr-n">${FLAGS[r.country] || '🏁'} ${esc(r.name)}
+        <span class="rr-n">${FLAGS[r.country] || '🏁'} ${esc(raceEs(r.name))}
           <small>${esc(fmtDateY(r.date))}${isClinch ? ' · 🏆 Título' : ''}</small></span>
         <span class="rr-p ${posLbl === 'P1' ? 'win' : ''}">${posLbl}${r.sprintPos ? `<small>S${esc(r.sprintPos)}</small>` : ''}</span>
         <span class="rr-bar"><i style="width:${w}%"></i></span>
@@ -1392,7 +1454,14 @@ document.addEventListener('click', e => {
   if (e.target.id === 'modal' || e.target.closest('#mClose')) closeModal();
 });
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+// El logo también lleva al inicio con Enter o barra espaciadora
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') return closeModal();
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.logo')) {
+    e.preventDefault();
+    show('home');
+  }
+});
 
 $('#simRaces').addEventListener('change', e => {
   const s = e.target;
