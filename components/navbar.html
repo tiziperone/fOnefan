@@ -1,28 +1,24 @@
-<header class="border-b border-gray-800 bg-f1dark/90 backdrop-blur sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-    <div class="flex items-center space-x-3">
-        <span class="bg-f1red text-white text-xs font-black px-2.5 py-1 uppercase tracking-widest skew-x-[-12deg]">F1 2026</span>
-        <h1 class="text-xl font-black italic tracking-wider">DRIVER<span class="text-f1red">WIN</span></h1>
+<header class="border-b border-white/5 bg-[#0a0a0c]/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-2xl">
+    <div class="flex items-center space-x-3 group cursor-pointer">
+        <span class="bg-f1red text-white text-[10px] font-black px-2.5 py-1 uppercase tracking-widest skew-x-[-12deg] group-hover:bg-white group-hover:text-f1red transition duration-300">F1 2026</span>
+        <h1 class="text-2xl font-black italic tracking-wider text-white drop-shadow-md">DRIVER<span class="text-f1red">WIN</span></h1>
     </div>
 
-    <!-- Navegación por Secciones -->
-    <nav class="flex space-x-2 bg-f1card p-1 rounded-lg border border-gray-800 text-xs font-bold">
-        <button onclick="switchMainTab('simulator')" id="navSimBtn" class="px-4 py-2 rounded-md bg-f1red text-white transition">Simulador</button>
-        <button onclick="switchMainTab('calendar')" id="navCalBtn" class="px-4 py-2 rounded-md text-gray-400 hover:text-white transition">Calendario</button>
-        <button onclick="switchMainTab('history')" id="navHistBtn" class="px-4 py-2 rounded-md text-gray-400 hover:text-white transition">Historial 10 Años</button>
-        <button onclick="switchMainTab('circuits')" id="navCircBtn" class="px-4 py-2 rounded-md text-gray-400 hover:text-white transition">Circuitos</button>
+    <!-- Navegación Reordenada -->
+    <nav class="flex space-x-1 bg-white/5 p-1.5 rounded-xl border border-white/5 text-xs font-bold shadow-inner backdrop-blur-sm">
+        <button onclick="switchMainTab('calendar')" id="navCalBtn" class="px-5 py-2.5 rounded-lg bg-f1red text-white transition shadow-[0_0_15px_rgba(225,6,0,0.4)]">Calendario</button>
+        <button onclick="switchMainTab('history')" id="navHistBtn" class="px-5 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition">Historial</button>
+        <button onclick="switchMainTab('circuits')" id="navCircBtn" class="px-5 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition">Circuitos</button>
+        <button onclick="switchMainTab('simulator')" id="navSimBtn" class="px-5 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition">Simulador</button>
     </nav>
     
-    <!-- Selectores de Favoritos -->
+    <!-- Favoritos -->
     <div class="flex items-center space-x-3 text-xs">
-        <div>
-            <select id="favoriteDriver" class="bg-f1card border border-gray-700 rounded px-2 py-1.5 text-white focus:outline-none focus:border-f1red">
-                <option value="">⭐ Piloto Fav</option>
-            </select>
-        </div>
-        <div>
-            <select id="favoriteTeam" class="bg-f1card border border-gray-700 rounded px-2 py-1.5 text-white focus:outline-none focus:border-f1red">
-                <option value="">🛡️ Escudería Fav</option>
-            </select>
-        </div>
+        <select id="favoriteDriver" class="appearance-none cursor-pointer bg-[#15151e] border border-white/10 rounded-lg px-4 py-2 text-gray-300 hover:border-f1red/50 focus:outline-none focus:ring-2 focus:ring-f1red/50 transition duration-300">
+            <option value="">⭐ Piloto Fav</option>
+        </select>
+        <select id="favoriteTeam" class="appearance-none cursor-pointer bg-[#15151e] border border-white/10 rounded-lg px-4 py-2 text-gray-300 hover:border-f1red/50 focus:outline-none focus:ring-2 focus:ring-f1red/50 transition duration-300">
+            <option value="">🛡️ Escudería Fav</option>
+        </select>
     </div>
 </header>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DriverWin | F1 Championship & Stats Hub</title>
+    <title>DriverWin | Modern F1 Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -12,160 +12,142 @@
                 extend: {
                     colors: {
                         f1red: '#e10600',
-                        f1dark: '#0f0f13',
-                        f1card: '#181822',
-                        f1border: '#2a2a3c'
+                        f1dark: '#0a0a0c',
+                        f1card: '#121218',
+                        f1border: '#ffffff10'
                     }
                 }
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Titillium Web', sans-serif; }
+        body { font-family: 'Titillium Web', sans-serif; background: radial-gradient(circle at top, #1a1a24, #0a0a0c 60%); background-attachment: fixed; }
+        
+        .accordion-content { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .accordion-content.open { max-height: 800px; opacity: 1; margin-top: 1rem; }
+        .accordion-icon { transition: transform 0.3s ease; }
+        .open .accordion-icon { transform: rotate(180deg); }
+
+        .circuit-svg path { 
+            fill: none; stroke: #3f3f46; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; 
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .circuit-card:hover .circuit-svg path { stroke: #e10600; filter: drop-shadow(0 0 12px rgba(225, 6, 0, 0.8)); stroke-width: 5; }
+        .circuit-card:hover { transform: translateY(-5px); border-color: rgba(225, 6, 0, 0.3); }
+
+        .modal-svg path { fill: none; stroke: #e10600; stroke-width: 3; filter: drop-shadow(0 0 15px rgba(225, 6, 0, 0.6)); }
+        
+        @keyframes fadeInScale {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .animate-pop { animation: fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
-<body class="bg-f1dark text-white min-h-screen selection:bg-f1red selection:text-white flex flex-col justify-between antialiased">
+<body class="text-gray-100 min-h-screen selection:bg-f1red selection:text-white flex flex-col justify-between antialiased">
 
-    <div>
-        <!-- Navbar Inyectado Dinámicamente -->
-        <div id="navbar-container"></div>
+    <div id="navbar-container"></div>
 
-        <!-- Contenedor Principal con más espacio y separación -->
-        <main class="max-w-7xl mx-auto px-6 py-10">
-            
-            <!-- VISTA 1: SIMULADOR -->
-            <section id="viewSimulator" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 space-y-6">
-                    <div class="bg-f1card border border-f1border rounded-2xl p-8 shadow-2xl">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-xl font-bold italic flex items-center space-x-2">
-                                <span>🏁 Simulador de Grandes Premios Restantes</span>
-                            </h2>
-                            <button onclick="resetSimulation()" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-xl font-semibold transition border border-gray-700">Reiniciar Simulación</button>
-                        </div>
-                        <div id="racesContainer" class="space-y-6 max-h-[70vh] overflow-y-auto pr-3"></div>
-                    </div>
+    <main class="max-w-7xl mx-auto px-6 py-10 w-full">
+        
+        <!-- VISTA 1: CALENDARIO (Por defecto) -->
+        <section id="viewCalendar" class="space-y-6">
+            <div class="mb-8">
+                <h2 class="text-4xl font-black italic tracking-wide text-white drop-shadow-lg">Calendario <span class="text-f1red">2026</span></h2>
+                <p class="text-sm text-gray-400 mt-2 font-medium">Todas las fechas oficiales de la temporada actual. Las carreras disputadas aparecen atenuadas.</p>
+            </div>
+            <div id="calendarContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- VISTA 2: HISTORIAL -->
+        <section id="viewHistory" class="hidden space-y-6 animate-pop">
+            <h2 class="text-4xl font-black italic mb-6">Salón de la Fama</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="historyContainer"></div>
+        </section>
+
+        <!-- VISTA 3: CIRCUITOS -->
+        <section id="viewCircuits" class="hidden space-y-6 animate-pop">
+            <h2 class="text-4xl font-black italic mb-6">Diseño de Pistas</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="circuitsContainer"></div>
+        </section>
+
+        <!-- VISTA 4: SIMULADOR -->
+        <section id="viewSimulator" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-10 animate-pop">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-3xl font-black italic">Zona de <span class="text-f1red">Estrategia</span></h2>
+                    <button onclick="resetSimulation()" class="text-xs bg-white/5 hover:bg-f1red border border-white/10 px-5 py-2.5 rounded-lg font-bold transition duration-300">Borrar Simulación</button>
                 </div>
-
-                <aside class="space-y-6">
-                    <!-- Tarjeta de Favorito -->
-                    <div id="favoriteCard" class="bg-gradient-to-br from-f1card via-gray-900 to-f1card border border-f1border rounded-2xl p-6 shadow-2xl relative overflow-hidden hidden">
-                        <div class="absolute -right-4 -bottom-4 text-f1red/10 text-8xl font-black italic">FAV</div>
-                        <h3 class="text-xs font-bold uppercase tracking-widest text-f1red">Tu Selección</h3>
-                        <div class="mt-3">
-                            <p id="favDriverInfo" class="text-lg font-black italic">Piloto: -</p>
-                            <p id="favTeamInfo" class="text-xs text-gray-400 mt-0.5">Escudería: -</p>
-                        </div>
-                        <div class="mt-5 pt-4 border-t border-f1border">
-                            <h4 class="text-xs font-semibold text-gray-400 mb-1.5">Análisis de Opciones:</h4>
-                            <p id="favScenarioText" class="text-xs text-gray-200 italic leading-relaxed">Selecciona un piloto favorito para calcular sus opciones de campeonato.</p>
-                        </div>
-                    </div>
-
-                    <!-- Tabla de Puntuación -->
-                    <div class="bg-f1card border border-f1border rounded-2xl p-6 shadow-2xl">
-                        <div class="flex border-b border-f1border pb-3 mb-4">
-                            <button onclick="switchTableTab('drivers')" id="tabDriversBtn" class="flex-1 pb-1 font-bold text-xs border-b-2 border-f1red text-white uppercase tracking-wider transition">Pilotos</button>
-                            <button onclick="switchTableTab('teams')" id="tabTeamsBtn" class="flex-1 pb-1 font-bold text-xs border-b-2 border-transparent text-gray-400 uppercase tracking-wider transition">Constructores</button>
-                        </div>
-
-                        <div id="driversTableContainer" class="overflow-x-auto max-h-[52vh] overflow-y-auto pr-1">
-                            <table class="w-full text-left text-sm">
-                                <thead>
-                                    <tr class="text-gray-500 text-xs border-b border-f1border">
-                                        <th class="pb-3">Pos</th>
-                                        <th class="pb-3">Piloto</th>
-                                        <th class="pb-3 text-right">Pts</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="driversTableBody" class="divide-y divide-f1border/40"></tbody>
-                            </table>
-                        </div>
-
-                        <div id="teamsTableContainer" class="overflow-x-auto max-h-[52vh] overflow-y-auto pr-1 hidden">
-                            <table class="w-full text-left text-sm">
-                                <thead>
-                                    <tr class="text-gray-500 text-xs border-b border-f1border">
-                                        <th class="pb-3">Pos</th>
-                                        <th class="pb-3">Escudería</th>
-                                        <th class="pb-3 text-right">Pts</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="teamsTableBody" class="divide-y divide-f1border/40"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </aside>
-            </section>
-
-            <!-- VISTA 2: CALENDARIO -->
-            <section id="viewCalendar" class="hidden space-y-6">
-                <div class="bg-f1card border border-f1border rounded-2xl p-8 shadow-2xl">
-                    <h2 class="text-2xl font-black italic mb-2 text-f1red">📅 Calendario Actualizado 2026</h2>
-                    <p class="text-sm text-gray-400 mb-8">Próximas citas y circuitos confirmados para la temporada actual.</p>
-                    <div id="calendarContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-                </div>
-            </section>
-
-            <!-- VISTA 3: HISTORIAL 10 AÑOS -->
-            <section id="viewHistory" class="hidden space-y-6">
-                <div class="bg-f1card border border-f1border rounded-2xl p-8 shadow-2xl">
-                    <h2 class="text-2xl font-black italic mb-2 text-f1red">📜 Archivo Histórico (Últimos 10 Años)</h2>
-                    <p class="text-sm text-gray-400 mb-8">Repasa quiénes dominaron la máxima categoría temporada por temporada.</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6" id="historyContainer"></div>
-                </div>
-            </section>
-
-            <!-- VISTA 4: CIRCUITOS Y RÉCORDS -->
-            <section id="viewCircuits" class="hidden space-y-6">
-                <div class="bg-f1card border border-f1border rounded-2xl p-8 shadow-2xl">
-                    <h2 class="text-2xl font-black italic mb-2 text-f1red">🏟️ Rincón de Circuitos & Récords</h2>
-                    <p class="text-sm text-gray-400 mb-8">Haz clic en cualquier circuito para ver su historia completa, horarios oficiales y probabilidades de Safety Car.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="circuitsContainer"></div>
-                </div>
-            </section>
-
-        </main>
-    </div>
-
-    <!-- MODAL DE DETALLES DE CIRCUITO -->
-    <div id="circuitModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-f1card border border-f1border rounded-2xl max-w-xl w-full p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
-            <button onclick="closeCircuitModal()" class="absolute top-6 right-6 text-gray-400 hover:text-white text-xl font-bold bg-gray-800/60 hover:bg-gray-700 w-9 h-9 rounded-full flex items-center justify-center transition">✕</button>
-            <span id="modalCircuitCountry" class="text-xs font-bold text-f1red uppercase tracking-widest">País</span>
-            <h3 id="modalCircuitName" class="text-2xl font-black italic mt-1 mb-4">Nombre del Circuito</h3>
-            
-            <div class="grid grid-cols-2 gap-4 bg-gray-900/60 border border-f1border p-4 rounded-xl mb-6 text-xs">
-                <div>
-                    <span class="text-gray-400 block font-semibold">🕒 Horario Oficial:</span>
-                    <strong id="modalCircuitSchedule" class="text-white text-sm">-</strong>
-                </div>
-                <div>
-                    <span class="text-gray-400 block font-semibold">⚠️ Prob. Safety Car:</span>
-                    <strong id="modalCircuitSafety" class="text-yellow-400 text-sm">-</strong>
-                </div>
-                <div>
-                    <span class="text-gray-400 block font-semibold">⚡ Récord de Vuelta:</span>
-                    <strong id="modalCircuitRecord" class="text-white text-sm">-</strong>
-                </div>
-                <div>
-                    <span class="text-gray-400 block font-semibold">🏆 Máximo Ganador:</span>
-                    <strong id="modalCircuitWins" class="text-white text-sm">-</strong>
-                </div>
+                <div id="racesContainer" class="space-y-4"></div>
             </div>
 
-            <div>
-                <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Reseña Histórica:</h4>
-                <p id="modalCircuitHistory" class="text-sm text-gray-300 leading-relaxed italic"></p>
+            <aside class="space-y-6">
+                <div id="favoriteCard" class="bg-gradient-to-br from-[#181824] to-[#0d0d12] border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden hidden">
+                    <div class="absolute -right-4 -bottom-6 text-f1red/5 text-9xl font-black italic">FAV</div>
+                    <h3 class="text-[10px] font-bold uppercase tracking-widest text-f1red">Tu Elección</h3>
+                    <div class="mt-2 relative z-10">
+                        <p id="favDriverInfo" class="text-2xl font-black italic text-white drop-shadow-md">Piloto: -</p>
+                        <p id="favTeamInfo" class="text-xs text-gray-400 mt-1 font-semibold">Escudería: -</p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-white/10 relative z-10 bg-black/20 p-4 rounded-xl backdrop-blur-sm">
+                        <p id="favScenarioText" class="text-xs text-gray-300 italic leading-relaxed">Selecciona un piloto para analizar sus chances.</p>
+                    </div>
+                </div>
+
+                <div class="bg-f1card/80 backdrop-blur-md border border-white/5 rounded-2xl p-6 shadow-2xl">
+                    <div class="flex border-b border-white/10 pb-2 mb-4">
+                        <button onclick="switchTableTab('drivers')" id="tabDriversBtn" class="flex-1 pb-2 font-black text-xs border-b-2 border-f1red text-white uppercase tracking-wider transition">Pilotos</button>
+                        <button onclick="switchTableTab('teams')" id="tabTeamsBtn" class="flex-1 pb-2 font-bold text-xs border-b-2 border-transparent text-gray-500 hover:text-gray-300 uppercase tracking-wider transition">Constructores</button>
+                    </div>
+                    <div id="driversTableContainer" class="overflow-x-auto"><table class="w-full text-left text-sm"><tbody id="driversTableBody" class="divide-y divide-white/5"></tbody></table></div>
+                    <div id="teamsTableContainer" class="overflow-x-auto hidden"><table class="w-full text-left text-sm"><tbody id="teamsTableBody" class="divide-y divide-white/5"></tbody></table></div>
+                </div>
+            </aside>
+        </section>
+    </main>
+
+    <!-- MODAL DE CIRCUITO -->
+    <div id="circuitModal" class="fixed inset-0 bg-[#050508]/95 backdrop-blur-xl z-50 flex items-center justify-center p-6 hidden opacity-0 transition-opacity duration-500">
+        <div class="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-10 relative animate-pop">
+            <button onclick="closeCircuitModal()" class="absolute -top-10 right-0 text-white hover:text-f1red text-2xl font-bold transition">✕ Salir</button>
+            <div class="flex items-center justify-center bg-white/5 border border-white/10 rounded-3xl p-10 shadow-[inset_0_0_50px_rgba(0,0,0,0.5)]">
+                <svg id="modalCircuitSvg" viewBox="0 0 100 100" class="w-full h-auto max-h-[60vh] modal-svg transform scale-110">
+                    <path d="" />
+                </svg>
+            </div>
+            <div class="flex flex-col justify-center space-y-8">
+                <div>
+                    <span id="modalCircuitCountry" class="text-xs font-bold text-gray-400 uppercase tracking-widest border border-gray-700 px-3 py-1 rounded-full">País</span>
+                    <h3 id="modalCircuitName" class="text-6xl font-black italic text-white drop-shadow-lg mt-4">Nombre</h3>
+                </div>
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-gradient-to-br from-gray-900 to-black p-5 rounded-2xl border border-white/5 shadow-lg">
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-bold block mb-1">Récord de Vuelta</span>
+                        <strong id="modalCircuitRecord" class="text-lg text-white font-black italic">-</strong>
+                    </div>
+                    <div class="bg-gradient-to-br from-gray-900 to-black p-5 rounded-2xl border border-white/5 shadow-lg">
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-bold block mb-1">Horario Oficial</span>
+                        <strong id="modalCircuitSchedule" class="text-lg text-white font-black italic">-</strong>
+                    </div>
+                    <div class="bg-gradient-to-br from-gray-900 to-black p-5 rounded-2xl border border-white/5 shadow-lg">
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-bold block mb-1">Prob. Safety Car</span>
+                        <strong id="modalCircuitSafety" class="text-lg text-yellow-400 font-black italic">-</strong>
+                    </div>
+                    <div class="bg-gradient-to-br from-gray-900 to-black p-5 rounded-2xl border border-white/5 shadow-lg">
+                        <span class="text-[10px] text-gray-500 uppercase tracking-wider font-bold block mb-1">Máximo Ganador</span>
+                        <strong id="modalCircuitWins" class="text-lg text-white font-black italic">-</strong>
+                    </div>
+                </div>
+                <div class="bg-f1red/10 border border-f1red/20 p-6 rounded-2xl">
+                    <h4 class="text-[11px] font-black uppercase tracking-widest text-f1red mb-2">Archivo Histórico</h4>
+                    <p id="modalCircuitHistory" class="text-gray-300 font-medium leading-relaxed"></p>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Footer Inyectado Dinámicamente -->
     <div id="footer-container"></div>
-
-    <!-- Archivos de Lógica -->
     <script src="data.js"></script>
     <script src="app.js"></script>
 </body>
