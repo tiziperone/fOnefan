@@ -3,10 +3,10 @@
 const API = 'https://api.jolpi.ca/ergast/f1';
 const OPENF1 = 'https://api.openf1.org/v1';
 const SEASON = 2026;
-const CHAMP_FROM = 2000;           // desde qué año se muestra en "Campeones por temporada"
+const CHAMP_FROM = 2000;           // (ya no se muestra; se conserva por compatibilidad)
 const FIRST_SEASON = 1950;         // primera temporada de F1 (para "Pilotos campeones")
 const CHAMP_CACHE = 'dw_champ_v1_';
-const DRV_CACHE = 'dw_drv_agg_v3';  // estadísticas de todos los pilotos
+const DRV_CACHE = 'dw_drv_agg_v4';  // estadísticas de todos los pilotos (incluye escuderías)
 const DRV_FROM = 1950;
 const DRV_TTL = 12 * 3600 * 1000;   // 12 horas
 const ART = 'America/Argentina/Buenos_Aires';
@@ -116,6 +116,21 @@ const NAME_COLORS = [
   [/bmw/i, '#1E5BC6'], [/jaguar/i, '#2E7D32'], [/stewart/i, '#C0C0C0']
 ];
 
+// Colores de cascos por escudería (principal, banda superior, banda inferior)
+const TEAM_LOOK = [
+  [/red bull/i,                                  {main:'#1c3f94', sec:'#e10600', acc:'#ffd60a'}],
+  [/racing bulls|^rb\b|alphatauri|toro rosso/i,  {main:'#6692ff', sec:'#ffffff', acc:'#0a1a4a'}],
+  [/mercedes/i,                                  {main:'#21d4b8', sec:'#ffffff', acc:'#0b0b10'}],
+  [/ferrari/i,                                   {main:'#e10600', sec:'#ffd60a', acc:'#111111'}],
+  [/mclaren/i,                                   {main:'#ff8000', sec:'#1e41ff', acc:'#ffffff'}],
+  [/alpine|renault/i,                            {main:'#0093cc', sec:'#ff87bc', acc:'#ffffff'}],
+  [/williams/i,                                  {main:'#64c4ff', sec:'#0b1f4a', acc:'#ffffff'}],
+  [/aston/i,                                     {main:'#229971', sec:'#cfe6dc', acc:'#0c3b2e'}],
+  [/haas/i,                                      {main:'#c9ccd0', sec:'#e10600', acc:'#111111'}],
+  [/audi|sauber/i,                               {main:'#16161c', sec:'#52e252', acc:'#ffffff'}],
+  [/cadillac/i,                                  {main:'#1a1a1a', sec:'#c9c9d1', acc:'#e10600'}]
+];
+
 // Banderas por país (clave = nombre en inglés que devuelve la API)
 const FLAGS = {
   Australia:'🇦🇺', China:'🇨🇳', Japan:'🇯🇵', Bahrain:'🇧🇭', 'Saudi Arabia':'🇸🇦',
@@ -223,7 +238,6 @@ const C = {
   drvProg: null      // avance de la carga: { n, t }
 };
 
-let hofTab = 'temp';
 let drvTab = 'act';     // 'act' | 'hist'
 let drvQuery = '';
 let drvModalId = null;  // piloto que está abierto en el modal
@@ -253,6 +267,18 @@ const readCache = k => { try { return JSON.parse(localStorage.getItem(k)); } cat
 const writeCache = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const isFinish = s => /^(Finished|\+\d+ Laps?)$/.test(s || '');
 const yearOf = iso => (iso ? String(iso).slice(0, 4) : '—');
+
+// Edad en años cumplidos a una fecha de referencia
+function ageOn(dob, ref) {
+  if (!dob || !ref) return null;
+  const b = new Date(String(dob).slice(0, 10) + 'T00:00:00');
+  const r = ref instanceof Date ? ref : new Date(String(ref).slice(0, 10) + 'T00:00:00');
+  if (isNaN(b) || isNaN(r)) return null;
+  let a = r.getFullYear() - b.getFullYear();
+  const m = r.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && r.getDate() < b.getDate())) a--;
+  return a;
+}
 
 /* ============ HORA ARGENTINA ============ */
 const fmtART = iso => {
@@ -406,7 +432,7 @@ function loadLocal() {
   S.source = 'local';
 }
 
-/* ============ CAMPEONES POR TEMPORADA ============ */
+/* ============ CAMPEONES (para "Pilotos campeones") ============ */
 async function loadChampYear(y) {
   const key = CHAMP_CACHE + y;
   if (y < SEASON) {
@@ -586,7 +612,7 @@ async function fetchPagedSlow(path, key) {
 
 const emptyAgg = () => ({
   starts: 0, wins: 0, podiums: 0, poles: 0, fl: 0, pts: 0,
-  first: null, last: null, team: '', teamDate: '', number: ''
+  first: null, last: null, team: '', teamDate: '', number: '', teams: new Set()
 });
 
 // Descarga una temporada completa y la suma a las estadísticas.
@@ -613,6 +639,7 @@ async function loadSeasonDrivers(y, agg, info) {
     s.pts += +x.points || 0;
     if (!s.first || r.date < s.first) s.first = r.date;
     if (!s.last || r.date > s.last) s.last = r.date;
+    if (x.Constructor?.name) s.teams.add(x.Constructor.name);
     if (r.date >= s.teamDate) {
       s.teamDate = r.date;
       s.team = x.Constructor?.name || s.team;
@@ -631,6 +658,7 @@ async function loadSeasonDrivers(y, agg, info) {
     a.pts += s.pts;
     if (s.first && (!a.first || s.first < a.first)) a.first = s.first;
     if (s.last && (!a.last || s.last > a.last)) a.last = s.last;
+    s.teams.forEach(t => a.teams.add(t));
     if (s.teamDate && s.teamDate >= a.teamDate) {
       a.teamDate = s.teamDate;
       a.team = s.team;
@@ -686,6 +714,7 @@ async function loadDriverAggregate() {
       code: m.code || '',
       num: m.permanentNumber || a.number || '',
       team: a.team,
+      teams: [...a.teams],
       starts: a.starts, wins: a.wins, podiums: a.podiums, poles: a.poles, fl: a.fl,
       pts: a.pts, first: a.first, last: a.last
     };
@@ -706,7 +735,7 @@ function ensureDrv() {
   return C.drvPromise;
 }
 
-// Casco estilizado en los colores de la escudería
+// Casco en los colores de la escudería, con banda superior, banda inferior y visera
 const shade = (hex, amt) => {
   let n = hex.replace('#', '');
   if (n.length === 3) n = n.split('').map(c => c + c).join('');
@@ -714,26 +743,35 @@ const shade = (hex, amt) => {
   return '#' + [0, 2, 4].map(i => f(parseInt(n.substr(i, 2), 16)).toString(16).padStart(2, '0')).join('');
 };
 
-function helmetSVG(id, color, cls = '') {
+function teamLook(name) {
+  const hit = TEAM_LOOK.find(([re]) => re.test(name || ''));
+  return hit ? hit[1] : { main: teamColorFor(name), sec: '#ffffff', acc: '#111111' };
+}
+
+function helmetSVG(id, teamName, cls = '') {
+  const L = teamLook(teamName);
   const gid = 'h' + String(id).replace(/[^a-z0-9]/gi, '') + (cls || 'sm');
-  const light = shade(color, .35), dark = shade(color, -.4);
+  const sh = shade(L.main, .35), dk = shade(L.main, -.45);
   return `<svg class="helmet ${cls}" viewBox="0 0 200 180" aria-hidden="true">
     <defs>
       <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="${light}"/>
-        <stop offset=".55" stop-color="${color}"/>
-        <stop offset="1" stop-color="${dark}"/>
+        <stop offset="0" stop-color="${sh}"/>
+        <stop offset=".55" stop-color="${L.main}"/>
+        <stop offset="1" stop-color="${dk}"/>
       </linearGradient>
       <linearGradient id="${gid}v" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#4a4a5c"/>
-        <stop offset="1" stop-color="#07070c"/>
+        <stop offset="0" stop-color="#34497a"/>
+        <stop offset=".55" stop-color="#0a0f1f"/>
+        <stop offset="1" stop-color="#1d1233"/>
       </linearGradient>
     </defs>
-    <path d="M30 118C28 60 68 20 112 20C152 20 174 56 174 98L174 128C174 153 158 165 132 165L62 165C42 165 31 147 30 118Z" fill="url(#${gid})"/>
-    <path d="M31 112C60 98 120 104 173 92L173 114C130 126 70 128 32 136Z" fill="#ffffff" opacity=".92"/>
-    <path d="M66 96C64 80 82 72 106 72L164 72C174 72 176 84 174 96L170 116C168 126 160 129 149 129L84 129C70 129 66 116 66 104Z" fill="url(#${gid}v)"/>
-    <path d="M66 96C64 80 82 72 106 72L164 72C174 72 176 84 174 96" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"/>
-    <path d="M58 46C78 30 108 26 128 34" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="7" stroke-linecap="round"/>
+    <path d="M26 118C22 62 60 20 112 20C152 20 178 52 180 96L182 130C182 152 168 162 146 162L72 162C46 162 28 146 26 118Z" fill="url(#${gid})"/>
+    <path d="M34 84C54 52 92 36 132 40C154 42 170 52 178 66L176 74C164 60 146 56 128 56C94 56 62 70 40 98Z" fill="${L.sec}"/>
+    <path d="M28 132C60 150 132 156 182 134L182 142C134 164 58 160 30 142Z" fill="${L.acc}"/>
+    <path d="M84 88C84 76 96 70 116 70L166 70C180 70 184 82 182 98L178 118C176 128 170 132 158 132L102 132C90 132 84 124 84 112Z" fill="url(#${gid}v)"/>
+    <path d="M96 84L150 78L160 96L104 104Z" fill="rgba(150,190,255,.3)"/>
+    <rect x="150" y="142" width="24" height="9" rx="4.5" fill="#0b0b10" opacity=".75"/>
+    <path d="M50 58C66 40 96 30 120 32" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="7" stroke-linecap="round"/>
   </svg>`;
 }
 
@@ -748,13 +786,14 @@ function renderDriversCurrent(grid, status) {
     const num = d.num || s.num || '—';
     const code = d.code || s.code || '';
     const nat = natEs(d.nat || s.nat);
+    const edad = ageOn(d.dob || s.dob, new Date());
     return `
     <article class="glass dcard" data-drv="${esc(d.id)}" style="--c:${col};animation-delay:${i * 40}ms">
-      <div class="dc-hel">${helmetSVG(d.id, col)}</div>
+      <div class="dc-hel">${helmetSVG(d.id, d.teamName)}</div>
       <div class="dhead"><span class="dnum">${esc(num)}</span><span class="dcode">${esc(code)}</span></div>
       <h3>${esc(d.name)}</h3>
       <p class="dteam"><span class="dot" style="background:${col}"></span>${esc(d.teamName)}</p>
-      <div class="dfoot"><span>${esc(nat || '—')}</span><span>${d.pos ? `P${d.pos} · ${d.basePts} pts` : ''}</span></div>
+      <div class="dfoot"><span>${esc(nat || '—')}${edad != null ? ` · ${edad} años` : ''}</span><span>${d.pos ? `P${d.pos} · ${d.basePts} pts` : ''}</span></div>
     </article>`;
   }).join('');
   refreshActStatus();
@@ -805,12 +844,17 @@ async function renderDriversHistory(grid, status) {
     const col = teamColorFor(d.team);
     const active = activeIds.has(d.id) || yearOf(d.last) === String(SEASON);
     const years = `${yearOf(d.first)}–${active ? '…' : yearOf(d.last)}`;
+    const edad = active ? ageOn(d.dob, new Date()) : ageOn(d.dob, d.last);
+    const edadTxt = edad != null ? (active ? ` · ${edad} años` : ` · ${edad} años al retiro`) : '';
+    const teams = (d.teams && d.teams.length ? d.teams : (d.team ? [d.team] : []));
+    const teamTxt = teams.slice(0, 3).map(esc).join(' · ') + (teams.length > 3 ? ` +${teams.length - 3}` : '');
     return `
     <article class="glass dcard small" data-drv="${esc(d.id)}" style="--c:${col};animation-delay:${Math.min(i, 30) * 18}ms">
-      <div class="dc-hel">${helmetSVG(d.id, col)}</div>
+      <div class="dc-hel">${helmetSVG(d.id, d.team)}</div>
       <div class="dbody">
         <h3>${esc(d.name)}</h3>
-        <p class="dteam">${esc(natEs(d.nat) || '—')}${d.team ? ' · ' + esc(d.team) : ''}</p>
+        <p class="dteam">${esc(natEs(d.nat) || '—')}${edadTxt}</p>
+        <p class="dteams">${teamTxt || '—'}</p>
         <div class="dyears">${years}</div>
         <div class="dstats">
           <span><b>${d.starts}</b> GP</span>
@@ -863,7 +907,6 @@ function driverModalHTML(id, failed = false) {
   const d = C.drv?.byId[id] || {};
   const name = cur ? cur.name : d.name;
   const team = cur ? cur.teamName : d.team;
-  const col = teamColorFor(team);
   const nat = cur?.nat || d.nat;
   const num = cur?.num || d.num || '—';
   const dob = cur?.dob || d.dob;
@@ -871,6 +914,9 @@ function driverModalHTML(id, failed = false) {
   const v = k => (loading ? '…' : (d[k] ?? 0));
   const titles = S.champs.filter(c => c.driverId === id).sort((a, b) => a.season - b.season);
   const active = !!cur || yearOf(d.last) === String(SEASON);
+  const col = teamColorFor(team);
+  const edad = active ? ageOn(dob, new Date()) : ageOn(dob, d.last);
+  const teamsList = (d.teams && d.teams.length) ? d.teams : (team ? [team] : []);
 
   const note = loading
     ? '<p class="muted" style="font-size:12px;margin-top:10px">Cargando estadísticas de la carrera…</p>'
@@ -880,12 +926,13 @@ function driverModalHTML(id, failed = false) {
     <span class="eyebrow">${cur ? 'Piloto actual · ' + SEASON : 'Historia de la F1'}</span>
     <h3 class="display m-title">${esc(name)}</h3>
     <div class="m-grid">
-      <div class="svg-box dhel">${helmetSVG(id, col, 'big')}</div>
+      <div class="svg-box dhel">${helmetSVG(id, team, 'big')}</div>
       <div style="display:grid;gap:12px;align-content:start">
         <div class="stat"><span>Número</span><strong>${esc(num)}</strong></div>
         <div class="stat"><span>Nacionalidad</span><strong>${esc(natEs(nat) || '—')}</strong></div>
         <div class="stat"><span>Fecha de nacimiento</span><strong>${dob ? esc(fmtDateY(dob)) : '—'}</strong></div>
-        <div class="stat"><span>Escudería ${cur ? 'actual' : 'última'}</span><strong>${esc(team || '—')}</strong></div>
+        <div class="stat"><span>${active ? 'Edad' : 'Edad al retiro'}</span><strong>${edad != null ? edad + ' años' : '—'}</strong></div>
+        <div class="stat"><span>Escuderías</span><strong>${esc(teamsList.join(' · ') || '—')}</strong></div>
       </div>
     </div>
 
@@ -1550,49 +1597,11 @@ async function openCircuitDetail(id, src) {
   if (telemetryPending) loadSafetyInto(c);
 }
 
-/* ============ SALÓN DE LA FAMA ============ */
-function ensureHofTabs() {
-  const view = $('#v-hof');
-  if (view.querySelector('#hofTabs')) return;
-  view.querySelector('.sec-head').insertAdjacentHTML('afterend', `
-    <div class="chips" id="hofTabs">
-      <button class="chip on" data-ht="temp">Campeones por temporada</button>
-      <button class="chip" data-ht="pil">Pilotos campeones</button>
-    </div>`);
-}
-
+/* ============ SALÓN DE LA FAMA: PILOTOS CAMPEONES ============ */
 function renderHOF() {
   const grid = $('#hofGrid');
   grid.classList.toggle('hof', true);
-  return hofTab === 'temp' ? renderHofSeasons(grid) : renderHofDrivers(grid);
-}
 
-function renderHofSeasons(grid) {
-  const leader = standings().drivers[0];
-  const live = `
-    <article class="glass yc live" data-season="${SEASON}" style="--c:#e10600">
-      <span class="eyebrow">En curso</span>
-      <div class="yc-year">${SEASON}</div>
-      <h3>${esc(leader.name)}</h3>
-      <p class="yc-team"><span class="dot" style="background:${teamColorByName(leader.teamName)}"></span>${esc(leader.teamName)}</p>
-      <div class="yc-foot"><span>Líder provisional · ${leader.pts} pts</span><span>Ver →</span></div>
-    </article>`;
-
-  const past = S.champs.filter(c => c.season >= CHAMP_FROM && c.season < SEASON);
-  const status = !S.champsDone
-    ? `<p class="muted" style="grid-column:1/-1">Cargando campeones… (${S.champs.length} de ${SEASON - FIRST_SEASON})</p>`
-    : (S.source === 'local' ? '<p class="muted" style="grid-column:1/-1">Requiere conexión a la API.</p>' : '');
-
-  grid.innerHTML = live + past.map((c, i) => `
-    <article class="glass yc" data-season="${c.season}" style="--c:${teamColorFor(c.team)};animation-delay:${Math.min(i, 20) * 30}ms">
-      <div class="yc-year">${c.season}</div>
-      <h3>${esc(c.name)}</h3>
-      <p class="yc-team"><span class="dot" style="background:${teamColorFor(c.team)}"></span>${esc(c.team)}</p>
-      <div class="yc-foot"><span>${c.points != null ? c.points + ' pts' : ''}</span><span>Ver temporada →</span></div>
-    </article>`).join('') + status;
-}
-
-function renderHofDrivers(grid) {
   const map = {};
   S.champs.forEach(c => {
     map[c.driverId] ??= { id: c.driverId, name: c.name, nat: c.nat, titles: [] };
@@ -1603,9 +1612,9 @@ function renderHofDrivers(grid) {
     b.titles.length - a.titles.length ||
     Math.min(...a.titles.map(t => t.season)) - Math.min(...b.titles.map(t => t.season)));
 
-  const status = !S.champsDone
-    ? `<p class="muted" style="grid-column:1/-1">Cargando campeones… (${S.champs.length} de ${SEASON - FIRST_SEASON})</p>`
-    : '';
+  let status = '';
+  if (S.source === 'local') status = '<p class="muted" style="grid-column:1/-1">Requiere conexión a la API.</p>';
+  else if (!S.champsDone) status = `<p class="muted" style="grid-column:1/-1">Cargando campeones… (${S.champs.length} de ${SEASON - FIRST_SEASON})</p>`;
 
   grid.innerHTML = list.map((d, i) => {
     const yrs = [...d.titles].sort((a, b) => a.season - b.season);
@@ -1847,13 +1856,6 @@ document.addEventListener('click', e => {
     return renderCircuits();
   }
 
-  const ht = e.target.closest('[data-ht]');
-  if (ht) {
-    hofTab = ht.dataset.ht;
-    document.querySelectorAll('#hofTabs .chip').forEach(c => c.classList.toggle('on', c === ht));
-    return renderHOF();
-  }
-
   const season = e.target.closest('[data-season]');
   if (season) return openSeason(season.dataset.season);
 
@@ -1922,7 +1924,6 @@ function renderAll() {
   renderStandings();
   ensureCircTabs();
   renderCircuits();
-  ensureHofTabs();
   renderHOF();
   renderSim();
   // Los pilotos se cargan al abrir su pestaña

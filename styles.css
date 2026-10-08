@@ -17,13 +17,11 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
 @keyframes shine{to{background-position:200% center}}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 
 .glass{background:var(--card);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);border:1px solid var(--line);border-radius:22px}
 .eyebrow{font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--red);font-weight:700}
 .display{font-weight:900;font-style:italic;letter-spacing:-.02em;line-height:.95}
 .muted{color:var(--muted)}
-/* Números y etiquetas: misma familia que el resto, con cifras alineadas */
 .mono{font-family:'Titillium Web',sans-serif;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em}
 
 /* NAV */
@@ -78,7 +76,8 @@ main{max-width:1240px;margin:0 auto;padding:12px 16px 80px}
 /* SECTION HEAD */
 .sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin:10px 0 26px;flex-wrap:wrap}
 .sec-head h2{font-size:clamp(34px,5vw,56px);margin-top:8px}
-.sec-head p{color:var(--muted);max-width:420px;font-size:14px;line-height:1.5}
+/* Frases de cabecera: tipografía semibold, con barra roja */
+.sec-head p{font-family:'Titillium Web',sans-serif;font-weight:600;font-size:15px;line-height:1.6;letter-spacing:.02em;color:#c4c4d0;max-width:520px;padding-left:16px;border-left:2px solid var(--red)}
 
 /* CHIPS */
 .chips{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
@@ -141,9 +140,8 @@ main{max-width:1240px;margin:0 auto;padding:12px 16px 80px}
 
 /* PILOTOS */
 .drv-tools{display:none;gap:10px;flex-wrap:wrap;align-items:center}
-.drv-tools input,.drv-tools select{appearance:none;background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--text);padding:10px 16px;border-radius:999px;font:600 13px 'Titillium Web',sans-serif;outline:none;min-width:220px}
-.drv-tools select{min-width:0;cursor:pointer}
-.drv-tools input:focus,.drv-tools select:focus{border-color:var(--red)}
+.drv-tools input{appearance:none;background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--text);padding:10px 16px;border-radius:999px;font:600 13px 'Titillium Web',sans-serif;outline:none;min-width:260px}
+.drv-tools input:focus{border-color:var(--red)}
 #drvStatus{font-size:13px;margin:-8px 0 18px;letter-spacing:.02em;font-weight:600}
 .drv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
 
@@ -163,6 +161,7 @@ main{max-width:1240px;margin:0 auto;padding:12px 16px 80px}
 .dcode{font-weight:700;font-size:11px;letter-spacing:.2em;color:var(--muted);border:1px solid var(--line);padding:4px 9px;border-radius:8px}
 .dcard h3{font-size:19px;font-weight:800;margin-top:12px;line-height:1.1}
 .dteam{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;margin-top:6px;font-weight:600}
+.dteams{font-size:11px;color:var(--muted);margin-top:4px;font-weight:600;letter-spacing:.02em;line-height:1.4}
 .dfoot{display:flex;justify-content:space-between;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);font-weight:600}
 
 /* Tarjeta compacta (historia) */
@@ -184,7 +183,7 @@ main{max-width:1240px;margin:0 auto;padding:12px 16px 80px}
 /* HALL OF FAME: GRID */
 .hof{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
 
-/* Año (temporada) */
+/* Año (temporada) — modal */
 .yc{padding:24px;cursor:pointer;position:relative;overflow:hidden;animation:rise .6s both;transition:.35s cubic-bezier(.16,1,.3,1);--c:var(--red)}
 .yc::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--c)}
 .yc::after{content:"";position:absolute;right:-50px;top:-50px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,var(--c),transparent 65%);opacity:.22;pointer-events:none}
@@ -254,7 +253,7 @@ details.acc[open] summary::after{transform:rotate(180deg)}
 .svg-box.track path{fill:var(--red);stroke:none;filter:drop-shadow(0 0 14px var(--glow))}
 .stat{background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:14px;padding:14px}
 .stat span{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
-.stat strong{display:block;font-size:17px;margin-top:4px;font-weight:700}
+.stat strong{display:block;font-size:16px;margin-top:4px;font-weight:700;line-height:1.35}
 
 /* TOP 10 */
 .top10{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:4px}

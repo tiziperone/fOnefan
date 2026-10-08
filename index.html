@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>fOnefan</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='crimson'/%3E%3Cg fill='white' opacity='.55'%3E%3Crect x='8' y='20' width='18' height='4' rx='2'/%3E%3Crect x='6' y='30' width='24' height='4' rx='2'/%3E%3Crect x='10' y='40' width='14' height='4' rx='2'/%3E%3C/g%3E%3Cpath transform='skewX(-12) translate(10 0)' d='M30 16H52L49.5 22H37V28H47L44.5 34H37V48H30Z' fill='white'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='crimson'/%3E%3Crect x='4' y='15' width='19' height='4' rx='2' fill='white'/%3E%3Crect x='8' y='15' width='3.5' height='19' rx='1.7' fill='white'/%3E%3Cpath d='M14 34Q16 28 27 28L42 30Q54 32 57 38V42H14Z' fill='white'/%3E%3Cpath d='M30 28Q34 22 42 24L45 29Z' fill='%2314141c' opacity='.7'/%3E%3Ccircle cx='22' cy='44' r='8.5' fill='%2314141c'/%3E%3Ccircle cx='22' cy='44' r='3.8' fill='gold'/%3E%3Ccircle cx='47' cy='45' r='6.5' fill='%2314141c'/%3E%3Ccircle cx='47' cy='45' r='2.8' fill='gold'/%3E%3Crect x='53' y='39' width='8' height='3' rx='1.5' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -22,12 +22,15 @@
           </linearGradient>
         </defs>
         <rect width="64" height="64" rx="16" fill="url(#lgMark)"/>
-        <g fill="#fff" opacity=".55">
-          <rect x="8" y="20" width="18" height="4" rx="2"/>
-          <rect x="6" y="30" width="24" height="4" rx="2"/>
-          <rect x="10" y="40" width="14" height="4" rx="2"/>
-        </g>
-        <path transform="skewX(-12) translate(10 0)" d="M30 16H52L49.5 22H37V28H47L44.5 34H37V48H30Z" fill="#fff"/>
+        <rect x="4" y="15" width="19" height="4" rx="2" fill="#fff"/>
+        <rect x="8" y="15" width="3.5" height="19" rx="1.7" fill="#fff"/>
+        <path d="M14 34Q16 28 27 28L42 30Q54 32 57 38V42H14Z" fill="#fff"/>
+        <path d="M30 28Q34 22 42 24L45 29Z" fill="#14141c" opacity=".7"/>
+        <circle cx="22" cy="44" r="8.5" fill="#14141c"/>
+        <circle cx="22" cy="44" r="3.8" fill="#ffd60a"/>
+        <circle cx="47" cy="45" r="6.5" fill="#14141c"/>
+        <circle cx="47" cy="45" r="2.8" fill="#ffd60a"/>
+        <rect x="53" y="39" width="8" height="3" rx="1.5" fill="#fff"/>
       </svg>
       fOnefan
     </div>
@@ -137,6 +140,7 @@
   <section class="view" id="v-hof">
     <div class="sec-head">
       <div><span class="eyebrow">Leyendas</span><h2 class="display">Salón de la Fama</h2></div>
+      <p>Todos los pilotos que alguna vez ganaron un título mundial.</p>
     </div>
     <div class="hof" id="hofGrid"></div>
   </section>
@@ -145,7 +149,7 @@
   <section class="view" id="v-sim">
     <div class="sec-head">
       <div><span class="eyebrow">Simulador</span><h2 class="display">Zona de Estrategia</h2></div>
-      <p>Asigna pilotos a las posiciones de cada carrera restante y observa cómo cambia el campeonato.</p>
+      <p>Descubre en qué posición necesita salir tu piloto para lograr ser campeón este año</p>
     </div>
     <div class="sim">
       <div>
