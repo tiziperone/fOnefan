@@ -1,0 +1,28 @@
+<header class="border-b border-gray-800 bg-f1dark/90 backdrop-blur sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div class="flex items-center space-x-3">
+        <span class="bg-f1red text-white text-xs font-black px-2.5 py-1 uppercase tracking-widest skew-x-[-12deg]">F1 2026</span>
+        <h1 class="text-xl font-black italic tracking-wider">DRIVER<span class="text-f1red">WIN</span></h1>
+    </div>
+
+    <!-- Navegación por Secciones -->
+    <nav class="flex space-x-2 bg-f1card p-1 rounded-lg border border-gray-800 text-xs font-bold">
+        <button onclick="switchMainTab('simulator')" id="navSimBtn" class="px-4 py-2 rounded-md bg-f1red text-white transition">Simulador</button>
+        <button onclick="switchMainTab('calendar')" id="navCalBtn" class="px-4 py-2 rounded-md text-gray-400 hover:text-white transition">Calendario</button>
+        <button onclick="switchMainTab('history')" id="navHistBtn" class="px-4 py-2 rounded-md text-gray-400 hover:text-white transition">Historial 10 Años</button>
+        <button onclick="switchMainTab('circuits')" id="navCircBtn" class="px-4 py-2 rounded-md text-gray-400 hover:text-white transition">Circuitos</button>
+    </nav>
+    
+    <!-- Selectores de Favoritos -->
+    <div class="flex items-center space-x-3 text-xs">
+        <div>
+            <select id="favoriteDriver" class="bg-f1card border border-gray-700 rounded px-2 py-1.5 text-white focus:outline-none focus:border-f1red">
+                <option value="">⭐ Piloto Fav</option>
+            </select>
+        </div>
+        <div>
+            <select id="favoriteTeam" class="bg-f1card border border-gray-700 rounded px-2 py-1.5 text-white focus:outline-none focus:border-f1red">
+                <option value="">🛡️ Escudería Fav</option>
+            </select>
+        </div>
+    </div>
+</header>
