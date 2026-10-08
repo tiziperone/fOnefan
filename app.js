@@ -1,10 +1,14 @@
-// ================= DRIVERWIN · DATOS EN VIVO (Jolpica-F1 + OpenF1) =================
+// ================= DRIVERWIN · DATOS EN VIVO =================
 
 const API = 'https://api.jolpi.ca/ergast/f1';
 const OPENF1 = 'https://api.openf1.org/v1';
 const SEASON = 2026;
+const CHAMP_FROM = 2000;           // desde qué año se muestra en "Campeones por temporada"
+const FIRST_SEASON = 1950;         // primera temporada de F1 (para "Pilotos campeones")
+const CHAMP_CACHE = 'dw_champ_v1_';
 const ART = 'America/Argentina/Buenos_Aires';
-const OF1_GAP = 2100; // OpenF1 permite ~30 peticiones/min
+const OF1_GAP = 2100;
+const TRACK_YEARS = [2026, 2025, 2024, 2023];
 
 const TEAM_COLORS = {
   mercedes: '#27F4D2', ferrari: '#E8002D', mclaren: '#FF8000',
@@ -12,6 +16,17 @@ const TEAM_COLORS = {
   haas: '#B6BABD', audi: '#52E252', sauber: '#52E252',
   williams: '#64C4FF', aston_martin: '#229971', cadillac: '#C9C9D1'
 };
+
+// Colores por nombre de escudería (incluye equipos históricos)
+const NAME_COLORS = [
+  [/red bull/i, '#3671C6'], [/racing bulls|^rb\b|alphatauri|toro rosso/i, '#6692FF'],
+  [/ferrari/i, '#E8002D'], [/mercedes/i, '#27F4D2'], [/mclaren/i, '#FF8000'],
+  [/alpine|renault/i, '#0093CC'], [/williams/i, '#64C4FF'], [/aston/i, '#229971'],
+  [/haas/i, '#B6BABD'], [/audi|sauber/i, '#52E252'], [/cadillac/i, '#C9C9D1'],
+  [/force india|racing point|jordan/i, '#F596C8'], [/brawn|honda|bar /i, '#CCCCCC'],
+  [/lotus/i, '#FFB800'], [/benetton/i, '#2E8B57'], [/toyota/i, '#CC0000'],
+  [/bmw/i, '#1E5BC6'], [/jaguar/i, '#2E7D32'], [/stewart/i, '#C0C0C0']
+];
 
 const FLAGS = {
   Australia:'🇦🇺', China:'🇨🇳', Japan:'🇯🇵', Bahrain:'🇧🇭', 'Saudi Arabia':'🇸🇦',
@@ -37,43 +52,70 @@ const TYRE = {
   INTERMEDIATE: 'Intermedio (verde)', WET: 'Mojado (azul)'
 };
 
-// Nombres de OpenF1 que difieren de Jolpica
-const ALIAS = { marinabay: 'singapore', yasmarina: 'abudhabi', yasisland: 'abudhabi', sopaulo: 'saopaulo' };
+const ALIAS = {
+  montmelo: 'barcelona', barcelonacatalunya: 'barcelona', catalunya: 'barcelona', circuitdebarcelonacatalunya: 'barcelona',
+  spielberg: 'austria', redbullring: 'austria',
+  spafrancorchamps: 'spa', circuitdespafrancorchamps: 'spa',
+  budapest: 'hungaroring',
+  sopaulo: 'saopaulo', interlagos: 'saopaulo', autodromojosecarlospace: 'saopaulo',
+  yasisland: 'abudhabi', yasmarina: 'abudhabi', yasmarinacircuit: 'abudhabi',
+  marinabay: 'singapore', marinabaystreetcircuit: 'singapore',
+  montecarlo: 'monaco', montecarlocircuit: 'monaco',
+  mexicocity: 'mexico', hermanosrodriguez: 'mexico', autodromohermanosrodriguez: 'mexico',
+  miamigardens: 'miami', miamiinternationalautodrome: 'miami',
+  sakhir: 'bahrain', bahraininternationalcircuit: 'bahrain',
+  madring: 'madrid', ifema: 'madrid',
+  lusail: 'qatar', losailinternationalcircuit: 'qatar',
+  gillesvilleneuve: 'montreal', circuitgillesvilleneuve: 'montreal',
+  sepanginternationalcircuit: 'sepang'
+};
 
 const S = {
-  source: 'api',        // 'api' | 'local'
+  source: 'api',
   calendar: [],
   drivers: [],
   teams: [],
-  history: [],
+  champs: [],        // todos los campeones (desde FIRST_SEASON)
+  champsDone: false,
   sim: {},
-  details: {},
-  updated: null
+  details: {}
 };
 
 const C = {
-  tab: 'vig',           // 'vig' | 'hist'
+  tab: 'vig',
   hist: null,
-  of1Sessions: {},      // sesiones de carrera OpenF1 por año
-  track: {},            // trazados en memoria
-  of1Last: 0
+  of1Sessions: {},
+  track: {},
+  of1Last: 0,
+  season: {}
 };
+
+let hofTab = 'temp';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const lastName = n => String(n).split(' ').pop();
 const fmtDate = iso => new Date(iso + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short' });
+const fmtDateY = iso => new Date(iso + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
 const drvName = d => `${d.givenName} ${d.familyName}`;
 const nextRace = () => S.calendar.find(r => !r.done) || null;
 const teamColorByName = name => {
   const t = S.teams.find(x => x.name === name);
   return t ? t.color : '#888';
 };
+const teamColorFor = name => {
+  const t = S.teams.find(x => x.name === name);
+  if (t) return t.color;
+  const hit = NAME_COLORS.find(([re]) => re.test(name || ''));
+  return hit ? hit[1] : '#e10600';
+};
+const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 const toSec = t => { const p = String(t).split(':'); return p.length === 2 ? (+p[0]) * 60 + (+p[1]) : +p[0]; };
 const lineRow = (label, value) => `<div class="line"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const readCache = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const writeCache = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const isFinish = s => /^(Finished|\+\d+ Laps?)$/.test(s || '');
 
 /* ============ HORA ARGENTINA ============ */
 const fmtART = iso => {
@@ -93,13 +135,34 @@ async function getJSON(path) {
   return res.json();
 }
 
-// Cola con espera para no superar el límite de OpenF1
-async function getOF1(path) {
+// Descarga todas las páginas de un endpoint de resultados y las agrupa por ronda
+async function fetchAllRaces(path) {
+  const byRound = {};
+  let offset = 0, total = Infinity;
+  while (offset < total) {
+    const sep = path.includes('?') ? '&' : '?';
+    const j = await getJSON(`${path}${sep}limit=100&offset=${offset}`);
+    total = +j.MRData.total || 0;
+    let n = 0;
+    (j.MRData.RaceTable.Races || []).forEach(r => {
+      const k = +r.round;
+      byRound[k] ??= { Results: [] };
+      const rows = r.Results || [];
+      n += rows.length;
+      byRound[k].Results.push(...rows);
+    });
+    if (!n) break;
+    offset += 100;
+  }
+  return byRound;
+}
+
+async function getTelemetry(path) {
   const slot = Math.max(Date.now(), C.of1Last + OF1_GAP);
   C.of1Last = slot;
   if (slot > Date.now()) await sleep(slot - Date.now());
   const res = await fetch(OPENF1 + path);
-  if (!res.ok) throw new Error(`OpenF1 HTTP ${res.status} en ${path}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status} en telemetría`);
   return res.json();
 }
 
@@ -193,57 +256,141 @@ function loadLocal() {
     id: t.id, name: t.name, color: t.color,
     pts: DRIVERS.filter(d => d.team === t.id).reduce((s, d) => s + d.basePts, 0)
   }));
-  S.history = HISTORY.map(h => ({ y: h.y, d: h.d, t: h.t }));
   S.source = 'local';
 }
 
-async function loadHistory() {
-  const years = [SEASON - 1, SEASON - 2, SEASON - 3];
-  const res = await Promise.allSettled(years.map(y =>
-    getJSON(`/${y}/driverStandings.json`).then(j => ({ y, j }))));
-  const out = res
-    .filter(r => r.status === 'fulfilled')
-    .map(({ value: { y, j } }) => {
-      const champ = j.MRData.StandingsTable.StandingsLists[0]?.DriverStandings[0];
-      return champ ? { y, d: drvName(champ.Driver), t: champ.Constructors[0]?.name || '—' } : null;
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.y - a.y);
-  return out.length ? out : HISTORY.map(h => ({ y: h.y, d: h.d, t: h.t }));
+/* ============ CAMPEONES POR TEMPORADA ============ */
+async function loadChampYear(y) {
+  const key = CHAMP_CACHE + y;
+  if (y < SEASON) {
+    const cached = readCache(key);
+    if (cached) return cached;
+  }
+  const j = await getJSON(`/${y}/driverStandings.json`);
+  const l = j.MRData.StandingsTable.StandingsLists[0];
+  if (!l || !l.DriverStandings?.length) return null;
+  const r = l.DriverStandings[0];
+  const cons = r.Constructors || [];
+  const out = {
+    season: +l.season,
+    driverId: r.Driver.driverId,
+    name: drvName(r.Driver),
+    nat: r.Driver.nationality || '',
+    teamId: cons[cons.length - 1]?.constructorId || '',
+    team: cons.map(c => c.name).join(' / ') || '—',
+    points: +r.points
+  };
+  if (y < SEASON) writeCache(key, out);
+  return out;
 }
 
-/* Resultados de una ronda disputada (se piden al abrirla) */
-async function loadDetail(round) {
-  if (S.details[round]) return S.details[round];
-  const [res, qua, spr, ds, cs] = await Promise.allSettled([
-    getJSON(`/${SEASON}/${round}/results.json`),
-    getJSON(`/${SEASON}/${round}/qualifying.json`),
-    getJSON(`/${SEASON}/${round}/sprint.json`),
-    getJSON(`/${SEASON}/${round}/driverStandings.json`),
-    getJSON(`/${SEASON}/${round}/constructorStandings.json`)
-  ]);
-  const val = (x, f) => (x.status === 'fulfilled' ? f(x.value) : []);
+// Carga todas las temporadas terminadas (desde 1950) de a poco
+async function loadAllChamps(onProgress) {
+  const years = [];
+  for (let y = SEASON - 1; y >= FIRST_SEASON; y--) years.push(y);
+  const found = [];
+  const failed = [];
 
-  const d = {
-    race: val(res, j => (j.MRData.RaceTable.Races[0]?.Results || []).map(x => ({
-      pos: x.position, name: drvName(x.Driver), team: x.Constructor.name,
-      pts: x.points, time: x.Time?.time || x.status
-    }))),
-    quali: val(qua, j => (j.MRData.RaceTable.Races[0]?.QualifyingResults || []).slice(0, 3).map(x => ({
-      pos: x.position, name: drvName(x.Driver), time: x.Q3 || x.Q2 || x.Q1 || '—'
-    }))),
-    sprint: val(spr, j => (j.MRData.RaceTable.Races[0]?.SprintResults || []).slice(0, 3).map(x => ({
-      pos: x.position, name: drvName(x.Driver), pts: x.points
-    }))),
-    drivers: val(ds, j => (j.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || []).map(x => ({
-      pos: x.position, name: drvName(x.Driver), pts: x.points
-    }))),
-    teams: val(cs, j => (j.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || []).map(x => ({
-      pos: x.position, name: x.Constructor.name, pts: x.points
-    })))
+  for (let i = 0; i < years.length; i += 3) {
+    const batch = years.slice(i, i + 3);
+    const res = await Promise.allSettled(batch.map(loadChampYear));
+    res.forEach((b, k) => {
+      if (b.status === 'fulfilled' && b.value) found.push(b.value);
+      else failed.push(batch[k]);
+    });
+    S.champs = [...found].sort((a, b) => b.season - a.season);
+    onProgress?.();
+    await sleep(250);
+  }
+
+  for (const y of failed.splice(0)) {
+    try {
+      const c = await loadChampYear(y);
+      if (c) found.push(c);
+    } catch (e) {
+      console.warn(`No se pudo cargar ${y}`, e);
+    }
+    await sleep(250);
+  }
+
+  S.champs = [...found].sort((a, b) => b.season - a.season);
+  S.champsDone = true;
+  onProgress?.();
+  return S.champs;
+}
+
+/* Detalle de una temporada: campeón, carrera por carrera y consagración */
+async function loadSeasonDetail(y) {
+  if (C.season[y]) return C.season[y];
+
+  const [cal, st, resByRound, sprByRound] = await Promise.all([
+    getJSON(`/${y}.json?limit=100`),
+    getJSON(`/${y}/driverStandings.json`),
+    fetchAllRaces(`/${y}/results.json`),
+    fetchAllRaces(`/${y}/sprint.json`).catch(() => ({}))
+  ]);
+
+  const list = st.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || [];
+  const champId = list[0].Driver.driverId;
+
+  const rounds = cal.MRData.RaceTable.Races.map(r => {
+    const k = +r.round;
+    return {
+      round: k,
+      name: r.raceName,
+      date: r.date,
+      country: r.Circuit.Location.country,
+      race: resByRound[k]?.Results || [],
+      sprint: sprByRound[k]?.Results || []
+    };
+  }).sort((a, b) => a.round - b.round);
+
+  const maxRace = y >= 2019 && y <= 2024 ? 26 : 25;
+  const maxSpr = y >= 2023 ? 8 : (y >= 2021 ? 3 : 0);
+  const maxAfter = i => rounds.slice(i + 1).reduce((s, rr) => s + maxRace + (rr.sprint.length ? maxSpr : 0), 0);
+  const cum = {};
+  let clinchIdx = -1;
+  rounds.forEach((rr, i) => {
+    rr.race.forEach(x => { cum[x.Driver.driverId] = (cum[x.Driver.driverId] || 0) + (+x.points); });
+    rr.sprint.forEach(x => { cum[x.Driver.driverId] = (cum[x.Driver.driverId] || 0) + (+x.points); });
+    if (clinchIdx < 0 && y >= 2010) {
+      const me = cum[champId] || 0;
+      const other = Math.max(0, ...Object.entries(cum).filter(([k]) => k !== champId).map(([, v]) => v));
+      if (me - other > maxAfter(i)) clinchIdx = i;
+    }
+  });
+  const clinchNA = y < 2010;
+  if (!clinchNA && clinchIdx < 0) clinchIdx = rounds.length - 1;
+
+  const rows = rounds.map(rr => {
+    const rRes = rr.race.find(x => x.Driver.driverId === champId);
+    const sp = rr.sprint.find(x => x.Driver.driverId === champId);
+    return {
+      round: rr.round, name: rr.name, date: rr.date, country: rr.country,
+      pos: rRes ? rRes.position : null,
+      status: rRes ? rRes.status : '',
+      grid: rRes ? rRes.grid : null,
+      sprintPos: sp ? sp.position : null,
+      pts: (rRes ? +rRes.points : 0) + (sp ? +sp.points : 0)
+    };
+  });
+
+  const out = {
+    champ: list[0],
+    runner: list[1] ? { name: drvName(list[1].Driver), pts: +list[1].points } : null,
+    champPts: +list[0].points,
+    rows,
+    total: rows.length,
+    wins: rows.filter(r => r.pos === '1').length,
+    podiums: rows.filter(r => ['1', '2', '3'].includes(r.pos)).length,
+    poles: rows.filter(r => r.grid === '1').length,
+    dnf: rows.filter(r => r.pos && !isFinish(r.status)).length,
+    sprintWins: rows.filter(r => r.sprintPos === '1').length,
+    clinchIdx,
+    clinchNA
   };
-  S.details[round] = d;
-  return d;
+  C.season[y] = out;
+  return out;
 }
 
 /* ============ CAMPEONATO Y SIMULACIÓN ============ */
@@ -418,6 +565,40 @@ async function openRace(id) {
   }
 }
 
+/* Resultados de una ronda disputada */
+async function loadDetail(round) {
+  if (S.details[round]) return S.details[round];
+  const [res, qua, spr, ds, cs] = await Promise.allSettled([
+    getJSON(`/${SEASON}/${round}/results.json`),
+    getJSON(`/${SEASON}/${round}/qualifying.json`),
+    getJSON(`/${SEASON}/${round}/sprint.json`),
+    getJSON(`/${SEASON}/${round}/driverStandings.json`),
+    getJSON(`/${SEASON}/${round}/constructorStandings.json`)
+  ]);
+  const val = (x, f) => (x.status === 'fulfilled' ? f(x.value) : []);
+
+  const d = {
+    race: val(res, j => (j.MRData.RaceTable.Races[0]?.Results || []).map(x => ({
+      pos: x.position, name: drvName(x.Driver), team: x.Constructor.name,
+      pts: x.points, time: x.Time?.time || x.status
+    }))),
+    quali: val(qua, j => (j.MRData.RaceTable.Races[0]?.QualifyingResults || []).slice(0, 3).map(x => ({
+      pos: x.position, name: drvName(x.Driver), time: x.Q3 || x.Q2 || x.Q1 || '—'
+    }))),
+    sprint: val(spr, j => (j.MRData.RaceTable.Races[0]?.SprintResults || []).slice(0, 3).map(x => ({
+      pos: x.position, name: drvName(x.Driver), pts: x.points
+    }))),
+    drivers: val(ds, j => (j.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || []).map(x => ({
+      pos: x.position, name: drvName(x.Driver), pts: x.points
+    }))),
+    teams: val(cs, j => (j.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || []).map(x => ({
+      pos: x.position, name: x.Constructor.name, pts: x.points
+    })))
+  };
+  S.details[round] = d;
+  return d;
+}
+
 function detailHTML(r, d) {
   if (!d.race.length) {
     return `${modalHead(r)}<div class="box"><p class="muted">Aún no hay resultados publicados para esta ronda.</p></div>`;
@@ -477,17 +658,24 @@ function renderStandings() {
     </div>`).join('');
 }
 
-/* ============ TRAZADO (telemetría OpenF1) ============ */
-const normName = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
-const aliasKey = s => ALIAS[normName(s)] || normName(s);
+/* ============ TRAZADOS (telemetría de vueltas reales) ============ */
+const canon = s => ALIAS[norm(s)] || norm(s);
 
-async function findSession(year, locality) {
-  C.of1Sessions[year] ??= await getOF1(`/sessions?year=${year}&session_name=Race`);
-  const want = aliasKey(locality);
-  return C.of1Sessions[year].find(s => aliasKey(s.circuit_short_name) === want) || null;
+async function getSessions(year) {
+  C.of1Sessions[year] ??= await getTelemetry(`/sessions?year=${year}&session_name=Race`);
+  return C.of1Sessions[year];
 }
 
-// Convierte coordenadas X/Y en una ruta SVG (vuelta cerrada, orientación de la telemetría)
+function matchSession(list, c) {
+  const wants = [c.locality, c.circuitName].map(canon).filter(Boolean);
+  let hit = list.find(s => [s.circuit_short_name, s.location].some(v => wants.includes(canon(v))));
+  if (!hit) {
+    const same = list.filter(s => s.country_name === c.country);
+    if (same.length === 1) hit = same[0];
+  }
+  return hit || null;
+}
+
 function toPath(xy) {
   const xs = xy.map(p => p[0]), ys = xy.map(p => p[1]);
   const minX = Math.min(...xs), maxX = Math.max(...xs);
@@ -502,14 +690,16 @@ function toPath(xy) {
 
 async function getTrack(c) {
   if (C.track[c.circuitId] !== undefined) return C.track[c.circuitId];
-  const key = 'dw_trk_v1_' + c.circuitId;
+  const key = 'dw_trk_v2_' + c.circuitId;
   const cached = readCache(key);
-  if (cached) return (C.track[c.circuitId] = cached);
+  if (cached) return (C.track[c.circuitId] = cached.none ? null : cached);
 
-  for (const year of [2025, 2024, 2023]) {
-    const s = await findSession(year, c.locality);
+  for (const year of TRACK_YEARS) {
+    const list = await getSessions(year);
+    const s = matchSession(list, c);
     if (!s) continue;
-    const laps = await getOF1(`/laps?session_key=${s.session_key}`);
+
+    const laps = await getTelemetry(`/laps?session_key=${s.session_key}`);
     const clean = laps
       .filter(l => l.date_start && l.lap_duration && !l.is_pit_out_lap && l.lap_number > 1)
       .sort((a, b) => a.lap_duration - b.lap_duration);
@@ -518,7 +708,7 @@ async function getTrack(c) {
 
     const start = lap.date_start;
     const end = new Date(new Date(start).getTime() + lap.lap_duration * 1000).toISOString();
-    const pos = await getOF1(
+    const pos = await getTelemetry(
       `/location?session_key=${s.session_key}&driver_number=${lap.driver_number}` +
       `&date>${encodeURIComponent(start)}&date<${encodeURIComponent(end)}`
     );
@@ -531,37 +721,39 @@ async function getTrack(c) {
     writeCache(key, out);
     return (C.track[c.circuitId] = out);
   }
+
+  writeCache(key, { none: true });
   return (C.track[c.circuitId] = null);
 }
 
 async function loadCardTracks(list) {
   for (const c of list) {
-    const box = document.querySelector(`.trk[data-trk="${c.circuitId}"]`);
-    if (!box) return; // cambió la pestaña
+    const box = document.querySelector(`.trk[data-trk="${CSS.escape(c.circuitId)}"]`);
+    if (!box) return;
     try {
       const t = await getTrack(c);
       box.innerHTML = t
         ? `<svg viewBox="0 0 100 100"><path d="${t.path}"/></svg>`
-        : '<span class="trk-msg">Sin telemetría reciente para este trazado</span>';
+        : '<span class="trk-msg">Trazado no disponible</span>';
     } catch {
       box.innerHTML = '<span class="trk-msg">Trazado no disponible</span>';
     }
   }
 }
 
-/* ============ SAFETY CAR (OpenF1, 2023–2025) ============ */
-async function computeSafety(locality) {
+/* ============ SAFETY CAR (2023–2025) ============ */
+async function computeSafety(c) {
   const keys = [];
   for (const y of [2023, 2024, 2025]) {
-    const s = await findSession(y, locality);
+    const s = matchSession(await getSessions(y), c);
     if (s) keys.push(s.session_key);
   }
   let sc = 0, vsc = 0;
   const comp = {};
   for (const k of keys) {
     const [rc, st] = await Promise.all([
-      getOF1(`/race_control?session_key=${k}`),
-      getOF1(`/stints?session_key=${k}`)
+      getTelemetry(`/race_control?session_key=${k}`),
+      getTelemetry(`/stints?session_key=${k}`)
     ]);
     const msgs = rc.map(m => String(m.message || '').toUpperCase());
     if (msgs.some(m => m.includes('SAFETY CAR DEPLOYED') && !m.includes('VIRTUAL'))) sc++;
@@ -571,11 +763,11 @@ async function computeSafety(locality) {
   return { races: keys.length, sc, vsc, comp };
 }
 
-async function getSafety(cid, locality) {
-  const key = 'dw_sc_v1_' + cid;
+async function getSafety(c) {
+  const key = 'dw_sc_v2_' + c.circuitId;
   const cached = readCache(key);
   if (cached) return cached;
-  const r = await computeSafety(locality);
+  const r = await computeSafety(c);
   if (r.races) writeCache(key, r);
   return r;
 }
@@ -654,7 +846,9 @@ async function renderCircuits() {
         <div class="trk" data-trk="${esc(c.circuitId)}"><span class="trk-msg">Cargando trazado…</span></div>
         <div class="foot">Ronda ${c.round} · ${esc(c.dateLabel)} · Ver ficha →</div>
       </div>`).join('');
-    loadCardTracks(list);
+    loadCardTracks(list.map(c => ({
+      circuitId: c.circuitId, locality: c.locality, circuitName: c.circuit, country: c.country
+    })));
     return;
   }
 
@@ -668,19 +862,22 @@ async function renderCircuits() {
       <div class="glass circ" data-circ="${esc(c.id)}" data-src="hist" style="animation-delay:${Math.min(i, 20) * 30}ms">
         <span class="eyebrow">${FLAGS[c.country] || '🏁'} ${esc(c.country)}</span>
         <h3>${esc(c.name)}</h3>
+        <div class="trk" data-trk="${esc(c.id)}"><span class="trk-msg">Cargando trazado…</span></div>
         <div class="foot">
           <span class="badge ${vig ? 'b-next' : 'b-done'}">${vig ? 'Vigente 2026' : 'Ya no forma parte del calendario'}</span>
           <span>Ver ficha →</span>
         </div>
       </div>`;
     }).join('');
+    loadCardTracks(list.map(c => ({
+      circuitId: c.id, locality: c.locality, circuitName: c.name, country: c.country
+    })));
   } catch (e) {
     console.warn(e);
     grid.innerHTML = '<p class="muted">No se pudo cargar el historial. Intenta de nuevo más tarde.</p>';
   }
 }
 
-/* Victorias a partir de /circuits/{id}/results/1 */
 function winStats(json) {
   const races = json.MRData.RaceTable.Races;
   const byDrv = {}, byTeam = {};
@@ -702,7 +899,6 @@ function winStats(json) {
   };
 }
 
-/* Récord de vuelta a partir de /circuits/{id}/fastest/1/results */
 function lapRecord(json) {
   let best = null;
   json.MRData.RaceTable.Races.forEach(r => r.Results.forEach(x => {
@@ -727,8 +923,8 @@ async function openCircuitDetail(id, src) {
   const locality = info.locality;
   const country = info.country;
   const name = isVig ? info.circuit : info.name;
-  const wiki = null;
   const flag = FLAGS[country] || '🏁';
+  const c = { circuitId: cid, locality, circuitName: name, country };
 
   openModal(`
     <span class="eyebrow">${flag} ${esc(country)}</span>
@@ -740,8 +936,8 @@ async function openCircuitDetail(id, src) {
     getJSON(`/circuits/${cid}/results/1.json?limit=1000`).catch(() => null),
     getJSON(`/circuits/${cid}/fastest/1/results.json?limit=1000`).catch(() => null),
     getJSON(`/circuits/${cid}/results.json?limit=1`).catch(() => null),
-    getTrack({ circuitId: cid, locality, country }).catch(() => null),
-    wantSafety ? getSafety(cid, locality).catch(() => 'error') : Promise.resolve(null)
+    getTrack(c).catch(() => null),
+    wantSafety ? getSafety(c).catch(() => 'error') : Promise.resolve(null)
   ]);
 
   const w = wins ? winStats(wins) : null;
@@ -750,8 +946,8 @@ async function openCircuitDetail(id, src) {
 
   const trackBox = track
     ? `<svg viewBox="0 0 100 100"><path d="${track.path}"/></svg>
-       <p class="muted" style="font-size:12px;margin-top:12px;text-align:center">Trazado real según la telemetría de ${track.year} (OpenF1).</p>`
-    : `<p class="muted" style="text-align:center;padding:40px 10px">Trazado no disponible: no hay telemetría reciente de este circuito.</p>`;
+       <p class="muted" style="font-size:12px;margin-top:12px;text-align:center">Trazado dibujado con la vuelta más rápida registrada en ${track.year}.</p>`
+    : `<p class="muted" style="text-align:center;padding:40px 10px">Trazado no disponible para este circuito.</p>`;
 
   const safetyOK = safety && safety !== 'error' && safety.races;
 
@@ -778,8 +974,8 @@ async function openCircuitDetail(id, src) {
           ? lineRow('Récord de vuelta', `${rec.t} · ${rec.drv}`) + lineRow('Año del récord', rec.season)
           : lineRow('Récord de vuelta', 'No disponible')}
         ${w ? lineRow('Carreras con ganador registrado', w.total) : ''}
-        ${w ? w.topDrivers.map(([n, c], i) => lineRow(`${i + 1}. Más victorias (piloto)`, `${n} · ${c}`)).join('') : ''}
-        ${w ? w.topTeams.map(([n, c], i) => lineRow(`${i + 1}. Más victorias (equipo)`, `${n} · ${c}`)).join('') : ''}
+        ${w ? w.topDrivers.map(([n, k], i) => lineRow(`${i + 1}. Más victorias (piloto)`, `${n} · ${k}`)).join('') : ''}
+        ${w ? w.topTeams.map(([n, k], i) => lineRow(`${i + 1}. Más victorias (equipo)`, `${n} · ${k}`)).join('') : ''}
       </div>
       ${isVig ? `
       <div class="box">
@@ -796,21 +992,211 @@ async function openCircuitDetail(id, src) {
 }
 
 /* ============ SALÓN DE LA FAMA ============ */
+function ensureHofTabs() {
+  const view = $('#v-hof');
+  if (view.querySelector('#hofTabs')) return;
+  view.querySelector('.sec-head p').textContent =
+    `Campeones por temporada desde ${CHAMP_FROM}, y todos los pilotos que alguna vez ganaron un título desde ${FIRST_SEASON}.`;
+  view.querySelector('.sec-head').insertAdjacentHTML('afterend', `
+    <div class="chips" id="hofTabs">
+      <button class="chip on" data-ht="temp">Campeones por temporada</button>
+      <button class="chip" data-ht="pil">Pilotos campeones</button>
+    </div>`);
+}
+
 function renderHOF() {
+  const grid = $('#hofGrid');
+  grid.classList.toggle('hof', true);
+  return hofTab === 'temp' ? renderHofSeasons(grid) : renderHofDrivers(grid);
+}
+
+function renderHofSeasons(grid) {
   const leader = standings().drivers[0];
   const live = `
-    <div class="glass champ live">
+    <article class="glass yc live" data-season="${SEASON}" style="--c:#e10600">
       <span class="eyebrow">En curso</span>
-      <div class="big" style="margin-top:14px;font-size:64px">${SEASON}</div>
+      <div class="yc-year">${SEASON}</div>
       <h3>${esc(leader.name)}</h3>
-      <p class="t">Líder provisional · ${leader.pts} pts</p>
+      <p class="yc-team"><span class="dot" style="background:${teamColorByName(leader.teamName)}"></span>${esc(leader.teamName)}</p>
+      <div class="yc-foot"><span>Líder provisional · ${leader.pts} pts</span><span>Ver →</span></div>
+    </article>`;
+
+  const past = S.champs.filter(c => c.season >= CHAMP_FROM && c.season < SEASON);
+  const status = !S.champsDone
+    ? `<p class="muted" style="grid-column:1/-1">Cargando campeones… (${S.champs.length} de ${SEASON - FIRST_SEASON})</p>`
+    : (S.source === 'local' ? '<p class="muted" style="grid-column:1/-1">Requiere conexión a la API.</p>' : '');
+
+  grid.innerHTML = live + past.map((c, i) => `
+    <article class="glass yc" data-season="${c.season}" style="--c:${teamColorFor(c.team)};animation-delay:${Math.min(i, 20) * 30}ms">
+      <div class="yc-year">${c.season}</div>
+      <h3>${esc(c.name)}</h3>
+      <p class="yc-team"><span class="dot" style="background:${teamColorFor(c.team)}"></span>${esc(c.team)}</p>
+      <div class="yc-foot"><span>${c.points != null ? c.points + ' pts' : ''}</span><span>Ver temporada →</span></div>
+    </article>`).join('') + status;
+}
+
+function renderHofDrivers(grid) {
+  const map = {};
+  S.champs.forEach(c => {
+    map[c.driverId] ??= { id: c.driverId, name: c.name, nat: c.nat, titles: [] };
+    map[c.driverId].titles.push(c);
+  });
+  // Más títulos primero; a igualdad, quien ganó antes
+  const list = Object.values(map).sort((a, b) =>
+    b.titles.length - a.titles.length ||
+    Math.min(...a.titles.map(t => t.season)) - Math.min(...b.titles.map(t => t.season)));
+
+  const status = !S.champsDone
+    ? `<p class="muted" style="grid-column:1/-1">Cargando campeones… (${S.champs.length} de ${SEASON - FIRST_SEASON})</p>`
+    : '';
+
+  grid.innerHTML = list.map((d, i) => {
+    const yrs = [...d.titles].sort((a, b) => a.season - b.season);
+    return `
+    <article class="glass dc" data-champ="${esc(d.id)}" style="animation-delay:${Math.min(i, 20) * 30}ms">
+      <div class="dc-top"><span class="dc-num">${d.titles.length}</span><span class="dc-lbl">${d.titles.length === 1 ? 'título' : 'títulos'}</span></div>
+      <h3>${esc(d.name)}</h3>
+      <p class="dc-nat">${esc(d.nat)}</p>
+      <div class="yrs">${yrs.map(t => `<span class="yr" data-season="${t.season}">${t.season}</span>`).join('')}</div>
+    </article>`;
+  }).join('') + status;
+}
+
+function openChampDriver(id) {
+  const list = S.champs.filter(c => c.driverId === id).sort((a, b) => a.season - b.season);
+  if (!list.length) return;
+  const teams = [...new Set(list.map(c => c.team))];
+  openModal(`
+    <span class="eyebrow">${esc(list[0].nat || 'Campeón del mundo')}</span>
+    <h3 class="display m-title">${esc(list[0].name)}</h3>
+    <div class="m-grid">
+      <div class="svg-box" style="display:grid;place-items:center;text-align:center">
+        <div>
+          <div class="dc-num" style="font-size:120px">${list.length}</div>
+          <div class="dc-lbl">${list.length === 1 ? 'Título mundial' : 'Títulos mundiales'}</div>
+        </div>
+      </div>
+      <div style="display:grid;gap:12px;align-content:start">
+        <div class="stat"><span>Primer título</span><strong>${list[0].season}</strong></div>
+        <div class="stat"><span>Último título</span><strong>${list[list.length - 1].season}</strong></div>
+        <div class="stat"><span>Escuderías</span><strong>${teams.map(esc).join(' · ')}</strong></div>
+      </div>
+    </div>
+    <div class="box" style="margin-top:18px">
+      <h4>🏆 Temporadas campeonas</h4>
+      <div class="yrs">${list.map(t => `<span class="yr" data-season="${t.season}">${t.season} · ${esc(t.team)}</span>`).join('')}</div>
+    </div>`);
+}
+
+async function openSeason(y) {
+  y = +y;
+  const c = S.champs.find(x => x.season === y);
+
+  if (y === SEASON) {
+    const { drivers } = standings(S.sim);
+    const [a, b] = drivers;
+    return openModal(`
+      <span class="eyebrow">Temporada ${SEASON} · En curso</span>
+      <h3 class="display m-title">${esc(a.name)}</h3>
+      <div class="m-grid">
+        <div class="stat"><span>Puntos del líder</span><strong>${a.pts}</strong></div>
+        <div class="stat"><span>Diferencia con el segundo</span><strong>${a.pts - b.pts} pts · ${esc(lastName(b.name))}</strong></div>
+      </div>
+      <div class="box" style="margin-top:18px">
+        <p class="muted" style="font-size:13px;line-height:1.7">El campeón se define al final de la temporada. Esta ficha se completará cuando termine.</p>
+      </div>`);
+  }
+
+  if (!c) return;
+  openModal(`
+    <span class="eyebrow">Temporada ${y} · Campeón del mundo</span>
+    <h3 class="display m-title">${esc(c.name)}</h3>
+    <p class="muted">Cargando temporada…</p>`);
+
+  if (S.source === 'local') {
+    return openModal(`
+      <span class="eyebrow">Temporada ${y} · Campeón del mundo</span>
+      <h3 class="display m-title">${esc(c.name)}</h3>
+      <div class="box"><p class="muted">El detalle de la temporada requiere conexión a la API.</p></div>`);
+  }
+
+  try {
+    const d = await loadSeasonDetail(y);
+    $('#mBody').innerHTML = seasonHTML(c, d);
+  } catch (e) {
+    console.warn(e);
+    $('#mBody').innerHTML = `
+      <span class="eyebrow">Temporada ${y} · Campeón del mundo</span>
+      <h3 class="display m-title">${esc(c.name)}</h3>
+      <div class="box"><p class="muted">No se pudo cargar la temporada. Intenta más tarde.</p></div>`;
+  }
+}
+
+function seasonHTML(c, d) {
+  const color = teamColorFor(c.team);
+  const maxPts = Math.max(1, ...d.rows.map(r => r.pts));
+
+  const clinchMsg = d.clinchNA
+    ? 'Dato no disponible para temporadas anteriores a 2010, cuando cambió el sistema de puntos.'
+    : (() => {
+        const r = d.rows[d.clinchIdx];
+        const faltan = d.total - 1 - d.clinchIdx;
+        return `<b>Ronda ${r.round} · ${esc(r.name)}</b><br>
+          <span class="muted">${esc(fmtDateY(r.date))} · ${faltan === 0
+            ? 'Se consagró en la última carrera de la temporada'
+            : `Faltaban ${faltan} ${faltan === 1 ? 'carrera' : 'carreras'} para el final`}</span>`;
+      })();
+
+  const rowsHTML = d.rows.map((r, i) => {
+    const isClinch = !d.clinchNA && i === d.clinchIdx;
+    const posLbl = !r.pos ? '—' : (isFinish(r.status) ? `P${r.pos}` : 'Ab.');
+    const w = Math.round(r.pts / maxPts * 100);
+    return `
+      <div class="rr ${isClinch ? 'is-clinch' : ''}" style="--c:${color}">
+        <span class="rr-r">R${String(r.round).padStart(2, '0')}</span>
+        <span class="rr-n">${FLAGS[r.country] || '🏁'} ${esc(r.name)}
+          <small>${esc(fmtDateY(r.date))}${isClinch ? ' · 🏆 Título' : ''}</small></span>
+        <span class="rr-p ${posLbl === 'P1' ? 'win' : ''}">${posLbl}${r.sprintPos ? `<small>S${esc(r.sprintPos)}</small>` : ''}</span>
+        <span class="rr-bar"><i style="width:${w}%"></i></span>
+        <span class="rr-pts">${r.pts}</span>
+      </div>`;
+  }).join('');
+
+  const gap = d.runner ? d.champPts - d.runner.pts : null;
+
+  return `
+    <span class="eyebrow">Temporada ${c.season} · Campeón del mundo</span>
+    <h3 class="display m-title">${esc(c.name)}</h3>
+    <span class="sea-team"><span class="dot" style="background:${color}"></span>${esc(c.team)}</span>
+
+    <div class="hero-stats">
+      <div class="hs"><b>${d.champPts}</b><span>Puntos</span></div>
+      <div class="hs"><b>${d.wins}</b><span>Victorias</span></div>
+      <div class="hs"><b>${d.podiums}</b><span>Podios</span></div>
+      <div class="hs"><b>${d.dnf}</b><span>Abandonos</span></div>
+    </div>
+
+    <div class="m-grid" style="margin-top:18px">
+      <div class="box">
+        <h4>🏆 Consagración</h4>
+        <p class="clinch">${clinchMsg}</p>
+        ${d.runner ? lineRow('Subcampeón', d.runner.name) : ''}
+        ${d.runner ? lineRow('Puntos del subcampeón', `${d.runner.pts} · diferencia ${gap}`) : ''}
+      </div>
+      <div class="box">
+        <h4>📈 Resumen</h4>
+        ${lineRow('Carreras disputadas', d.total)}
+        ${lineRow('Partidas desde P1', d.poles)}
+        ${lineRow('Victorias en Sprint', d.sprintWins)}
+        ${lineRow('Podios', d.podiums)}
+      </div>
+    </div>
+
+    <div class="box" style="margin-top:18px">
+      <h4>🏁 Carrera a carrera</h4>
+      <div class="rr-list">${rowsHTML}</div>
+      <p class="muted" style="font-size:12px;line-height:1.6;margin-top:12px">Los puntos incluyen la Carrera Sprint cuando la hubo. Ab. = abandono.</p>
     </div>`;
-  $('#hofGrid').innerHTML = live + S.history.map((h, i) => `
-    <div class="glass champ" style="animation-delay:${(i + 1) * 90}ms">
-      <div class="big">${h.y}</div>
-      <h3>${esc(h.d)}</h3>
-      <p class="t">${esc(h.t)}</p>
-    </div>`).join('');
 }
 
 /* ============ SIMULADOR ============ */
@@ -888,6 +1274,19 @@ document.addEventListener('click', e => {
     return renderCircuits();
   }
 
+  const ht = e.target.closest('[data-ht]');
+  if (ht) {
+    hofTab = ht.dataset.ht;
+    document.querySelectorAll('#hofTabs .chip').forEach(c => c.classList.toggle('on', c === ht));
+    return renderHOF();
+  }
+
+  const season = e.target.closest('[data-season]');
+  if (season) return openSeason(season.dataset.season);
+
+  const champ = e.target.closest('[data-champ]');
+  if (champ) return openChampDriver(champ.dataset.champ);
+
   const chip = e.target.closest('[data-f]');
   if (chip) {
     calFilter = chip.dataset.f;
@@ -938,11 +1337,12 @@ function renderAll() {
   renderStandings();
   ensureCircTabs();
   renderCircuits();
+  ensureHofTabs();
   renderHOF();
   renderSim();
   const footer = document.querySelector('footer');
   footer.textContent = S.source === 'api'
-    ? `DriverWin · Datos en vivo: Jolpica-F1 y OpenF1 · ${new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`
+    ? `DriverWin · Datos en vivo: Jolpica-F1 · ${new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`
     : 'DriverWin · Sin conexión a la API: mostrando datos locales';
 }
 
@@ -954,10 +1354,11 @@ function renderAll() {
     console.warn('API no disponible, usando datos locales:', err);
     loadLocal();
   }
-  try {
-    S.history = await loadHistory();
-  } catch {
-    S.history = HISTORY.map(h => ({ y: h.y, d: h.d, t: h.t }));
-  }
   renderAll();
+  if (S.source === 'api') {
+    loadAllChamps(() => renderHOF()).catch(err => console.warn('Campeones:', err));
+  } else {
+    S.champsDone = true;
+    renderHOF();
+  }
 })();
