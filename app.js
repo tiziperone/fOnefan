@@ -8,9 +8,13 @@ const FIRST_SEASON = 1950;         // primera temporada de F1 (para "Pilotos cam
 const CHAMP_CACHE = 'dw_champ_v1_';
 const DRV_CACHE = 'dw_drv_agg_v4';    // lista completa de pilotos (se reutiliza mientras no haya carreras nuevas)
 const SDRV_CACHE = 'dw_sdrv_v1_';     // resumen de cada temporada (las pasadas no cambian nunca)
+const DCONS_CACHE = 'dw_dcons_v1_';   // escuderías completas de cada piloto (endpoint /drivers/{id}/constructors)
 const DRV_FROM = 1950;
 const ART = 'America/Argentina/Buenos_Aires';
 const OF1_GAP = 2100;
+
+// Telemetría (safety car y neumáticos): OpenF1 solo tiene datos desde 2023
+const SAFETY_YEARS = [2023, 2024, 2025, 2026];
 
 // Trazados: SVG de julesr0y/pitlaneinsider (78 circuitos de la historia de F1)
 const TRACK_RAW = 'https://raw.githubusercontent.com/julesr0y/pitlaneinsider/main/public/img/circuits/';
@@ -131,6 +135,62 @@ const TEAM_LOOK = [
   [/cadillac/i,                                  {main:'#1a1a1a', sec:'#c9c9d1', acc:'#e10600'}]
 ];
 
+// Nombres completos de las escuderías (clave = nombre que devuelve la API, en minúsculas)
+const TEAM_FULL = {
+  'ferrari': 'Scuderia Ferrari',
+  'mclaren': 'McLaren F1 Team',
+  'mercedes': 'Mercedes-AMG Petronas F1 Team',
+  'red bull': 'Red Bull Racing',
+  'alphatauri': 'Scuderia AlphaTauri',
+  'toro rosso': 'Scuderia Toro Rosso',
+  'rb f1 team': 'Racing Bulls',
+  'visa cash app rb f1 team': 'Racing Bulls',
+  'racing bulls': 'Racing Bulls',
+  'alpine f1 team': 'Alpine F1 Team',
+  'alpine': 'Alpine F1 Team',
+  'renault': 'Renault F1 Team',
+  'williams': 'Williams Racing',
+  'aston martin': 'Aston Martin Aramco F1 Team',
+  'racing point': 'BWT Racing Point F1 Team',
+  'force india': 'Sahara Force India F1 Team',
+  'haas f1 team': 'Haas F1 Team',
+  'sauber': 'Stake F1 Team Kick Sauber',
+  'kick sauber': 'Stake F1 Team Kick Sauber',
+  'alfa romeo': 'Alfa Romeo F1 Team Stake',
+  'audi': 'Audi F1 Team',
+  'cadillac': 'Cadillac F1 Team',
+  'bmw sauber': 'BMW Sauber F1 Team',
+  'toyota': 'Panasonic Toyota Racing',
+  'honda': 'Honda F1 Team',
+  'brawn': 'Brawn GP',
+  'bar': 'British American Racing',
+  'jordan': 'Jordan Grand Prix',
+  'minardi': 'Minardi Team',
+  'benetton': 'Benetton Formula',
+  'tyrrell': 'Tyrrell Racing Organisation',
+  'stewart': 'Stewart Grand Prix',
+  'jaguar': 'Jaguar Racing',
+  'super aguri': 'Super Aguri F1 Team',
+  'spyker': 'Spyker F1 Team',
+  'midland': 'Midland F1 Racing',
+  'lotus f1': 'Lotus F1 Team',
+  'team lotus': 'Team Lotus',
+  'lotus': 'Lotus',
+  'caterham': 'Caterham F1 Team',
+  'marussia': 'Marussia F1 Team',
+  'manor marussia': 'Manor Marussia F1 Team',
+  'hrt': 'HRT F1 Team',
+  'virgin': 'Virgin Racing',
+  'ligier': 'Ligier',
+  'prost': 'Prost Grand Prix',
+  'arrows': 'Arrows Grand Prix',
+  'footwork': 'Footwork Arrows',
+  'brm': 'BRM',
+  'cooper': 'Cooper Car Company',
+  'maserati': 'Officine Alberto Maserati',
+  'vanwall': 'Vanwall'
+};
+
 // Banderas por país (clave = nombre en inglés que devuelve la API)
 const FLAGS = {
   Australia:'🇦🇺', China:'🇨🇳', Japan:'🇯🇵', Bahrain:'🇧🇭', 'Saudi Arabia':'🇸🇦',
@@ -180,6 +240,11 @@ const cty = c => COUNTRY_ES[c] || c || '—';
 const natEs = n => {
   const v = NAT_ES[n] || n || '';
   return v ? v.charAt(0).toUpperCase() + v.slice(1) : '';
+};
+// Nombre completo de una escudería (lo que devuelve la API se reemplaza por el nombre oficial)
+const teamFull = name => {
+  const k = String(name || '').trim().toLowerCase();
+  return TEAM_FULL[k] || name || '—';
 };
 // Los nombres de carreras que llegan de la API dicen "Grand Prix": lo pasamos a "Gran Premio"
 const raceEs = n => String(n || '').replace(/Grand Prix/g, 'Gran Premio');
@@ -235,7 +300,8 @@ const C = {
   season: {},
   drv: null,         // estadísticas de todos los pilotos
   drvPromise: null,
-  drvProg: null      // avance de la carga: { n, t }
+  drvProg: null,     // avance de la carga: { n, t }
+  dteams: {}         // escuderías completas por piloto (id -> [nombres])
 };
 
 let drvTab = 'act';     // 'act' | 'hist'
@@ -760,6 +826,46 @@ function ensureDrv() {
   return C.drvPromise;
 }
 
+// Escuderías completas de un piloto (historial completo de la API). Se pide una vez por piloto.
+async function loadDriverTeams(id) {
+  if (C.dteams[id]) return C.dteams[id];
+  const cached = readCache(DCONS_CACHE + id);
+  if (cached) return (C.dteams[id] = cached);
+  const j = await getSlow(`/drivers/${id}/constructors.json?limit=100`);
+  const list = (j.MRData.ConstructorTable?.Constructors || []).map(c => c.name);
+  C.dteams[id] = list;
+  writeCache(DCONS_CACHE + id, list);
+  return list;
+}
+
+// Lista de escuderías de un piloto: la completa (si ya llegó) más las del resumen, sin repetir
+function teamsFor(id, d) {
+  const list = [];
+  const add = n => { if (n && !list.some(x => norm(x) === norm(n))) list.push(n); };
+  (C.dteams[id] || []).forEach(add);
+  (d?.teams || []).forEach(add);
+  const cur = S.drivers.find(x => x.id === id);
+  if (cur) add(cur.teamName);
+  if (!list.length && d?.team) add(d.team);
+  return list;
+}
+
+// Clave de la escudería actual del piloto (para marcarla como "Actual")
+function currentTeamKey(id) {
+  const cur = S.drivers.find(x => x.id === id);
+  return cur ? norm(cur.teamName) : '';
+}
+
+// Pastillas con el nombre completo de cada escudería; la actual lleva la etiqueta "Actual"
+function teamPills(id, names) {
+  const key = currentTeamKey(id);
+  return names.map(n => {
+    const now = key && norm(n) === key;
+    const col = teamColorFor(n);
+    return `<span class="tpill${now ? ' now' : ''}" style="--c:${col}">${esc(teamFull(n))}${now ? '<em>Actual</em>' : ''}</span>`;
+  }).join('');
+}
+
 // Casco en los colores de la escudería, con banda superior, banda inferior y visera
 const shade = (hex, amt) => {
   let n = hex.replace('#', '');
@@ -817,7 +923,7 @@ function renderDriversCurrent(grid, status) {
       <div class="dc-hel">${helmetSVG(d.id, d.teamName)}</div>
       <div class="dhead"><span class="dnum">${esc(num)}</span><span class="dcode">${esc(code)}</span></div>
       <h3>${esc(d.name)}</h3>
-      <p class="dteam"><span class="dot" style="background:${col}"></span>${esc(d.teamName)}</p>
+      <p class="dteam"><span class="dot" style="background:${col}"></span>${esc(teamFull(d.teamName))}</p>
       <div class="dfoot"><span>${esc(nat || '—')}${edad != null ? ` · ${edad} años` : ''}</span><span>${d.pos ? `P${d.pos} · ${d.basePts} pts` : ''}</span></div>
     </article>`;
   }).join('');
@@ -868,25 +974,25 @@ async function renderDriversHistory(grid, status) {
     const t = titlesOf(d.id);
     const col = teamColorFor(d.team);
     const active = activeIds.has(d.id) || yearOf(d.last) === String(SEASON);
-    const years = `${yearOf(d.first)}–${active ? '…' : yearOf(d.last)}`;
+    const years = `${yearOf(d.first)} – ${active ? 'Actualidad' : yearOf(d.last)}`;
     const edad = active ? ageOn(d.dob, new Date()) : ageOn(d.dob, d.last);
-    const edadTxt = edad != null ? (active ? ` · ${edad} años` : ` · ${edad} años al retiro`) : '';
-    const teams = (d.teams && d.teams.length ? d.teams : (d.team ? [d.team] : []));
-    const teamTxt = teams.slice(0, 3).map(esc).join(' · ') + (teams.length > 3 ? ` +${teams.length - 3}` : '');
+    const edadTxt = edad != null ? (active ? `${edad} años` : `${edad} años al retiro`) : '';
+    const names = teamsFor(d.id, d);
+    const more = names.length > 3 ? `<span class="tpill more">+${names.length - 3}</span>` : '';
     return `
-    <article class="glass dcard small" data-drv="${esc(d.id)}" style="--c:${col};animation-delay:${Math.min(i, 30) * 18}ms">
-      <div class="dc-hel">${helmetSVG(d.id, d.team)}</div>
-      <div class="dbody">
-        <h3>${esc(d.name)}</h3>
-        <p class="dteam">${esc(natEs(d.nat) || '—')}${edadTxt}</p>
-        <p class="dteams">${teamTxt || '—'}</p>
-        <div class="dyears">${years}</div>
-        <div class="dstats">
-          <span><b>${d.starts}</b> GP</span>
-          <span><b>${d.wins}</b> victorias</span>
-          <span><b>${d.poles}</b> poles</span>
-          ${t ? `<span class="tit"><b>${t}</b> ${t === 1 ? 'título' : 'títulos'}</span>` : ''}
-        </div>
+    <article class="glass hcard" data-drv="${esc(d.id)}" style="--c:${col};animation-delay:${Math.min(i, 30) * 18}ms">
+      <div class="hc-head">
+        <span class="hc-years">${esc(years)}</span>
+        ${t ? `<span class="hc-title">🏆 ${t} ${t === 1 ? 'título' : 'títulos'}</span>` : ''}
+      </div>
+      <h3>${esc(d.name)}</h3>
+      <p class="hc-sub">${esc(natEs(d.nat) || '—')}${edadTxt ? ' · ' + edadTxt : ''}</p>
+      <div class="hc-teams">${names.length ? teamPills(d.id, names.slice(0, 3)) : ''}${more}</div>
+      <div class="hc-stats">
+        <div><b>${d.starts}</b><span>GP</span></div>
+        <div><b>${d.wins}</b><span>Victorias</span></div>
+        <div><b>${d.podiums}</b><span>Podios</span></div>
+        <div><b>${d.poles}</b><span>Poles</span></div>
       </div>
     </article>`;
   }).join('');
@@ -926,7 +1032,7 @@ function warmDrv() {
     });
 }
 
-// Contenido del modal de un piloto (se completa cuando llegan las estadísticas)
+// Contenido del modal de un piloto (se completa cuando llegan las estadísticas y las escuderías)
 function driverModalHTML(id, failed = false) {
   const cur = S.drivers.find(x => x.id === id);
   const d = C.drv?.byId[id] || {};
@@ -939,12 +1045,14 @@ function driverModalHTML(id, failed = false) {
   const v = k => (loading ? '…' : (d[k] ?? 0));
   const titles = S.champs.filter(c => c.driverId === id).sort((a, b) => a.season - b.season);
   const active = !!cur || yearOf(d.last) === String(SEASON);
+  const col = teamColorFor(team);
   const edad = active ? ageOn(dob, new Date()) : ageOn(dob, d.last);
-  const teamsList = (d.teams && d.teams.length) ? d.teams : (team ? [team] : []);
+  const names = teamsFor(id, d);
+  const teamsLoading = !C.dteams[id] && !failed;
 
   const note = loading
-    ? '<p class="muted" style="font-size:12px;margin-top:10px">Cargando estadísticas de la carrera…</p>'
-    : (failed ? '<p class="muted" style="font-size:12px;margin-top:10px">No se pudieron cargar las estadísticas. <button class="btn-sm" data-retry>Reintentar</button></p>' : '');
+    ? '<p class="muted" style="font-size:13px;margin-top:10px">Cargando estadísticas de la carrera…</p>'
+    : (failed ? '<p class="muted" style="font-size:13px;margin-top:10px">No se pudieron cargar las estadísticas. <button class="btn-sm" data-retry>Reintentar</button></p>' : '');
 
   return `
     <span class="eyebrow">${cur ? 'Piloto actual · ' + SEASON : 'Historia de la F1'}</span>
@@ -956,8 +1064,13 @@ function driverModalHTML(id, failed = false) {
         <div class="stat"><span>Nacionalidad</span><strong>${esc(natEs(nat) || '—')}</strong></div>
         <div class="stat"><span>Fecha de nacimiento</span><strong>${dob ? esc(fmtDateY(dob)) : '—'}</strong></div>
         <div class="stat"><span>${active ? 'Edad' : 'Edad al retiro'}</span><strong>${edad != null ? edad + ' años' : '—'}</strong></div>
-        <div class="stat"><span>Escuderías</span><strong>${esc(teamsList.join(' · ') || '—')}</strong></div>
       </div>
+    </div>
+
+    <div class="box" style="margin-top:18px">
+      <h4>🛡️ Escuderías en las que corrió</h4>
+      <div class="tpills">${names.length ? teamPills(id, names) : '<span class="muted">—</span>'}</div>
+      ${teamsLoading ? '<p class="muted" style="font-size:13px;margin-top:12px">Cargando historial completo de escuderías…</p>' : ''}
     </div>
 
     <div class="m-grid" style="margin-top:18px">
@@ -982,20 +1095,24 @@ function driverModalHTML(id, failed = false) {
     ${titles.length ? `
     <div class="box" style="margin-top:18px">
       <h4>👑 Títulos mundiales</h4>
-      <div class="yrs">${titles.map(t => `<span class="yr" data-season="${t.season}">${t.season} · ${esc(t.team)}</span>`).join('')}</div>
+      <div class="yrs">${titles.map(t => `<span class="yr" data-season="${t.season}">${t.season} · ${esc(teamFull(t.team))}</span>`).join('')}</div>
     </div>` : ''}`;
 }
 
 function openDriver(id) {
   drvModalId = id;
+  let statsFailed = false;
+  const paint = () => {
+    if (drvModalId === id) $('#mBody').innerHTML = driverModalHTML(id, statsFailed);
+  };
   openModal(driverModalHTML(id));
+  loadDriverTeams(id).then(paint).catch(e => { console.warn(e); paint(); });
   if (C.drv) return;
-  ensureDrv()
-    .then(() => { if (drvModalId === id) $('#mBody').innerHTML = driverModalHTML(id); })
-    .catch(e => {
-      console.warn(e);
-      if (drvModalId === id) $('#mBody').innerHTML = driverModalHTML(id, true);
-    });
+  ensureDrv().then(paint).catch(e => {
+    console.warn(e);
+    statsFailed = true;
+    paint();
+  });
 }
 
 /* ============ NAVEGACIÓN ============ */
@@ -1149,8 +1266,8 @@ async function openRace(id) {
         </div>
         <div class="box">
           <h4>💡 Lo que hay que saber</h4>
-          <p class="muted" style="font-size:13px;line-height:1.7">${notes}</p>
-          <p class="muted" style="font-size:13px;line-height:1.7;margin-top:10px">Los horarios se muestran en hora de Argentina (UTC−3), sin cambio de horario.</p>
+          <p class="muted" style="font-size:14px;line-height:1.7">${notes}</p>
+          <p class="muted" style="font-size:14px;line-height:1.7;margin-top:10px">Los horarios se muestran en hora de Argentina (UTC−3), sin cambio de horario.</p>
         </div>
       </div>`);
   }
@@ -1329,7 +1446,7 @@ async function loadCardTracks(list) {
   });
 }
 
-/* ============ SAFETY CAR (2023–2025) ============ */
+/* ============ SAFETY CAR Y NEUMÁTICOS (OpenF1, desde 2023) ============ */
 const canon = s => ALIAS[norm(s)] || norm(s);
 
 async function getSessions(year) {
@@ -1349,7 +1466,7 @@ function matchSession(list, c) {
 
 async function computeSafety(c) {
   const keys = [];
-  for (const y of [2023, 2024, 2025]) {
+  for (const y of SAFETY_YEARS) {
     const s = matchSession(await getSessions(y), c);
     if (s) keys.push(s.session_key);
   }
@@ -1369,7 +1486,7 @@ async function computeSafety(c) {
 }
 
 async function getSafety(c) {
-  const key = 'dw_sc_v2_' + c.circuitId;
+  const key = 'dw_sc_v3_' + c.circuitId;
   const cached = readCache(key);
   if (cached) return cached;
   const r = await computeSafety(c);
@@ -1380,13 +1497,13 @@ async function getSafety(c) {
 function safetyHTML(s) {
   if (s === 'error') return '<p class="muted">No se pudieron cargar los datos de safety car ahora. Intenta más tarde.</p>';
   if (!s) return '<p class="muted">Sin datos de safety car.</p>';
-  if (!s.races) return '<p class="muted">Este circuito no tuvo carrera entre 2023 y 2025, así que no hay datos recientes de safety car.</p>';
+  if (!s.races) return '<p class="muted">Este circuito no tuvo carrera entre 2023 y 2026, así que no hay datos de safety car.</p>';
   const p = n => Math.round(n / s.races * 100);
   return `
     ${lineRow('Safety car real', `${p(s.sc)}% · ${s.sc} de ${s.races} carreras`)}
     ${lineRow('Safety car virtual', `${p(s.vsc)}% · ${s.vsc} de ${s.races} carreras`)}
-    <p class="muted" style="font-size:12px;line-height:1.7;margin-top:12px">
-      Porcentaje de carreras entre 2023 y 2025 con al menos un despliegue.
+    <p class="muted" style="font-size:13px;line-height:1.7;margin-top:12px">
+      Porcentaje de carreras desde 2023 con al menos un despliegue.
       El <b>safety car real</b> sale a pista y la parrilla queda detrás de él.
       El <b>virtual</b> (VSC) obliga a reducir la velocidad sin que salga el auto,
       y se cuenta por separado.
@@ -1587,7 +1704,7 @@ async function openCircuitDetail(id, src) {
         ${isVig
           ? lineRow('Ronda 2026', `${info.round} · ${info.dateLabel}`)
           : lineRow('Estado', 'Ya no forma parte del calendario de F1')}
-        ${lineRow('Primera carrera registrada', firstSeason || '—')}
+        ${lineRow('Primera carrera', firstSeason || '—')}
         ${w ? lineRow('Última victoria', `${w.lastSeason} · ${w.lastWinner}`) : ''}
       </div>
     </div>
@@ -1597,13 +1714,13 @@ async function openCircuitDetail(id, src) {
         ${rec
           ? lineRow('Récord de vuelta', `${rec.t} · ${rec.drv}`) + lineRow('Año del récord', rec.season)
           : lineRow('Récord de vuelta', 'No disponible')}
-        ${w ? lineRow('Carreras con ganador registrado', w.total) : ''}
+        ${w ? lineRow('Grandes Premios disputados', w.total) : ''}
         ${w ? w.topDrivers.map(([n, k], i) => lineRow(`${i + 1}. Más victorias (piloto)`, `${n} · ${k}`)).join('') : ''}
         ${w ? w.topTeams.map(([n, k], i) => lineRow(`${i + 1}. Más victorias (equipo)`, `${n} · ${k}`)).join('') : ''}
       </div>
       ${isVig ? `
       <div class="box">
-        <h4>🚦 Safety car · 2023–2025</h4>
+        <h4>🚦 Safety car · desde 2023</h4>
         <div id="safetyBox" data-cid="${esc(cid)}">
           ${telemetryPending ? '<p class="muted">Calculando datos de safety car…</p>' : '<p class="muted">Sin datos de safety car.</p>'}
         </div>
@@ -1611,11 +1728,11 @@ async function openCircuitDetail(id, src) {
     </div>
     ${isVig ? `
     <div class="box" style="margin-top:18px">
-      <h4>🛞 Neumáticos más usados · 2023–2025</h4>
+      <h4>🛞 Neumáticos más usados · desde 2023</h4>
       <div id="compBox" data-cid="${esc(cid)}">
         ${telemetryPending ? '<p class="muted">Calculando…</p>' : '<p class="muted">Sin datos de neumáticos para este circuito.</p>'}
       </div>
-      <p class="muted" style="font-size:12px;line-height:1.6;margin-top:10px">Son los compuestos más usados en carrera, no una recomendación oficial.</p>
+      <p class="muted" style="font-size:13px;line-height:1.6;margin-top:10px">Son los compuestos más usados en carrera, no una recomendación oficial. La telemetría pública (OpenF1) existe desde 2023; para carreras anteriores no hay registro disponible.</p>
     </div>` : ''}`;
 
   if (telemetryPending) loadSafetyInto(c);
@@ -1693,7 +1810,7 @@ async function openSeason(y) {
         <div class="stat"><span>Diferencia con el segundo</span><strong>${a.pts - b.pts} pts · ${esc(lastName(b.name))}</strong></div>
       </div>
       <div class="box" style="margin-top:18px">
-        <p class="muted" style="font-size:13px;line-height:1.7">El campeón se define al final de la temporada. Esta ficha se completará cuando termine.</p>
+        <p class="muted" style="font-size:14px;line-height:1.7">El campeón se define al final de la temporada. Esta ficha se completará cuando termine.</p>
       </div>`);
   }
 
@@ -1785,7 +1902,7 @@ function seasonHTML(c, d) {
     <div class="box" style="margin-top:18px">
       <h4>🏁 Carrera a carrera</h4>
       <div class="rr-list">${rowsHTML}</div>
-      <p class="muted" style="font-size:12px;line-height:1.6;margin-top:12px">Los puntos incluyen la Carrera Sprint cuando la hubo. Ab. = abandono.</p>
+      <p class="muted" style="font-size:13px;line-height:1.6;margin-top:12px">Los puntos incluyen la Carrera Sprint cuando la hubo. Ab. = abandono.</p>
     </div>`;
 }
 
@@ -1806,7 +1923,7 @@ function renderSim() {
     ? rem.map((r, i) => `
       <details class="glass acc" ${i === 0 ? 'open' : ''}>
         <summary>
-          <span class="mono muted" style="font-size:12px">R${r.round}</span>
+          <span class="mono muted" style="font-size:13px">R${r.round}</span>
           <strong>${r.flag} ${esc(r.name)}</strong>
           <span class="badge ${r.sprint ? 'b-sprint' : 'b-done'}">${r.sprint ? 'Sprint' : 'Estándar'}</span>
         </summary>
