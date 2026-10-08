@@ -2,6 +2,7 @@
 
 const API = 'https://api.jolpi.ca/ergast/f1';
 const SEASON = 2026;
+const ART = 'America/Argentina/Buenos_Aires';
 
 const TEAM_COLORS = {
   mercedes: '#27F4D2', ferrari: '#E8002D', mclaren: '#FF8000',
@@ -17,6 +18,15 @@ const FLAGS = {
   Singapore:'🇸🇬', Mexico:'🇲🇽', Brazil:'🇧🇷', UAE:'🇦🇪', Qatar:'🇶🇦'
 };
 
+const SESSION_NAMES = {
+  FirstPractice: 'Práctica 1',
+  SecondPractice: 'Práctica 2',
+  ThirdPractice: 'Práctica 3',
+  SprintQualifying: 'Clasificación Sprint',
+  Sprint: 'Carrera Sprint',
+  Qualifying: 'Clasificación'
+};
+
 const S = {
   source: 'api',        // 'api' | 'local'
   calendar: [],
@@ -24,7 +34,7 @@ const S = {
   teams: [],            // {id,name,color,pts}
   history: [],          // {y,d,t}
   sim: {},
-  details: {},          // cache por ronda
+  details: {},          // cache de resultados por ronda
   updated: null
 };
 
@@ -34,7 +44,21 @@ const lastName = n => String(n).split(' ').pop();
 const fmtDate = iso => new Date(iso + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short' });
 const drvName = d => `${d.givenName} ${d.familyName}`;
 const nextRace = () => S.calendar.find(r => !r.done) || null;
-const teamById = id => S.teams.find(t => t.id === id) || { name: '—', color: '#777' };
+const teamColorByName = name => {
+  const t = S.teams.find(x => x.name === name);
+  return t ? t.color : '#888';
+};
+
+/* ============ HORA ARGENTINA ============ */
+const fmtART = iso => {
+  const t = new Date(iso).toLocaleString('es', {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: ART
+  });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+const hourART = iso => new Date(iso).toLocaleTimeString('es', {
+  hour: '2-digit', minute: '2-digit', timeZone: ART
+});
 
 /* ============ CARGA DE DATOS ============ */
 async function getJSON(path) {
@@ -48,6 +72,20 @@ function parseCalendar(json) {
     const local = CALENDAR.find(c => c.r === +r.round);
     const when = r.time ? `${r.date}T${r.time}` : `${r.date}T23:59:59`;
     const loc = r.Circuit.Location;
+
+    const sessions = [];
+    for (const key of Object.keys(SESSION_NAMES)) {
+      const s = r[key];
+      if (!s?.date) continue;
+      sessions.push({
+        name: SESSION_NAMES[key],
+        when: s.time ? `${s.date}T${s.time}` : `${s.date}T12:00:00Z`,
+        tbc: !s.time
+      });
+    }
+    sessions.push({ name: 'Carrera', when, tbc: !r.time });
+    sessions.sort((a, b) => new Date(a.when) - new Date(b.when));
+
     return {
       round: +r.round,
       id: 'r' + r.round,
@@ -59,6 +97,7 @@ function parseCalendar(json) {
       flag: FLAGS[loc.country] || '🏁',
       circuit: r.Circuit.circuitName,
       place: `${loc.locality}, ${loc.country}`,
+      sessions,
       done: new Date(when) < new Date()
     };
   });
@@ -102,7 +141,7 @@ function loadLocal() {
   S.calendar = CALENDAR.map(r => ({
     round: r.r, id: r.id, name: r.name, dateLabel: r.date, start: r.start,
     when: r.start + 'T23:59:59', sprint: r.sprint, flag: r.flag,
-    circuit: '', place: '', done: r.done
+    circuit: '', place: '', sessions: [], done: r.done
   }));
   S.drivers = DRIVERS.map(d => ({
     id: d.id, name: d.name, team: d.team,
@@ -132,7 +171,7 @@ async function loadHistory() {
   return out.length ? out : HISTORY.map(h => ({ y: h.y, d: h.d, t: h.t }));
 }
 
-/* Detalle de una ronda disputada (se carga al abrirla) */
+/* Resultados de una ronda disputada (se piden al abrirla) */
 async function loadDetail(round) {
   if (S.details[round]) return S.details[round];
   const [res, qua, spr, ds, cs] = await Promise.allSettled([
@@ -272,22 +311,52 @@ const modalHead = r => `
   <span class="eyebrow">Ronda ${r.round} · ${esc(r.dateLabel)}</span>
   <h3 class="display m-title">${esc(r.name)}</h3>`;
 
+function sessionsHTML(r) {
+  if (!r.sessions.length) {
+    return '<p class="muted">Horarios no disponibles. Se cargan desde la API cuando hay conexión.</p>';
+  }
+  const now = new Date();
+  const nextIdx = r.sessions.findIndex(s => new Date(s.when) > now);
+  return `<div class="sess-grid">${r.sessions.map((s, i) => {
+    const past = new Date(s.when) < now;
+    const isNext = i === nextIdx;
+    return `
+      <div class="sess ${past ? 'past' : ''} ${isNext ? 'is-next' : ''}">
+        <span class="sess-name">${esc(s.name)}</span>
+        <strong class="sess-time">${s.tbc ? 'Por confirmar' : hourART(s.when) + ' hs'}</strong>
+        <small>${s.tbc ? '' : fmtART(s.when)}</small>
+      </div>`;
+  }).join('')}</div>`;
+}
+
 async function openRace(id) {
   const r = S.calendar.find(x => x.id === id);
   if (!r) return;
 
   if (!r.done) {
-    const estado = nextRace() && nextRace().id === r.id ? 'Próximo Gran Premio' : 'Programado';
-    const fecha = new Date(r.start + 'T00:00:00')
-      .toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' });
+    const next = nextRace();
+    const estado = next && next.id === r.id ? 'Próximo Gran Premio' : 'Programado';
+    const notes = r.sprint
+      ? 'Fin de semana con Sprint. La clasificación Sprint fija la parrilla de la Carrera Sprint, que reparte puntos del 1.º al 8.º (8-7-6-5-4-3-2-1). La clasificación principal fija la parrilla de la carrera.'
+      : 'Fin de semana estándar. La clasificación principal fija la parrilla de la carrera, que reparte puntos del 1.º al 10.º (25-18-15-12-10-8-6-4-2-1).';
+
     return openModal(`${modalHead(r)}
+      <div class="box" style="margin-bottom:18px">
+        <h4>📅 Horarios · Hora de Argentina (ART)</h4>
+        ${sessionsHTML(r)}
+      </div>
       <div class="m-grid">
-        <div class="svg-box" style="display:grid;place-items:center;font-size:72px">${r.flag}</div>
-        <div style="display:grid;gap:12px;align-content:start">
-          <div class="stat"><span>Formato</span><strong>${r.sprint ? 'Con Sprint' : 'Estándar'}</strong></div>
-          <div class="stat"><span>Inicio del fin de semana</span><strong>${fecha}</strong></div>
-          <div class="stat"><span>Estado</span><strong>${estado}</strong></div>
-          ${r.circuit ? `<div class="stat"><span>Circuito</span><strong>${esc(r.circuit)}</strong></div>` : ''}
+        <div class="box">
+          <h4>ℹ️ Detalles</h4>
+          <div class="line"><span>Circuito</span><strong>${esc(r.circuit || '—')}</strong></div>
+          <div class="line"><span>Ubicación</span><strong>${esc(r.place || '—')}</strong></div>
+          <div class="line"><span>Formato</span><strong>${r.sprint ? 'Con Sprint' : 'Estándar'}</strong></div>
+          <div class="line"><span>Estado</span><strong>${estado}</strong></div>
+        </div>
+        <div class="box">
+          <h4>💡 Lo que hay que saber</h4>
+          <p class="muted" style="font-size:13px;line-height:1.7">${notes}</p>
+          <p class="muted" style="font-size:13px;line-height:1.7;margin-top:10px">Los horarios se muestran en hora de Argentina (UTC−3), sin cambio de horario.</p>
         </div>
       </div>`);
   }
@@ -343,11 +412,6 @@ function detailHTML(r, d) {
       </div>
     </div>`;
 }
-
-const teamColorByName = name => {
-  const t = S.teams.find(x => x.name === name);
-  return t ? t.color : '#888';
-};
 
 /* ============ CAMPEONATO ============ */
 function renderStandings() {

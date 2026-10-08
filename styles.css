@@ -177,13 +177,16 @@ details.acc[open] summary::after{transform:rotate(180deg)}
 .stat{background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:14px;padding:14px}
 .stat span{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
 .stat strong{display:block;font-size:17px;margin-top:4px}
+
+/* TOP 10 */
 .top10{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:4px}
 .p10{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
 .p10 .k{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--red);font-weight:700}
 .p10 .nm{font-weight:700;font-size:13px;margin-top:6px;line-height:1.2}
 .p10 .tm{font-size:10px;color:var(--muted);margin-top:3px}
 .p10 .pt{font-family:'JetBrains Mono',monospace;color:#ffd166;font-size:12px;margin-top:8px}
-@media (max-width:980px){ .top10{grid-template-columns:repeat(2,1fr)} }
+
+/* SESIONES (horarios ART) */
 .sess-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
 .sess{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px;transition:.25s}
 .sess-name{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
@@ -191,12 +194,14 @@ details.acc[open] summary::after{transform:rotate(180deg)}
 .sess small{color:var(--muted);font-size:12px}
 .sess.past{opacity:.4}
 .sess.is-next{border-color:var(--red);box-shadow:0 0 18px var(--glow)}
+
 footer{text-align:center;color:var(--muted);font-size:11px;padding:30px;letter-spacing:.2em;text-transform:uppercase}
 
 @media (max-width:980px){
   .hero{grid-template-columns:1fr;padding:30px}
   .bento .s3{grid-column:span 6}
   .two,.sim{grid-template-columns:1fr}
+  .top10{grid-template-columns:repeat(2,1fr)}
 }
 @media (max-width:640px){
   .bento .s3{grid-column:span 12}
