@@ -1,8 +1,10 @@
-// ================= DRIVERWIN · DATOS EN VIVO (Jolpica-F1 / Ergast) =================
+// ================= DRIVERWIN · DATOS EN VIVO (Jolpica-F1 + OpenF1) =================
 
 const API = 'https://api.jolpi.ca/ergast/f1';
+const OPENF1 = 'https://api.openf1.org/v1';
 const SEASON = 2026;
 const ART = 'America/Argentina/Buenos_Aires';
+const OF1_GAP = 2100; // OpenF1 permite ~30 peticiones/min
 
 const TEAM_COLORS = {
   mercedes: '#27F4D2', ferrari: '#E8002D', mclaren: '#FF8000',
@@ -15,7 +17,10 @@ const FLAGS = {
   Australia:'🇦🇺', China:'🇨🇳', Japan:'🇯🇵', Bahrain:'🇧🇭', 'Saudi Arabia':'🇸🇦',
   USA:'🇺🇸', Italy:'🇮🇹', Monaco:'🇲🇨', Spain:'🇪🇸', Canada:'🇨🇦', Austria:'🇦🇹',
   UK:'🇬🇧', Hungary:'🇭🇺', Belgium:'🇧🇪', Netherlands:'🇳🇱', Azerbaijan:'🇦🇿',
-  Singapore:'🇸🇬', Mexico:'🇲🇽', Brazil:'🇧🇷', UAE:'🇦🇪', Qatar:'🇶🇦'
+  Singapore:'🇸🇬', Mexico:'🇲🇽', Brazil:'🇧🇷', UAE:'🇦🇪', Qatar:'🇶🇦',
+  Argentina:'🇦🇷', France:'🇫🇷', Germany:'🇩🇪', Portugal:'🇵🇹', Sweden:'🇸🇪',
+  Turkey:'🇹🇷', India:'🇮🇳', Korea:'🇰🇷', 'South Africa':'🇿🇦', Malaysia:'🇲🇾',
+  Russia:'🇷🇺', Morocco:'🇲🇦', Vietnam:'🇻🇳', Indonesia:'🇮🇩', Switzerland:'🇨🇭'
 };
 
 const SESSION_NAMES = {
@@ -27,15 +32,31 @@ const SESSION_NAMES = {
   Qualifying: 'Clasificación'
 };
 
+const TYRE = {
+  SOFT: 'Blando (rojo)', MEDIUM: 'Medio (amarillo)', HARD: 'Duro (blanco)',
+  INTERMEDIATE: 'Intermedio (verde)', WET: 'Mojado (azul)'
+};
+
+// Nombres de OpenF1 que difieren de Jolpica
+const ALIAS = { marinabay: 'singapore', yasmarina: 'abudhabi', yasisland: 'abudhabi', sopaulo: 'saopaulo' };
+
 const S = {
   source: 'api',        // 'api' | 'local'
   calendar: [],
-  drivers: [],          // {id,name,team,teamName,basePts,pos}
-  teams: [],            // {id,name,color,pts}
-  history: [],          // {y,d,t}
+  drivers: [],
+  teams: [],
+  history: [],
   sim: {},
-  details: {},          // cache de resultados por ronda
+  details: {},
   updated: null
+};
+
+const C = {
+  tab: 'vig',           // 'vig' | 'hist'
+  hist: null,
+  of1Sessions: {},      // sesiones de carrera OpenF1 por año
+  track: {},            // trazados en memoria
+  of1Last: 0
 };
 
 const $ = s => document.querySelector(s);
@@ -48,6 +69,11 @@ const teamColorByName = name => {
   const t = S.teams.find(x => x.name === name);
   return t ? t.color : '#888';
 };
+const toSec = t => { const p = String(t).split(':'); return p.length === 2 ? (+p[0]) * 60 + (+p[1]) : +p[0]; };
+const lineRow = (label, value) => `<div class="line"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const readCache = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+const writeCache = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
 /* ============ HORA ARGENTINA ============ */
 const fmtART = iso => {
@@ -64,6 +90,16 @@ const hourART = iso => new Date(iso).toLocaleTimeString('es', {
 async function getJSON(path) {
   const res = await fetch(API + path);
   if (!res.ok) throw new Error(`HTTP ${res.status} en ${path}`);
+  return res.json();
+}
+
+// Cola con espera para no superar el límite de OpenF1
+async function getOF1(path) {
+  const slot = Math.max(Date.now(), C.of1Last + OF1_GAP);
+  C.of1Last = slot;
+  if (slot > Date.now()) await sleep(slot - Date.now());
+  const res = await fetch(OPENF1 + path);
+  if (!res.ok) throw new Error(`OpenF1 HTTP ${res.status} en ${path}`);
   return res.json();
 }
 
@@ -96,6 +132,10 @@ function parseCalendar(json) {
       sprint: !!r.Sprint,
       flag: FLAGS[loc.country] || '🏁',
       circuit: r.Circuit.circuitName,
+      circuitId: r.Circuit.circuitId,
+      circuitUrl: r.Circuit.url,
+      country: loc.country,
+      locality: loc.locality,
       place: `${loc.locality}, ${loc.country}`,
       sessions,
       done: new Date(when) < new Date()
@@ -141,7 +181,8 @@ function loadLocal() {
   S.calendar = CALENDAR.map(r => ({
     round: r.r, id: r.id, name: r.name, dateLabel: r.date, start: r.start,
     when: r.start + 'T23:59:59', sprint: r.sprint, flag: r.flag,
-    circuit: '', place: '', sessions: [], done: r.done
+    circuit: '', circuitId: null, circuitUrl: null, country: '', locality: '',
+    place: '', sessions: [], done: r.done
   }));
   S.drivers = DRIVERS.map(d => ({
     id: d.id, name: d.name, team: d.team,
@@ -436,36 +477,322 @@ function renderStandings() {
     </div>`).join('');
 }
 
-/* ============ CIRCUITOS (datos locales) ============ */
-function renderCircuits() {
-  $('#circGrid').innerHTML = CIRCUITS.map((c, i) => `
-    <div class="glass circ" data-circ="${c.id}" style="animation-delay:${i * 90}ms">
-      <span class="eyebrow">${esc(c.country)}</span>
-      <h3>${esc(c.name)}</h3>
-      <svg viewBox="0 0 100 100"><path d="${c.path}"/></svg>
-      <div class="foot">Primer GP ${esc(c.firstGP)} · Ver ficha →</div>
-    </div>`).join('');
+/* ============ TRAZADO (telemetría OpenF1) ============ */
+const normName = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+const aliasKey = s => ALIAS[normName(s)] || normName(s);
+
+async function findSession(year, locality) {
+  C.of1Sessions[year] ??= await getOF1(`/sessions?year=${year}&session_name=Race`);
+  const want = aliasKey(locality);
+  return C.of1Sessions[year].find(s => aliasKey(s.circuit_short_name) === want) || null;
 }
 
-function openCircuit(id) {
-  const c = CIRCUITS.find(x => x.id === id);
-  if (!c) return;
+// Convierte coordenadas X/Y en una ruta SVG (vuelta cerrada, orientación de la telemetría)
+function toPath(xy) {
+  const xs = xy.map(p => p[0]), ys = xy.map(p => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const span = Math.max(maxX - minX, maxY - minY) || 1;
+  const step = Math.max(1, Math.floor(xy.length / 500));
+  const pts = xy.filter((_, i) => i % step === 0);
+  const sx = v => ((v - minX) / span * 90 + 5).toFixed(1);
+  const sy = v => ((maxY - v) / span * 90 + 5).toFixed(1);
+  return 'M' + pts.map(p => `${sx(p[0])} ${sy(p[1])}`).join(' L') + ' Z';
+}
+
+async function getTrack(c) {
+  if (C.track[c.circuitId] !== undefined) return C.track[c.circuitId];
+  const key = 'dw_trk_v1_' + c.circuitId;
+  const cached = readCache(key);
+  if (cached) return (C.track[c.circuitId] = cached);
+
+  for (const year of [2025, 2024, 2023]) {
+    const s = await findSession(year, c.locality);
+    if (!s) continue;
+    const laps = await getOF1(`/laps?session_key=${s.session_key}`);
+    const clean = laps
+      .filter(l => l.date_start && l.lap_duration && !l.is_pit_out_lap && l.lap_number > 1)
+      .sort((a, b) => a.lap_duration - b.lap_duration);
+    const lap = clean[0];
+    if (!lap) continue;
+
+    const start = lap.date_start;
+    const end = new Date(new Date(start).getTime() + lap.lap_duration * 1000).toISOString();
+    const pos = await getOF1(
+      `/location?session_key=${s.session_key}&driver_number=${lap.driver_number}` +
+      `&date>${encodeURIComponent(start)}&date<${encodeURIComponent(end)}`
+    );
+    const xy = pos
+      .filter(p => p.x != null && p.y != null && !(p.x === 0 && p.y === 0))
+      .map(p => [p.x, p.y]);
+    if (xy.length < 30) continue;
+
+    const out = { path: toPath(xy), year };
+    writeCache(key, out);
+    return (C.track[c.circuitId] = out);
+  }
+  return (C.track[c.circuitId] = null);
+}
+
+async function loadCardTracks(list) {
+  for (const c of list) {
+    const box = document.querySelector(`.trk[data-trk="${c.circuitId}"]`);
+    if (!box) return; // cambió la pestaña
+    try {
+      const t = await getTrack(c);
+      box.innerHTML = t
+        ? `<svg viewBox="0 0 100 100"><path d="${t.path}"/></svg>`
+        : '<span class="trk-msg">Sin telemetría reciente para este trazado</span>';
+    } catch {
+      box.innerHTML = '<span class="trk-msg">Trazado no disponible</span>';
+    }
+  }
+}
+
+/* ============ SAFETY CAR (OpenF1, 2023–2025) ============ */
+async function computeSafety(locality) {
+  const keys = [];
+  for (const y of [2023, 2024, 2025]) {
+    const s = await findSession(y, locality);
+    if (s) keys.push(s.session_key);
+  }
+  let sc = 0, vsc = 0;
+  const comp = {};
+  for (const k of keys) {
+    const [rc, st] = await Promise.all([
+      getOF1(`/race_control?session_key=${k}`),
+      getOF1(`/stints?session_key=${k}`)
+    ]);
+    const msgs = rc.map(m => String(m.message || '').toUpperCase());
+    if (msgs.some(m => m.includes('SAFETY CAR DEPLOYED') && !m.includes('VIRTUAL'))) sc++;
+    if (msgs.some(m => m.includes('VIRTUAL SAFETY CAR DEPLOYED'))) vsc++;
+    st.forEach(x => { if (x.compound) comp[x.compound] = (comp[x.compound] || 0) + 1; });
+  }
+  return { races: keys.length, sc, vsc, comp };
+}
+
+async function getSafety(cid, locality) {
+  const key = 'dw_sc_v1_' + cid;
+  const cached = readCache(key);
+  if (cached) return cached;
+  const r = await computeSafety(locality);
+  if (r.races) writeCache(key, r);
+  return r;
+}
+
+function safetyHTML(s) {
+  if (s === 'error') return '<p class="muted">No se pudieron cargar los datos de safety car ahora. Intenta más tarde.</p>';
+  if (!s) return '<p class="muted">Sin datos de safety car.</p>';
+  if (!s.races) return '<p class="muted">Este circuito no tuvo carrera entre 2023 y 2025, así que no hay datos recientes de safety car.</p>';
+  const p = n => Math.round(n / s.races * 100);
+  return `
+    ${lineRow('Safety car real', `${p(s.sc)}% · ${s.sc} de ${s.races} carreras`)}
+    ${lineRow('Safety car virtual', `${p(s.vsc)}% · ${s.vsc} de ${s.races} carreras`)}
+    <p class="muted" style="font-size:12px;line-height:1.7;margin-top:12px">
+      Porcentaje de carreras entre 2023 y 2025 con al menos un despliegue.
+      El <b>safety car real</b> sale a pista y la parrilla queda detrás de él.
+      El <b>virtual</b> (VSC) obliga a reducir la velocidad sin que salga el auto,
+      y se cuenta por separado.
+    </p>`;
+}
+
+function compoundHTML(comp) {
+  const total = Object.values(comp || {}).reduce((a, b) => a + b, 0);
+  if (!total) return '<p class="muted">Sin datos de neumáticos.</p>';
+  return Object.entries(comp).sort((a, b) => b[1] - a[1]).map(([k, v]) => {
+    const p = Math.round(v / total * 100);
+    return `
+      <div style="margin-bottom:12px">
+        <div class="line" style="border:0;padding:0 0 6px"><span>${esc(TYRE[k] || k)}</span><strong>${p}%</strong></div>
+        <div style="height:6px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden">
+          <i style="display:block;height:100%;width:${p}%;background:var(--red)"></i>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ============ CIRCUITOS: VIGENTES / HISTORIAL ============ */
+function ensureCircTabs() {
+  const view = $('#v-circuits');
+  if (view.querySelector('#circTabs')) return;
+  view.querySelector('.sec-head p').textContent =
+    'Vigentes: los circuitos del calendario 2026. Historial: todos los que alguna vez albergaron una carrera de F1.';
+  view.querySelector('.sec-head').insertAdjacentHTML('afterend', `
+    <div class="chips" id="circTabs">
+      <button class="chip on" data-ct="vig">Circuitos vigentes</button>
+      <button class="chip" data-ct="hist">Historial de circuitos</button>
+    </div>`);
+}
+
+async function loadCircuitHistory() {
+  if (C.hist) return C.hist;
+  const json = await getJSON('/circuits.json?limit=1000');
+  C.hist = json.MRData.CircuitTable.Circuits.map(c => ({
+    id: c.circuitId,
+    name: c.circuitName,
+    locality: c.Location.locality,
+    country: c.Location.country,
+    url: c.url
+  })).sort((a, b) => a.name.localeCompare(b.name));
+  return C.hist;
+}
+
+async function renderCircuits() {
+  const grid = $('#circGrid');
+
+  if (C.tab === 'vig') {
+    if (S.source === 'local') {
+      grid.innerHTML = '<p class="muted">Los circuitos vigentes requieren conexión a la API.</p>';
+      return;
+    }
+    const seen = new Set();
+    const list = S.calendar.filter(r => r.circuitId && !seen.has(r.circuitId) && seen.add(r.circuitId));
+    grid.innerHTML = list.map((c, i) => `
+      <div class="glass circ" data-circ="${esc(c.circuitId)}" data-src="vig" style="animation-delay:${i * 60}ms">
+        <span class="eyebrow">${c.flag} ${esc(c.country)}</span>
+        <h3>${esc(c.circuit)}</h3>
+        <div class="trk" data-trk="${esc(c.circuitId)}"><span class="trk-msg">Cargando trazado…</span></div>
+        <div class="foot">Ronda ${c.round} · ${esc(c.dateLabel)} · Ver ficha →</div>
+      </div>`).join('');
+    loadCardTracks(list);
+    return;
+  }
+
+  grid.innerHTML = '<p class="muted">Cargando historial…</p>';
+  try {
+    const list = await loadCircuitHistory();
+    const current = new Set(S.calendar.map(r => r.circuitId));
+    grid.innerHTML = list.map((c, i) => {
+      const vig = current.has(c.id);
+      return `
+      <div class="glass circ" data-circ="${esc(c.id)}" data-src="hist" style="animation-delay:${Math.min(i, 20) * 30}ms">
+        <span class="eyebrow">${FLAGS[c.country] || '🏁'} ${esc(c.country)}</span>
+        <h3>${esc(c.name)}</h3>
+        <div class="foot">
+          <span class="badge ${vig ? 'b-next' : 'b-done'}">${vig ? 'Vigente 2026' : 'Ya no forma parte del calendario'}</span>
+          <span>Ver ficha →</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.warn(e);
+    grid.innerHTML = '<p class="muted">No se pudo cargar el historial. Intenta de nuevo más tarde.</p>';
+  }
+}
+
+/* Victorias a partir de /circuits/{id}/results/1 */
+function winStats(json) {
+  const races = json.MRData.RaceTable.Races;
+  const byDrv = {}, byTeam = {};
+  races.forEach(r => {
+    const w = r.Results[0];
+    if (!w) return;
+    const dn = drvName(w.Driver);
+    byDrv[dn] = (byDrv[dn] || 0) + 1;
+    byTeam[w.Constructor.name] = (byTeam[w.Constructor.name] || 0) + 1;
+  });
+  const top = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const last = races[races.length - 1];
+  return {
+    total: races.length,
+    topDrivers: top(byDrv),
+    topTeams: top(byTeam),
+    lastSeason: last?.season,
+    lastWinner: last ? drvName(last.Results[0].Driver) : null
+  };
+}
+
+/* Récord de vuelta a partir de /circuits/{id}/fastest/1/results */
+function lapRecord(json) {
+  let best = null;
+  json.MRData.RaceTable.Races.forEach(r => r.Results.forEach(x => {
+    const t = x.FastestLap?.Time?.time;
+    if (!t) return;
+    const sec = toSec(t);
+    if (!best || sec < best.sec) {
+      best = { sec, t, drv: drvName(x.Driver), team: x.Constructor.name, season: r.season };
+    }
+  }));
+  return best;
+}
+
+async function openCircuitDetail(id, src) {
+  const isVig = src === 'vig';
+  const info = isVig
+    ? S.calendar.find(r => r.circuitId === id)
+    : (C.hist || []).find(c => c.id === id);
+  if (!info) return;
+
+  const cid = isVig ? info.circuitId : info.id;
+  const locality = info.locality;
+  const country = info.country;
+  const name = isVig ? info.circuit : info.name;
+  const wiki = null;
+  const flag = FLAGS[country] || '🏁';
+
   openModal(`
-    <span class="eyebrow">${esc(c.country)}</span>
-    <h3 class="display m-title">${esc(c.name)}</h3>
+    <span class="eyebrow">${flag} ${esc(country)}</span>
+    <h3 class="display m-title">${esc(name)}</h3>
+    <p class="muted">Cargando datos del circuito…</p>`);
+
+  const wantSafety = isVig && S.source === 'api';
+  const [wins, fast, first, track, safety] = await Promise.all([
+    getJSON(`/circuits/${cid}/results/1.json?limit=1000`).catch(() => null),
+    getJSON(`/circuits/${cid}/fastest/1/results.json?limit=1000`).catch(() => null),
+    getJSON(`/circuits/${cid}/results.json?limit=1`).catch(() => null),
+    getTrack({ circuitId: cid, locality, country }).catch(() => null),
+    wantSafety ? getSafety(cid, locality).catch(() => 'error') : Promise.resolve(null)
+  ]);
+
+  const w = wins ? winStats(wins) : null;
+  const rec = fast ? lapRecord(fast) : null;
+  const firstSeason = first?.MRData.RaceTable.Races[0]?.season;
+
+  const trackBox = track
+    ? `<svg viewBox="0 0 100 100"><path d="${track.path}"/></svg>
+       <p class="muted" style="font-size:12px;margin-top:12px;text-align:center">Trazado real según la telemetría de ${track.year} (OpenF1).</p>`
+    : `<p class="muted" style="text-align:center;padding:40px 10px">Trazado no disponible: no hay telemetría reciente de este circuito.</p>`;
+
+  const safetyOK = safety && safety !== 'error' && safety.races;
+
+  $('#mBody').innerHTML = `
+    <span class="eyebrow">${flag} ${esc(country)}</span>
+    <h3 class="display m-title">${esc(name)}</h3>
     <div class="m-grid">
-      <div class="svg-box"><svg viewBox="0 0 100 100"><path d="${c.path}"/></svg></div>
-      <div style="display:grid;gap:12px;align-content:start">
-        <div class="stat"><span>Primer Gran Premio</span><strong>${esc(c.firstGP)}</strong></div>
-        <div class="stat"><span>Longitud</span><strong>${esc(c.length)}</strong></div>
-        <div class="stat"><span>Récord de vuelta</span><strong>${esc(c.record)}</strong></div>
-        <div class="stat"><span>Máximo ganador</span><strong>${esc(c.wins)}</strong></div>
+      <div class="svg-box">${trackBox}</div>
+      <div class="box">
+        <h4>📍 Ficha</h4>
+        ${lineRow('Localidad', locality || '—')}
+        ${lineRow('País', country || '—')}
+        ${isVig
+          ? lineRow('Ronda 2026', `${info.round} · ${info.dateLabel}`)
+          : lineRow('Estado', 'Ya no forma parte del calendario de F1')}
+        ${lineRow('Primera carrera registrada', firstSeason || '—')}
+        ${w ? lineRow('Última victoria', `${w.lastSeason} · ${w.lastWinner}`) : ''}
       </div>
     </div>
-    <div class="box" style="margin-top:18px;border-color:rgba(225,6,0,.3);background:rgba(225,6,0,.08)">
-      <h4 style="color:var(--red)">Archivo histórico</h4>
-      <p style="line-height:1.7;color:#d6d6de">${esc(c.history)}</p>
-    </div>`);
+    <div class="m-grid" style="margin-top:18px">
+      <div class="box">
+        <h4>🏁 Récords y victorias</h4>
+        ${rec
+          ? lineRow('Récord de vuelta', `${rec.t} · ${rec.drv}`) + lineRow('Año del récord', rec.season)
+          : lineRow('Récord de vuelta', 'No disponible')}
+        ${w ? lineRow('Carreras con ganador registrado', w.total) : ''}
+        ${w ? w.topDrivers.map(([n, c], i) => lineRow(`${i + 1}. Más victorias (piloto)`, `${n} · ${c}`)).join('') : ''}
+        ${w ? w.topTeams.map(([n, c], i) => lineRow(`${i + 1}. Más victorias (equipo)`, `${n} · ${c}`)).join('') : ''}
+      </div>
+      ${isVig ? `
+      <div class="box">
+        <h4>🚦 Safety car · 2023–2025</h4>
+        ${safetyHTML(safety)}
+      </div>` : ''}
+    </div>
+    ${isVig ? `
+    <div class="box" style="margin-top:18px">
+      <h4>🛞 Neumáticos más usados · 2023–2025</h4>
+      ${safetyOK ? compoundHTML(safety.comp) : '<p class="muted">Sin datos de neumáticos para este circuito.</p>'}
+      <p class="muted" style="font-size:12px;line-height:1.6;margin-top:10px">Son los compuestos más usados en carrera, no una recomendación oficial.</p>
+    </div>` : ''}`;
 }
 
 /* ============ SALÓN DE LA FAMA ============ */
@@ -554,10 +881,17 @@ document.addEventListener('click', e => {
   const viewBtn = e.target.closest('[data-view]');
   if (viewBtn) return show(viewBtn.dataset.view);
 
+  const ct = e.target.closest('[data-ct]');
+  if (ct) {
+    C.tab = ct.dataset.ct;
+    document.querySelectorAll('#circTabs .chip').forEach(c => c.classList.toggle('on', c === ct));
+    return renderCircuits();
+  }
+
   const chip = e.target.closest('[data-f]');
   if (chip) {
     calFilter = chip.dataset.f;
-    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === chip));
+    document.querySelectorAll('.chip[data-f]').forEach(c => c.classList.toggle('on', c === chip));
     return renderCalendar();
   }
 
@@ -565,7 +899,7 @@ document.addEventListener('click', e => {
   if (race) return openRace(race.dataset.race);
 
   const circ = e.target.closest('[data-circ]');
-  if (circ) return openCircuit(circ.dataset.circ);
+  if (circ) return openCircuitDetail(circ.dataset.circ, circ.dataset.src);
 
   if (e.target.id === 'modal' || e.target.closest('#mClose')) closeModal();
 });
@@ -602,12 +936,13 @@ function renderAll() {
   renderHome();
   renderCalendar();
   renderStandings();
+  ensureCircTabs();
   renderCircuits();
   renderHOF();
   renderSim();
   const footer = document.querySelector('footer');
   footer.textContent = S.source === 'api'
-    ? `DriverWin · Datos en vivo: Jolpica-F1 · ${new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`
+    ? `DriverWin · Datos en vivo: Jolpica-F1 y OpenF1 · ${new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}`
     : 'DriverWin · Sin conexión a la API: mostrando datos locales';
 }
 
