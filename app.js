@@ -6,7 +6,7 @@ const SEASON = 2026;
 const CHAMP_FROM = 2000;           // desde qué año se muestra en "Campeones por temporada"
 const FIRST_SEASON = 1950;         // primera temporada de F1 (para "Pilotos campeones")
 const CHAMP_CACHE = 'dw_champ_v1_';
-const DRV_CACHE = 'dw_drv_agg_v1';  // estadísticas de todos los pilotos
+const DRV_CACHE = 'dw_drv_agg_v3';  // estadísticas de todos los pilotos
 const DRV_FROM = 1950;
 const DRV_TTL = 12 * 3600 * 1000;   // 12 horas
 const ART = 'America/Argentina/Buenos_Aires';
@@ -219,13 +219,14 @@ const C = {
   of1Last: 0,
   season: {},
   drv: null,         // estadísticas de todos los pilotos
-  drvPromise: null
+  drvPromise: null,
+  drvProg: null      // avance de la carga: { n, t }
 };
 
 let hofTab = 'temp';
 let drvTab = 'act';     // 'act' | 'hist'
 let drvQuery = '';
-let drvSort = 'titles';
+let drvModalId = null;  // piloto que está abierto en el modal
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -353,6 +354,10 @@ function parseDrivers(json) {
   return list.map(s => ({
     id: s.Driver.driverId,
     name: drvName(s.Driver),
+    nat: s.Driver.nationality || '',
+    dob: s.Driver.dateOfBirth || '',
+    code: s.Driver.code || '',
+    num: s.Driver.permanentNumber || '',
     team: s.Constructors[0]?.constructorId || '',
     teamName: s.Constructors[0]?.name || '—',
     basePts: +s.points,
@@ -390,7 +395,7 @@ function loadLocal() {
     lat: null, lon: null, place: '', sessions: [], done: r.done
   }));
   S.drivers = DRIVERS.map(d => ({
-    id: d.id, name: d.name, team: d.team,
+    id: d.id, name: d.name, nat: '', dob: '', code: '', num: '', team: d.team,
     teamName: (TEAMS.find(t => t.id === d.team) || {}).name || '—',
     basePts: d.basePts, pos: 0
   }));
@@ -537,13 +542,33 @@ async function loadSeasonDetail(y) {
 
 /* ============ PILOTOS: ESTADÍSTICAS DE TODA LA HISTORIA ============ */
 
-// Descarga todas las filas de un endpoint por temporada, agrupadas por carrera
-async function fetchPaged(path, key) {
+// Pedidos espaciados y con reintentos: así no se supera el límite de la API
+let lastCall = 0;
+async function pace() {
+  const wait = lastCall + 300 - Date.now();
+  if (wait > 0) await sleep(wait);
+  lastCall = Date.now();
+}
+
+async function getSlow(path, tries = 6) {
+  for (let i = 0; i < tries; i++) {
+    await pace();
+    let res = null;
+    try { res = await fetch(API + path); } catch (e) { res = null; }
+    if (res && res.ok) return res.json();
+    if (res && res.status !== 429 && res.status < 500) throw new Error(`HTTP ${res.status} en ${path}`);
+    await sleep(1500 * (i + 1));
+  }
+  throw new Error(`Sin respuesta de la API en ${path}`);
+}
+
+// Trae todas las páginas de un endpoint por temporada, agrupadas por carrera
+async function fetchPagedSlow(path, key) {
   const byRound = {};
   let offset = 0, total = Infinity, guard = 0;
-  while (offset < total && guard++ < 40) {
+  while (offset < total && guard++ < 60) {
     const sep = path.includes('?') ? '&' : '?';
-    const j = await getJSON(`${path}${sep}limit=1000&offset=${offset}`);
+    const j = await getSlow(`${path}${sep}limit=100&offset=${offset}`);
     total = +j.MRData.total || 0;
     let n = 0;
     (j.MRData.RaceTable.Races || []).forEach(r => {
@@ -554,76 +579,108 @@ async function fetchPaged(path, key) {
       byRound[k].rows.push(...rows);
     });
     if (!n) break;
-    offset += n;
+    offset += 100;
   }
   return Object.values(byRound);
 }
 
-async function loadDriverAggregate(onProgress) {
+const emptyAgg = () => ({
+  starts: 0, wins: 0, podiums: 0, poles: 0, fl: 0, pts: 0,
+  first: null, last: null, team: '', teamDate: '', number: ''
+});
+
+// Descarga una temporada completa y la suma a las estadísticas.
+// Primero descarga todo y recién después suma, así un reintento no duplica datos.
+async function loadSeasonDrivers(y, agg, info) {
+  const races = await fetchPagedSlow(`/${y}/results.json`, 'Results');
+  const quals = await fetchPagedSlow(`/${y}/qualifying.json`, 'QualifyingResults').catch(() => []);
+  const hasQ = quals.length > 0;
+
+  const local = {};
+  const ps = id => local[id] ??= emptyAgg();
+
+  if (hasQ) quals.forEach(q => q.rows.forEach(x => {
+    if (x.position === '1') ps(x.Driver.driverId).poles++;
+  }));
+
+  races.forEach(r => r.rows.forEach(x => {
+    const s = ps(x.Driver.driverId);
+    s.starts++;
+    if (x.position === '1') s.wins++;
+    if (['1', '2', '3'].includes(x.position)) s.podiums++;
+    if (x.FastestLap?.rank === '1') s.fl++;
+    if (!hasQ && x.grid === '1') s.poles++;
+    s.pts += +x.points || 0;
+    if (!s.first || r.date < s.first) s.first = r.date;
+    if (!s.last || r.date > s.last) s.last = r.date;
+    if (r.date >= s.teamDate) {
+      s.teamDate = r.date;
+      s.team = x.Constructor?.name || s.team;
+      s.number = x.number || s.number;
+    }
+    info[x.Driver.driverId] = x.Driver;
+  }));
+
+  Object.entries(local).forEach(([id, s]) => {
+    const a = agg[id] ??= emptyAgg();
+    a.starts += s.starts;
+    a.wins += s.wins;
+    a.podiums += s.podiums;
+    a.poles += s.poles;
+    a.fl += s.fl;
+    a.pts += s.pts;
+    if (s.first && (!a.first || s.first < a.first)) a.first = s.first;
+    if (s.last && (!a.last || s.last > a.last)) a.last = s.last;
+    if (s.teamDate && s.teamDate >= a.teamDate) {
+      a.teamDate = s.teamDate;
+      a.team = s.team;
+      a.number = s.number || a.number;
+    }
+  });
+}
+
+function buildDrvState(list, season) {
+  return { season, ts: Date.now(), list, byId: Object.fromEntries(list.map(d => [d.id, d])) };
+}
+
+// Avance de la carga: se muestra en la pestaña abierta
+function drvProgress(n, t) {
+  C.drvProg = { n, t };
+  if (C.drv) return;
+  const st = $('#drvStatus');
+  if (!st) return;
+  if (drvTab === 'hist') st.textContent = `Cargando historial de pilotos… (${n} de ${t} temporadas)`;
+  else refreshActStatus();
+}
+
+async function loadDriverAggregate() {
   const cached = readCache(DRV_CACHE);
   if (cached && cached.season === SEASON && Date.now() - cached.ts < DRV_TTL) {
-    C.drv = { ...cached, byId: Object.fromEntries(cached.list.map(d => [d.id, d])) };
-    return;
+    return buildDrvState(cached.list, cached.season);
   }
 
-  // Datos personales de todos los pilotos
-  const info = {};
-  for (let off = 0; ; off += 1000) {
-    const j = await getJSON(`/drivers.json?limit=1000&offset=${off}`);
-    const list = j.MRData.DriverTable.Drivers || [];
-    list.forEach(d => { info[d.driverId] = d; });
-    if (!list.length || off + list.length >= (+j.MRData.total || 0)) break;
-  }
-
-  const agg = {};
-  const mk = id => agg[id] ??= {
-    id, starts: 0, wins: 0, podiums: 0, poles: 0, fl: 0, pts: 0,
-    first: null, last: null, team: '', teamDate: '', number: ''
-  };
-
+  const agg = {}, info = {};
   const years = [];
   for (let y = DRV_FROM; y <= SEASON; y++) years.push(y);
-  let done = 0;
+  const failed = [];
 
-  for (let i = 0; i < years.length; i += 4) {
-    const batch = years.slice(i, i + 4);
-    await Promise.all(batch.map(async y => {
-      const [races, quals] = await Promise.all([
-        fetchPaged(`/${y}/results.json`, 'Results'),
-        fetchPaged(`/${y}/qualifying.json`, 'QualifyingResults').catch(() => [])
-      ]);
-
-      races.forEach(r => r.rows.forEach(x => {
-        const a = mk(x.Driver.driverId);
-        a.starts++;
-        if (x.position === '1') a.wins++;
-        if (['1', '2', '3'].includes(x.position)) a.podiums++;
-        if (x.FastestLap?.rank === '1') a.fl++;
-        if (!quals.length && x.grid === '1') a.poles++;
-        a.pts += +x.points || 0;
-        if (!a.first || r.date < a.first) a.first = r.date;
-        if (!a.last || r.date > a.last) a.last = r.date;
-        if (r.date >= a.teamDate) {
-          a.teamDate = r.date;
-          a.team = x.Constructor.name;
-          a.number = x.number || a.number;
-        }
-      }));
-
-      quals.forEach(q => q.rows.forEach(x => {
-        if (x.position === '1') mk(x.Driver.driverId).poles++;
-      }));
-
-      done++;
-      onProgress?.(done, years.length);
-    }));
+  for (let i = 0; i < years.length; i++) {
+    try { await loadSeasonDrivers(years[i], agg, info); }
+    catch (e) { console.warn(`Pilotos ${years[i]}:`, e); failed.push(years[i]); }
+    drvProgress(i + 1, years.length);
   }
 
-  const list = Object.values(agg).map(a => {
-    const m = info[a.id] || {};
+  // Reintenta las temporadas que fallaron
+  for (const y of failed.splice(0)) {
+    try { await loadSeasonDrivers(y, agg, info); }
+    catch (e) { console.warn(`Pilotos ${y} (reintento):`, e); failed.push(y); }
+  }
+
+  const list = Object.keys(agg).map(id => {
+    const a = agg[id], m = info[id] || {};
     return {
-      id: a.id,
-      name: m.givenName ? `${m.givenName} ${m.familyName}` : a.id,
+      id,
+      name: m.givenName ? `${m.givenName} ${m.familyName}` : id,
       nat: m.nationality || '',
       dob: m.dateOfBirth || '',
       code: m.code || '',
@@ -634,16 +691,17 @@ async function loadDriverAggregate(onProgress) {
     };
   });
 
-  const out = { season: SEASON, ts: Date.now(), list };
-  writeCache(DRV_CACHE, out);
-  C.drv = { ...out, byId: Object.fromEntries(list.map(d => [d.id, d])) };
+  if (!list.length) throw new Error('No se obtuvieron datos de pilotos');
+  if (!failed.length) writeCache(DRV_CACHE, { season: SEASON, ts: Date.now(), list });
+  if (failed.length) console.warn('Temporadas incompletas:', failed);
+  return buildDrvState(list, SEASON);
 }
 
-// Evita cargar dos veces lo mismo si el usuario cambia de pestaña rápido
-function ensureDrv(onProgress) {
+// Una sola carga a la vez; si falla, el próximo intento vuelve a empezar
+function ensureDrv() {
   if (C.drv) return Promise.resolve(C.drv);
-  C.drvPromise ??= loadDriverAggregate(onProgress)
-    .then(() => C.drv)
+  C.drvPromise ??= loadDriverAggregate()
+    .then(st => { C.drv = st; C.drvProg = null; return st; })
     .catch(e => { C.drvPromise = null; throw e; });
   return C.drvPromise;
 }
@@ -682,65 +740,62 @@ function helmetSVG(id, color, cls = '') {
 /* ============ PILOTOS: VISTA ============ */
 const titlesOf = id => S.champs.filter(c => c.driverId === id).length;
 
-async function renderDrivers() {
-  const tools = $('#drvTools'), grid = $('#drvGrid'), status = $('#drvStatus');
-  tools.style.display = drvTab === 'hist' ? 'flex' : 'none';
-  document.querySelectorAll('#drvTabs .chip').forEach(c => c.classList.toggle('on', c.dataset.dt === drvTab));
-
-  if (S.source === 'local') {
-    grid.innerHTML = '';
-    status.textContent = 'Los pilotos requieren conexión a la API.';
-    return;
-  }
-
-  if (!C.drv) {
-    grid.innerHTML = '';
-    status.textContent = 'Cargando pilotos…';
-    try {
-      await ensureDrv((n, t) => {
-        status.textContent = `Cargando historial de pilotos… (${n} de ${t} temporadas)`;
-      });
-    } catch (e) {
-      console.warn(e);
-      status.textContent = 'No se pudo cargar la lista de pilotos. Intenta más tarde.';
-      return;
-    }
-  }
-
-  if (drvTab === 'act') renderDriversCurrent(grid, status);
-  else renderDriversHistory(grid, status);
-}
-
+// Pilotos actuales: se muestran al instante; las estadísticas llegan después
 function renderDriversCurrent(grid, status) {
   grid.innerHTML = S.drivers.map((d, i) => {
     const s = C.drv?.byId[d.id] || {};
     const col = teamColorByName(d.teamName);
+    const num = d.num || s.num || '—';
+    const code = d.code || s.code || '';
+    const nat = natEs(d.nat || s.nat);
     return `
     <article class="glass dcard" data-drv="${esc(d.id)}" style="--c:${col};animation-delay:${i * 40}ms">
       <div class="dc-hel">${helmetSVG(d.id, col)}</div>
-      <div class="dhead"><span class="dnum">${esc(s.num || '—')}</span><span class="dcode">${esc(s.code || '')}</span></div>
+      <div class="dhead"><span class="dnum">${esc(num)}</span><span class="dcode">${esc(code)}</span></div>
       <h3>${esc(d.name)}</h3>
       <p class="dteam"><span class="dot" style="background:${col}"></span>${esc(d.teamName)}</p>
-      <div class="dfoot"><span>${esc(natEs(s.nat) || '—')}</span><span>${d.pos ? `P${d.pos} · ${d.basePts} pts` : ''}</span></div>
+      <div class="dfoot"><span>${esc(nat || '—')}</span><span>${d.pos ? `P${d.pos} · ${d.basePts} pts` : ''}</span></div>
     </article>`;
   }).join('');
-  status.textContent = `${S.drivers.length} pilotos en la parrilla 2026`;
+  refreshActStatus();
 }
 
-function renderDriversHistory(grid, status) {
+function refreshActStatus() {
+  const st = $('#drvStatus');
+  if (!st || drvTab !== 'act') return;
+  let txt = `${S.drivers.length} pilotos en la parrilla 2026`;
+  if (!C.drv) {
+    txt += C.drvProg
+      ? ` · cargando historial (${C.drvProg.n} de ${C.drvProg.t} temporadas)`
+      : ' · cargando estadísticas…';
+  }
+  st.textContent = txt;
+}
+
+// Pilotos de la historia: necesita la carga completa, con reintento si falla
+async function renderDriversHistory(grid, status) {
+  if (!C.drv) {
+    grid.innerHTML = '';
+    status.textContent = 'Cargando pilotos de la historia…';
+    try {
+      await ensureDrv();
+    } catch (e) {
+      console.warn(e);
+      grid.innerHTML = '';
+      status.innerHTML = `No se pudo cargar la lista de pilotos. <button class="btn-sm" data-retry>Reintentar</button>`;
+      return;
+    }
+    if (drvTab !== 'hist') return;
+  }
+
   const q = norm(drvQuery);
   const list = C.drv.list.filter(d => !q || norm(d.name).includes(q));
 
-  list.sort((a, b) => {
-    if (drvSort === 'name') return a.name.localeCompare(b.name);
-    const key = {
-      titles: d => titlesOf(d.id),
-      wins: d => d.wins,
-      poles: d => d.poles,
-      starts: d => d.starts
-    }[drvSort];
-    return (key(b) - key(a)) || (b.wins - a.wins) || (b.starts - a.starts);
-  });
+  list.sort((a, b) =>
+    (titlesOf(b.id) - titlesOf(a.id)) ||
+    (b.wins - a.wins) ||
+    (b.starts - a.starts) ||
+    a.name.localeCompare(b.name));
 
   status.textContent = `${list.length} ${list.length === 1 ? 'piloto' : 'pilotos'}${q ? ' encontrados' : ' en la historia de la F1'}`;
 
@@ -768,28 +823,68 @@ function renderDriversHistory(grid, status) {
   }).join('');
 }
 
-function openDriver(id) {
+async function renderDrivers() {
+  const tools = $('#drvTools'), grid = $('#drvGrid'), status = $('#drvStatus');
+  tools.style.display = drvTab === 'hist' ? 'flex' : 'none';
+  document.querySelectorAll('#drvTabs .chip').forEach(c => c.classList.toggle('on', c.dataset.dt === drvTab));
+
+  if (S.source === 'local') {
+    grid.innerHTML = '';
+    status.textContent = 'Los pilotos requieren conexión a la API.';
+    return;
+  }
+
+  if (drvTab === 'act') {
+    renderDriversCurrent(grid, status);
+    if (!C.drv) warmDrv();
+    return;
+  }
+
+  await renderDriversHistory(grid, status);
+}
+
+// Carga las estadísticas en segundo plano para la pestaña de actuales
+function warmDrv() {
+  if (C.drv) return;
+  ensureDrv()
+    .then(() => { if (drvTab === 'act') renderDrivers(); })
+    .catch(e => {
+      console.warn(e);
+      const st = $('#drvStatus');
+      if (st && drvTab === 'act') {
+        st.innerHTML = `${S.drivers.length} pilotos en la parrilla 2026 · no se pudieron cargar las estadísticas. <button class="btn-sm" data-retry>Reintentar</button>`;
+      }
+    });
+}
+
+// Contenido del modal de un piloto (se completa cuando llegan las estadísticas)
+function driverModalHTML(id, failed = false) {
   const cur = S.drivers.find(x => x.id === id);
-  const d = C.drv?.byId[id];
-  if (!cur && !d) return;
-
-  const info = d || {};
-  const v = k => info[k] ?? 0;
-  const name = cur ? cur.name : info.name;
-  const team = cur ? cur.teamName : info.team;
+  const d = C.drv?.byId[id] || {};
+  const name = cur ? cur.name : d.name;
+  const team = cur ? cur.teamName : d.team;
   const col = teamColorFor(team);
+  const nat = cur?.nat || d.nat;
+  const num = cur?.num || d.num || '—';
+  const dob = cur?.dob || d.dob;
+  const loading = !C.drv && !failed;
+  const v = k => (loading ? '…' : (d[k] ?? 0));
   const titles = S.champs.filter(c => c.driverId === id).sort((a, b) => a.season - b.season);
-  const active = !!cur || yearOf(info.last) === String(SEASON);
+  const active = !!cur || yearOf(d.last) === String(SEASON);
 
-  openModal(`
+  const note = loading
+    ? '<p class="muted" style="font-size:12px;margin-top:10px">Cargando estadísticas de la carrera…</p>'
+    : (failed ? '<p class="muted" style="font-size:12px;margin-top:10px">No se pudieron cargar las estadísticas. <button class="btn-sm" data-retry>Reintentar</button></p>' : '');
+
+  return `
     <span class="eyebrow">${cur ? 'Piloto actual · ' + SEASON : 'Historia de la F1'}</span>
     <h3 class="display m-title">${esc(name)}</h3>
     <div class="m-grid">
       <div class="svg-box dhel">${helmetSVG(id, col, 'big')}</div>
       <div style="display:grid;gap:12px;align-content:start">
-        <div class="stat"><span>Número</span><strong>${esc(info.num || '—')}</strong></div>
-        <div class="stat"><span>Nacionalidad</span><strong>${esc(natEs(info.nat) || '—')}</strong></div>
-        <div class="stat"><span>Fecha de nacimiento</span><strong>${info.dob ? esc(fmtDateY(info.dob)) : '—'}</strong></div>
+        <div class="stat"><span>Número</span><strong>${esc(num)}</strong></div>
+        <div class="stat"><span>Nacionalidad</span><strong>${esc(natEs(nat) || '—')}</strong></div>
+        <div class="stat"><span>Fecha de nacimiento</span><strong>${dob ? esc(fmtDateY(dob)) : '—'}</strong></div>
         <div class="stat"><span>Escudería ${cur ? 'actual' : 'última'}</span><strong>${esc(team || '—')}</strong></div>
       </div>
     </div>
@@ -797,8 +892,8 @@ function openDriver(id) {
     <div class="m-grid" style="margin-top:18px">
       <div class="box">
         <h4>🏁 Carrera</h4>
-        ${lineRow('Primera carrera', info.first ? fmtDateY(info.first) : '—')}
-        ${lineRow(active ? 'Estado' : 'Retiro (última carrera)', active ? 'En actividad' : (info.last ? fmtDateY(info.last) : '—'))}
+        ${lineRow('Primera carrera', d.first ? fmtDateY(d.first) : '—')}
+        ${lineRow(active ? 'Estado' : 'Retiro (última carrera)', active ? 'En actividad' : (d.last ? fmtDateY(d.last) : '—'))}
         ${lineRow('Grandes Premios', v('starts'))}
         ${lineRow('Puntos totales', v('pts'))}
       </div>
@@ -811,12 +906,25 @@ function openDriver(id) {
         ${lineRow('Campeonatos', titles.length)}
       </div>
     </div>
+    ${note}
 
     ${titles.length ? `
     <div class="box" style="margin-top:18px">
       <h4>👑 Títulos mundiales</h4>
       <div class="yrs">${titles.map(t => `<span class="yr" data-season="${t.season}">${t.season} · ${esc(t.team)}</span>`).join('')}</div>
-    </div>` : ''}`);
+    </div>` : ''}`;
+}
+
+function openDriver(id) {
+  drvModalId = id;
+  openModal(driverModalHTML(id));
+  if (C.drv) return;
+  ensureDrv()
+    .then(() => { if (drvModalId === id) $('#mBody').innerHTML = driverModalHTML(id); })
+    .catch(e => {
+      console.warn(e);
+      if (drvModalId === id) $('#mBody').innerHTML = driverModalHTML(id, true);
+    });
 }
 
 /* ============ NAVEGACIÓN ============ */
@@ -920,6 +1028,7 @@ function openModal(html) {
 function closeModal() {
   $('#modal').classList.remove('open');
   document.body.style.overflow = '';
+  drvModalId = null;
 }
 const modalHead = r => `
   <span class="eyebrow">Ronda ${r.round} · ${esc(r.dateLabel)}</span>
@@ -1715,6 +1824,13 @@ document.addEventListener('click', e => {
   const viewBtn = e.target.closest('[data-view]');
   if (viewBtn) return show(viewBtn.dataset.view);
 
+  const retry = e.target.closest('[data-retry]');
+  if (retry) {
+    C.drvPromise = null;
+    if (drvModalId) return openDriver(drvModalId);
+    return renderDrivers();
+  }
+
   const dt = e.target.closest('[data-dt]');
   if (dt) {
     drvTab = dt.dataset.dt;
@@ -1796,10 +1912,6 @@ $('#simReset').addEventListener('click', () => {
 
 $('#drvSearch').addEventListener('input', e => {
   drvQuery = e.target.value;
-  if (drvTab === 'hist' && C.drv) renderDrivers();
-});
-$('#drvSort').addEventListener('change', e => {
-  drvSort = e.target.value;
   if (drvTab === 'hist' && C.drv) renderDrivers();
 });
 
