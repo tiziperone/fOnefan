@@ -6,6 +6,9 @@ const SEASON = 2026;
 const CHAMP_FROM = 2000;           // desde qué año se muestra en "Campeones por temporada"
 const FIRST_SEASON = 1950;         // primera temporada de F1 (para "Pilotos campeones")
 const CHAMP_CACHE = 'dw_champ_v1_';
+const DRV_CACHE = 'dw_drv_agg_v1';  // estadísticas de todos los pilotos
+const DRV_FROM = 1950;
+const DRV_TTL = 12 * 3600 * 1000;   // 12 horas
 const ART = 'America/Argentina/Buenos_Aires';
 const OF1_GAP = 2100;
 
@@ -214,10 +217,15 @@ const C = {
   hist: null,
   of1Sessions: {},
   of1Last: 0,
-  season: {}
+  season: {},
+  drv: null,         // estadísticas de todos los pilotos
+  drvPromise: null
 };
 
 let hofTab = 'temp';
+let drvTab = 'act';     // 'act' | 'hist'
+let drvQuery = '';
+let drvSort = 'titles';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -243,6 +251,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const readCache = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const writeCache = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const isFinish = s => /^(Finished|\+\d+ Laps?)$/.test(s || '');
+const yearOf = iso => (iso ? String(iso).slice(0, 4) : '—');
 
 /* ============ HORA ARGENTINA ============ */
 const fmtART = iso => {
@@ -256,10 +265,14 @@ const hourART = iso => new Date(iso).toLocaleTimeString('es', {
 });
 
 /* ============ CARGA DE DATOS ============ */
-async function getJSON(path) {
-  const res = await fetch(API + path);
-  if (!res.ok) throw new Error(`HTTP ${res.status} en ${path}`);
-  return res.json();
+// Reintenta si la API responde con límite de peticiones (429)
+async function getJSON(path, tries = 3) {
+  for (let i = 0; i < tries; i++) {
+    const res = await fetch(API + path);
+    if (res.ok) return res.json();
+    if (res.status !== 429 || i === tries - 1) throw new Error(`HTTP ${res.status} en ${path}`);
+    await sleep(1500 * (i + 1));
+  }
 }
 
 // Descarga todas las páginas de un endpoint de resultados y las agrupa por ronda
@@ -522,7 +535,298 @@ async function loadSeasonDetail(y) {
   return out;
 }
 
-/* ============ CAMPEONATO Y SIMULACIÓN ============ */
+/* ============ PILOTOS: ESTADÍSTICAS DE TODA LA HISTORIA ============ */
+
+// Descarga todas las filas de un endpoint por temporada, agrupadas por carrera
+async function fetchPaged(path, key) {
+  const byRound = {};
+  let offset = 0, total = Infinity, guard = 0;
+  while (offset < total && guard++ < 40) {
+    const sep = path.includes('?') ? '&' : '?';
+    const j = await getJSON(`${path}${sep}limit=1000&offset=${offset}`);
+    total = +j.MRData.total || 0;
+    let n = 0;
+    (j.MRData.RaceTable.Races || []).forEach(r => {
+      const k = +r.round;
+      byRound[k] ??= { date: r.date, rows: [] };
+      const rows = r[key] || [];
+      n += rows.length;
+      byRound[k].rows.push(...rows);
+    });
+    if (!n) break;
+    offset += n;
+  }
+  return Object.values(byRound);
+}
+
+async function loadDriverAggregate(onProgress) {
+  const cached = readCache(DRV_CACHE);
+  if (cached && cached.season === SEASON && Date.now() - cached.ts < DRV_TTL) {
+    C.drv = { ...cached, byId: Object.fromEntries(cached.list.map(d => [d.id, d])) };
+    return;
+  }
+
+  // Datos personales de todos los pilotos
+  const info = {};
+  for (let off = 0; ; off += 1000) {
+    const j = await getJSON(`/drivers.json?limit=1000&offset=${off}`);
+    const list = j.MRData.DriverTable.Drivers || [];
+    list.forEach(d => { info[d.driverId] = d; });
+    if (!list.length || off + list.length >= (+j.MRData.total || 0)) break;
+  }
+
+  const agg = {};
+  const mk = id => agg[id] ??= {
+    id, starts: 0, wins: 0, podiums: 0, poles: 0, fl: 0, pts: 0,
+    first: null, last: null, team: '', teamDate: '', number: ''
+  };
+
+  const years = [];
+  for (let y = DRV_FROM; y <= SEASON; y++) years.push(y);
+  let done = 0;
+
+  for (let i = 0; i < years.length; i += 4) {
+    const batch = years.slice(i, i + 4);
+    await Promise.all(batch.map(async y => {
+      const [races, quals] = await Promise.all([
+        fetchPaged(`/${y}/results.json`, 'Results'),
+        fetchPaged(`/${y}/qualifying.json`, 'QualifyingResults').catch(() => [])
+      ]);
+
+      races.forEach(r => r.rows.forEach(x => {
+        const a = mk(x.Driver.driverId);
+        a.starts++;
+        if (x.position === '1') a.wins++;
+        if (['1', '2', '3'].includes(x.position)) a.podiums++;
+        if (x.FastestLap?.rank === '1') a.fl++;
+        if (!quals.length && x.grid === '1') a.poles++;
+        a.pts += +x.points || 0;
+        if (!a.first || r.date < a.first) a.first = r.date;
+        if (!a.last || r.date > a.last) a.last = r.date;
+        if (r.date >= a.teamDate) {
+          a.teamDate = r.date;
+          a.team = x.Constructor.name;
+          a.number = x.number || a.number;
+        }
+      }));
+
+      quals.forEach(q => q.rows.forEach(x => {
+        if (x.position === '1') mk(x.Driver.driverId).poles++;
+      }));
+
+      done++;
+      onProgress?.(done, years.length);
+    }));
+  }
+
+  const list = Object.values(agg).map(a => {
+    const m = info[a.id] || {};
+    return {
+      id: a.id,
+      name: m.givenName ? `${m.givenName} ${m.familyName}` : a.id,
+      nat: m.nationality || '',
+      dob: m.dateOfBirth || '',
+      code: m.code || '',
+      num: m.permanentNumber || a.number || '',
+      team: a.team,
+      starts: a.starts, wins: a.wins, podiums: a.podiums, poles: a.poles, fl: a.fl,
+      pts: a.pts, first: a.first, last: a.last
+    };
+  });
+
+  const out = { season: SEASON, ts: Date.now(), list };
+  writeCache(DRV_CACHE, out);
+  C.drv = { ...out, byId: Object.fromEntries(list.map(d => [d.id, d])) };
+}
+
+// Evita cargar dos veces lo mismo si el usuario cambia de pestaña rápido
+function ensureDrv(onProgress) {
+  if (C.drv) return Promise.resolve(C.drv);
+  C.drvPromise ??= loadDriverAggregate(onProgress)
+    .then(() => C.drv)
+    .catch(e => { C.drvPromise = null; throw e; });
+  return C.drvPromise;
+}
+
+// Casco estilizado en los colores de la escudería
+const shade = (hex, amt) => {
+  let n = hex.replace('#', '');
+  if (n.length === 3) n = n.split('').map(c => c + c).join('');
+  const f = v => Math.max(0, Math.min(255, Math.round(amt < 0 ? v * (1 + amt) : v + (255 - v) * amt)));
+  return '#' + [0, 2, 4].map(i => f(parseInt(n.substr(i, 2), 16)).toString(16).padStart(2, '0')).join('');
+};
+
+function helmetSVG(id, color, cls = '') {
+  const gid = 'h' + String(id).replace(/[^a-z0-9]/gi, '') + (cls || 'sm');
+  const light = shade(color, .35), dark = shade(color, -.4);
+  return `<svg class="helmet ${cls}" viewBox="0 0 200 180" aria-hidden="true">
+    <defs>
+      <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${light}"/>
+        <stop offset=".55" stop-color="${color}"/>
+        <stop offset="1" stop-color="${dark}"/>
+      </linearGradient>
+      <linearGradient id="${gid}v" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#4a4a5c"/>
+        <stop offset="1" stop-color="#07070c"/>
+      </linearGradient>
+    </defs>
+    <path d="M30 118C28 60 68 20 112 20C152 20 174 56 174 98L174 128C174 153 158 165 132 165L62 165C42 165 31 147 30 118Z" fill="url(#${gid})"/>
+    <path d="M31 112C60 98 120 104 173 92L173 114C130 126 70 128 32 136Z" fill="#ffffff" opacity=".92"/>
+    <path d="M66 96C64 80 82 72 106 72L164 72C174 72 176 84 174 96L170 116C168 126 160 129 149 129L84 129C70 129 66 116 66 104Z" fill="url(#${gid}v)"/>
+    <path d="M66 96C64 80 82 72 106 72L164 72C174 72 176 84 174 96" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"/>
+    <path d="M58 46C78 30 108 26 128 34" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="7" stroke-linecap="round"/>
+  </svg>`;
+}
+
+/* ============ PILOTOS: VISTA ============ */
+const titlesOf = id => S.champs.filter(c => c.driverId === id).length;
+
+async function renderDrivers() {
+  const tools = $('#drvTools'), grid = $('#drvGrid'), status = $('#drvStatus');
+  tools.style.display = drvTab === 'hist' ? 'flex' : 'none';
+  document.querySelectorAll('#drvTabs .chip').forEach(c => c.classList.toggle('on', c.dataset.dt === drvTab));
+
+  if (S.source === 'local') {
+    grid.innerHTML = '';
+    status.textContent = 'Los pilotos requieren conexión a la API.';
+    return;
+  }
+
+  if (!C.drv) {
+    grid.innerHTML = '';
+    status.textContent = 'Cargando pilotos…';
+    try {
+      await ensureDrv((n, t) => {
+        status.textContent = `Cargando historial de pilotos… (${n} de ${t} temporadas)`;
+      });
+    } catch (e) {
+      console.warn(e);
+      status.textContent = 'No se pudo cargar la lista de pilotos. Intenta más tarde.';
+      return;
+    }
+  }
+
+  if (drvTab === 'act') renderDriversCurrent(grid, status);
+  else renderDriversHistory(grid, status);
+}
+
+function renderDriversCurrent(grid, status) {
+  grid.innerHTML = S.drivers.map((d, i) => {
+    const s = C.drv?.byId[d.id] || {};
+    const col = teamColorByName(d.teamName);
+    return `
+    <article class="glass dcard" data-drv="${esc(d.id)}" style="--c:${col};animation-delay:${i * 40}ms">
+      <div class="dc-hel">${helmetSVG(d.id, col)}</div>
+      <div class="dhead"><span class="dnum">${esc(s.num || '—')}</span><span class="dcode">${esc(s.code || '')}</span></div>
+      <h3>${esc(d.name)}</h3>
+      <p class="dteam"><span class="dot" style="background:${col}"></span>${esc(d.teamName)}</p>
+      <div class="dfoot"><span>${esc(natEs(s.nat) || '—')}</span><span>${d.pos ? `P${d.pos} · ${d.basePts} pts` : ''}</span></div>
+    </article>`;
+  }).join('');
+  status.textContent = `${S.drivers.length} pilotos en la parrilla 2026`;
+}
+
+function renderDriversHistory(grid, status) {
+  const q = norm(drvQuery);
+  const list = C.drv.list.filter(d => !q || norm(d.name).includes(q));
+
+  list.sort((a, b) => {
+    if (drvSort === 'name') return a.name.localeCompare(b.name);
+    const key = {
+      titles: d => titlesOf(d.id),
+      wins: d => d.wins,
+      poles: d => d.poles,
+      starts: d => d.starts
+    }[drvSort];
+    return (key(b) - key(a)) || (b.wins - a.wins) || (b.starts - a.starts);
+  });
+
+  status.textContent = `${list.length} ${list.length === 1 ? 'piloto' : 'pilotos'}${q ? ' encontrados' : ' en la historia de la F1'}`;
+
+  const activeIds = new Set(S.drivers.map(d => d.id));
+  grid.innerHTML = list.map((d, i) => {
+    const t = titlesOf(d.id);
+    const col = teamColorFor(d.team);
+    const active = activeIds.has(d.id) || yearOf(d.last) === String(SEASON);
+    const years = `${yearOf(d.first)}–${active ? '…' : yearOf(d.last)}`;
+    return `
+    <article class="glass dcard small" data-drv="${esc(d.id)}" style="--c:${col};animation-delay:${Math.min(i, 30) * 18}ms">
+      <div class="dc-hel">${helmetSVG(d.id, col)}</div>
+      <div class="dbody">
+        <h3>${esc(d.name)}</h3>
+        <p class="dteam">${esc(natEs(d.nat) || '—')}${d.team ? ' · ' + esc(d.team) : ''}</p>
+        <div class="dyears">${years}</div>
+        <div class="dstats">
+          <span><b>${d.starts}</b> GP</span>
+          <span><b>${d.wins}</b> victorias</span>
+          <span><b>${d.poles}</b> poles</span>
+          ${t ? `<span class="tit"><b>${t}</b> ${t === 1 ? 'título' : 'títulos'}</span>` : ''}
+        </div>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+function openDriver(id) {
+  const cur = S.drivers.find(x => x.id === id);
+  const d = C.drv?.byId[id];
+  if (!cur && !d) return;
+
+  const info = d || {};
+  const v = k => info[k] ?? 0;
+  const name = cur ? cur.name : info.name;
+  const team = cur ? cur.teamName : info.team;
+  const col = teamColorFor(team);
+  const titles = S.champs.filter(c => c.driverId === id).sort((a, b) => a.season - b.season);
+  const active = !!cur || yearOf(info.last) === String(SEASON);
+
+  openModal(`
+    <span class="eyebrow">${cur ? 'Piloto actual · ' + SEASON : 'Historia de la F1'}</span>
+    <h3 class="display m-title">${esc(name)}</h3>
+    <div class="m-grid">
+      <div class="svg-box dhel">${helmetSVG(id, col, 'big')}</div>
+      <div style="display:grid;gap:12px;align-content:start">
+        <div class="stat"><span>Número</span><strong>${esc(info.num || '—')}</strong></div>
+        <div class="stat"><span>Nacionalidad</span><strong>${esc(natEs(info.nat) || '—')}</strong></div>
+        <div class="stat"><span>Fecha de nacimiento</span><strong>${info.dob ? esc(fmtDateY(info.dob)) : '—'}</strong></div>
+        <div class="stat"><span>Escudería ${cur ? 'actual' : 'última'}</span><strong>${esc(team || '—')}</strong></div>
+      </div>
+    </div>
+
+    <div class="m-grid" style="margin-top:18px">
+      <div class="box">
+        <h4>🏁 Carrera</h4>
+        ${lineRow('Primera carrera', info.first ? fmtDateY(info.first) : '—')}
+        ${lineRow(active ? 'Estado' : 'Retiro (última carrera)', active ? 'En actividad' : (info.last ? fmtDateY(info.last) : '—'))}
+        ${lineRow('Grandes Premios', v('starts'))}
+        ${lineRow('Puntos totales', v('pts'))}
+      </div>
+      <div class="box">
+        <h4>🏆 Logros</h4>
+        ${lineRow('Victorias', v('wins'))}
+        ${lineRow('Podios', v('podiums'))}
+        ${lineRow('Poles', v('poles'))}
+        ${lineRow('Vueltas rápidas', v('fl'))}
+        ${lineRow('Campeonatos', titles.length)}
+      </div>
+    </div>
+
+    ${titles.length ? `
+    <div class="box" style="margin-top:18px">
+      <h4>👑 Títulos mundiales</h4>
+      <div class="yrs">${titles.map(t => `<span class="yr" data-season="${t.season}">${t.season} · ${esc(t.team)}</span>`).join('')}</div>
+    </div>` : ''}`);
+}
+
+/* ============ NAVEGACIÓN ============ */
+function show(v) {
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (v === 'pilotos') renderDrivers();
+}
+
 function standings(sim = {}) {
   const delta = {};
   Object.values(sim).forEach(r => {
@@ -539,13 +843,6 @@ function standings(sim = {}) {
     }))
     .sort((a, b) => b.pts - a.pts);
   return { drivers, teams };
-}
-
-/* ============ NAVEGACIÓN ============ */
-function show(v) {
-  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
-  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.view === v));
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ============ INICIO ============ */
@@ -1102,7 +1399,7 @@ async function openCircuitDetail(id, src) {
     <span class="eyebrow">${flag} ${esc(cty(country))}</span>
     <h3 class="display m-title">${esc(name)}</h3>
     <div class="m-grid">
-      <div class="svg-box">${trackBox}</div>
+      <div class="svg-box track">${trackBox}</div>
       <div class="box">
         <h4>📍 Ficha</h4>
         ${lineRow('Localidad', locality || '—')}
@@ -1418,6 +1715,15 @@ document.addEventListener('click', e => {
   const viewBtn = e.target.closest('[data-view]');
   if (viewBtn) return show(viewBtn.dataset.view);
 
+  const dt = e.target.closest('[data-dt]');
+  if (dt) {
+    drvTab = dt.dataset.dt;
+    return renderDrivers();
+  }
+
+  const drv = e.target.closest('[data-drv]');
+  if (drv) return openDriver(drv.dataset.drv);
+
   const ct = e.target.closest('[data-ct]');
   if (ct) {
     C.tab = ct.dataset.ct;
@@ -1488,6 +1794,15 @@ $('#simReset').addEventListener('click', () => {
   updateSummary();
 });
 
+$('#drvSearch').addEventListener('input', e => {
+  drvQuery = e.target.value;
+  if (drvTab === 'hist' && C.drv) renderDrivers();
+});
+$('#drvSort').addEventListener('change', e => {
+  drvSort = e.target.value;
+  if (drvTab === 'hist' && C.drv) renderDrivers();
+});
+
 /* ============ INICIALIZACIÓN ============ */
 function renderAll() {
   renderHome();
@@ -1498,7 +1813,7 @@ function renderAll() {
   ensureHofTabs();
   renderHOF();
   renderSim();
-  // El pie de página queda fijo como "fOnefan" (está en index.html)
+  // Los pilotos se cargan al abrir su pestaña
 }
 
 (async function init() {

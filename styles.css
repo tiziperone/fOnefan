@@ -17,6 +17,7 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opa
 @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
 @keyframes shine{to{background-position:200% center}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 
 .glass{background:var(--card);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);border:1px solid var(--line);border-radius:22px}
 .eyebrow{font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--red);font-weight:700}
@@ -130,13 +131,55 @@ main{max-width:1240px;margin:0 auto;padding:12px 16px 80px}
 .circ:hover .trk path{fill:var(--red);filter:drop-shadow(0 0 10px var(--glow))}
 .trk-msg{font-size:12px;color:var(--muted);text-align:center;padding:0 10px}
 
-/* Pie de tarjeta de circuito: "Ver ficha" como botón */
+/* Pie de tarjeta de circuito */
 .circ .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);flex-wrap:wrap}
 .meta{font-weight:600;font-size:12px;letter-spacing:.06em;color:var(--muted);font-variant-numeric:tabular-nums}
 .ficha{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:linear-gradient(90deg,rgba(225,6,0,.18),rgba(225,6,0,.05));border:1px solid rgba(225,6,0,.35);color:#fff;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;transition:.35s cubic-bezier(.16,1,.3,1)}
 .ficha i{font-style:normal;display:inline-block;transition:transform .35s cubic-bezier(.16,1,.3,1)}
 .circ:hover .ficha{background:var(--red);border-color:var(--red);box-shadow:0 0 22px var(--glow)}
 .circ:hover .ficha i{transform:translateX(5px)}
+
+/* PILOTOS */
+.drv-tools{display:none;gap:10px;flex-wrap:wrap;align-items:center}
+.drv-tools input,.drv-tools select{appearance:none;background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--text);padding:10px 16px;border-radius:999px;font:600 13px 'Titillium Web',sans-serif;outline:none;min-width:220px}
+.drv-tools select{min-width:0;cursor:pointer}
+.drv-tools input:focus,.drv-tools select:focus{border-color:var(--red)}
+#drvStatus{font-size:13px;margin:-8px 0 18px;letter-spacing:.02em;font-weight:600}
+.drv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+
+.dcard{position:relative;overflow:hidden;padding:16px 16px 18px;cursor:pointer;animation:rise .6s both;transition:.4s cubic-bezier(.16,1,.3,1);--c:var(--red)}
+.dcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--c)}
+.dcard::after{content:"";position:absolute;right:-70px;top:-70px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,var(--c),transparent 65%);opacity:.14;pointer-events:none;transition:opacity .45s}
+.dcard:hover{transform:translateY(-6px);border-color:rgba(255,255,255,.16);box-shadow:0 26px 50px -28px var(--c)}
+.dcard:hover::after{opacity:.32}
+
+.dc-hel{position:relative;height:150px;display:grid;place-items:center;border-radius:18px;background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.08),transparent 70%),rgba(0,0,0,.35);border:1px solid var(--line);overflow:hidden}
+.dc-hel::after{content:"";position:absolute;left:50%;bottom:-26px;width:72%;height:44px;transform:translateX(-50%);background:radial-gradient(ellipse,var(--c),transparent 70%);opacity:.4;filter:blur(8px)}
+.helmet{width:80%;height:auto;position:relative;z-index:1;filter:drop-shadow(0 14px 18px rgba(0,0,0,.65));transition:transform .5s cubic-bezier(.16,1,.3,1)}
+.dcard:hover .helmet{transform:translateY(-5px) rotate(-5deg) scale(1.06)}
+
+.dhead{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.dnum{font-weight:900;font-style:italic;font-size:30px;line-height:1;color:var(--c);text-shadow:0 0 18px var(--c);font-variant-numeric:tabular-nums}
+.dcode{font-weight:700;font-size:11px;letter-spacing:.2em;color:var(--muted);border:1px solid var(--line);padding:4px 9px;border-radius:8px}
+.dcard h3{font-size:19px;font-weight:800;margin-top:12px;line-height:1.1}
+.dteam{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;margin-top:6px;font-weight:600}
+.dfoot{display:flex;justify-content:space-between;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);font-weight:600}
+
+/* Tarjeta compacta (historia) */
+.dcard.small{display:grid;grid-template-columns:118px minmax(0,1fr);gap:16px;align-items:center;padding:14px}
+.dcard.small .dc-hel{height:100px;border-radius:14px}
+.dcard.small .helmet{width:92%}
+.dcard.small .dc-hel::after{display:none}
+.dbody{min-width:0}
+.dbody h3{font-size:18px;font-weight:800;line-height:1.1;margin-top:0}
+.dyears{font-size:12px;color:var(--c);font-weight:800;letter-spacing:.08em;margin-top:6px;font-variant-numeric:tabular-nums}
+.dstats{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:11px;color:var(--muted);font-weight:600}
+.dstats b{color:var(--text);font-weight:800;font-size:13px;margin-right:3px;font-variant-numeric:tabular-nums}
+.dstats .tit b{color:#ffd166}
+
+/* Casco en la ficha */
+.svg-box.dhel{display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.08),transparent 70%),rgba(255,255,255,.03)}
+.svg-box.dhel .helmet{width:88%;max-height:320px;filter:drop-shadow(0 22px 28px rgba(0,0,0,.7))}
 
 /* HALL OF FAME: GRID */
 .hof{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
@@ -207,7 +250,8 @@ details.acc[open] summary::after{transform:rotate(180deg)}
 .scroll::-webkit-scrollbar-thumb{background:rgba(225,6,0,.5);border-radius:8px}
 .svg-box{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:22px;padding:28px}
 .svg-box svg{width:100%;height:auto;max-height:340px}
-.svg-box path{fill:var(--red);stroke:none;filter:drop-shadow(0 0 14px var(--glow))}
+/* Solo el trazado de circuitos se pinta de rojo (los cascos conservan sus colores) */
+.svg-box.track path{fill:var(--red);stroke:none;filter:drop-shadow(0 0 14px var(--glow))}
 .stat{background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:14px;padding:14px}
 .stat span{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .stat strong{display:block;font-size:17px;margin-top:4px;font-weight:700}
@@ -267,5 +311,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:30px;letter-s
   .hero-ghost{display:none}
   .hero-stats{grid-template-columns:repeat(2,1fr)}
   .rr{grid-template-columns:36px minmax(0,1fr) 44px 60px 34px;gap:8px}
+  .drv-tools input{min-width:0;width:100%}
+  .dcard.small{grid-template-columns:96px minmax(0,1fr)}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
