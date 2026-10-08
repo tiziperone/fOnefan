@@ -37,10 +37,46 @@ const F1Data = {
     ],
 
     circuits: [
-        { id: 'monza', name: 'Autodromo Nazionale Monza', lapRecord: '1:21.046', recordDriver: 'Rubens Barrichello', recordYear: 2004, mostWins: 'M. Schumacher / L. Hamilton (5)' },
-        { id: 'singapur', name: 'Marina Bay Street Circuit', lapRecord: '1:35.784', recordDriver: 'Lewis Hamilton', recordYear: 2023, mostWins: 'Sebastian Vettel / Lewis Hamilton (4)' },
-        { id: 'silverstone', name: 'Silverstone Circuit', lapRecord: '1:27.097', recordDriver: 'Max Verstappen', recordYear: 2020, mostWins: 'Lewis Hamilton (8)' },
-        { id: 'monaco', name: 'Circuit de Monaco', lapRecord: '1:12.909', recordDriver: 'Lewis Hamilton', recordYear: 2021, mostWins: 'Ayrton Senna (6)' }
+        { 
+            id: 'monza', 
+            name: 'Autodromo Nazionale Monza', 
+            country: 'Italia', 
+            lapRecord: '1:21.046 (Rubens Barrichello, 2004)', 
+            mostWins: 'M. Schumacher / L. Hamilton (5)', 
+            schedule: 'Domingo 10:00 ART', 
+            safetyCarProb: '45%', 
+            history: 'Conocido como "El Templo de la Velocidad", Monza es uno de los circuitos más antiguos y rápidos del calendario. Sus largas rectas y bajas cargas aerodinámicas obligan a los equipos a usar configuraciones de alerones ultra específicos.' 
+        },
+        { 
+            id: 'singapur', 
+            name: 'Marina Bay Street Circuit', 
+            country: 'Singapur', 
+            lapRecord: '1:35.784 (Lewis Hamilton, 2023)', 
+            mostWins: 'Sebastian Vettel / Lewis Hamilton (4)', 
+            schedule: 'Domingo 09:00 ART (Nocturna)', 
+            safetyCarProb: '100%', 
+            history: 'La primera carrera nocturna en la historia de la Fórmula 1. Es un circuito callejero extremadamente demandante físicamente para los pilotos debido al calor, la humedad y los muros cercanos.' 
+        },
+        { 
+            id: 'silverstone', 
+            name: 'Silverstone Circuit', 
+            country: 'Reino Unido', 
+            lapRecord: '1:27.097 (Max Verstappen, 2020)', 
+            mostWins: 'Lewis Hamilton (8)', 
+            schedule: 'Domingo 11:00 ART', 
+            safetyCarProb: '60%', 
+            history: 'Cuna del Campeonato Mundial de F1 en 1950. Famoso por sus curvas de alta velocidad legendarias como Maggotts, Becketts y Chapel, donde los monoplazas alcanzan fuerzas G impresionantes.' 
+        },
+        { 
+            id: 'monaco', 
+            name: 'Circuit de Monaco', 
+            country: 'Mónaco', 
+            lapRecord: '1:12.909 (Lewis Hamilton, 2021)', 
+            mostWins: 'Ayrton Senna (6)', 
+            schedule: 'Domingo 10:00 ART', 
+            safetyCarProb: '85%', 
+            history: 'La joya de la corona de la Fórmula 1. Un trazado callejero estrecho donde adelantar es prácticamente imposible, convirtiendo la sesión de clasificación del sábado en el momento más crucial del fin de semana.' 
+        }
     ],
 
     history: {

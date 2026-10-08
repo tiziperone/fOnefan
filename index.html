@@ -12,8 +12,9 @@
                 extend: {
                     colors: {
                         f1red: '#e10600',
-                        f1dark: '#15151e',
-                        f1card: '#1f1f2b'
+                        f1dark: '#0f0f13',
+                        f1card: '#181822',
+                        f1border: '#2a2a3c'
                     }
                 }
             }
@@ -24,74 +25,74 @@
         body { font-family: 'Titillium Web', sans-serif; }
     </style>
 </head>
-<body class="bg-f1dark text-white min-h-screen selection:bg-f1red selection:text-white flex flex-col justify-between">
+<body class="bg-f1dark text-white min-h-screen selection:bg-f1red selection:text-white flex flex-col justify-between antialiased">
 
     <div>
         <!-- Navbar Inyectado Dinámicamente -->
         <div id="navbar-container"></div>
 
-        <!-- Contenedor Principal de Vistas -->
-        <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Contenedor Principal con más espacio y separación -->
+        <main class="max-w-7xl mx-auto px-6 py-10">
             
-            <!-- VISTA 1: SIMULADOR (Por defecto) -->
+            <!-- VISTA 1: SIMULADOR -->
             <section id="viewSimulator" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-2 space-y-6">
-                    <div class="bg-f1card border border-gray-800 rounded-xl p-6 shadow-xl">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-lg font-bold italic flex items-center space-x-2">
+                    <div class="bg-f1card border border-f1border rounded-2xl p-8 shadow-2xl">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-bold italic flex items-center space-x-2">
                                 <span>🏁 Simulador de Grandes Premios Restantes</span>
                             </h2>
-                            <button onclick="resetSimulation()" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded font-semibold transition">Reiniciar</button>
+                            <button onclick="resetSimulation()" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-xl font-semibold transition border border-gray-700">Reiniciar Simulación</button>
                         </div>
-                        <div id="racesContainer" class="space-y-4 max-h-[68vh] overflow-y-auto pr-2"></div>
+                        <div id="racesContainer" class="space-y-6 max-h-[70vh] overflow-y-auto pr-3"></div>
                     </div>
                 </div>
 
                 <aside class="space-y-6">
                     <!-- Tarjeta de Favorito -->
-                    <div id="favoriteCard" class="bg-gradient-to-br from-f1card to-gray-900 border border-gray-800 rounded-xl p-6 shadow-xl relative overflow-hidden hidden">
-                        <div class="absolute -right-4 -bottom-4 text-f1red/10 text-7xl font-black italic">FAV</div>
+                    <div id="favoriteCard" class="bg-gradient-to-br from-f1card via-gray-900 to-f1card border border-f1border rounded-2xl p-6 shadow-2xl relative overflow-hidden hidden">
+                        <div class="absolute -right-4 -bottom-4 text-f1red/10 text-8xl font-black italic">FAV</div>
                         <h3 class="text-xs font-bold uppercase tracking-widest text-f1red">Tu Selección</h3>
-                        <div class="mt-2">
+                        <div class="mt-3">
                             <p id="favDriverInfo" class="text-lg font-black italic">Piloto: -</p>
-                            <p id="favTeamInfo" class="text-xs text-gray-400">Escudería: -</p>
+                            <p id="favTeamInfo" class="text-xs text-gray-400 mt-0.5">Escudería: -</p>
                         </div>
-                        <div class="mt-4 pt-4 border-t border-gray-800">
-                            <h4 class="text-xs font-semibold text-gray-400 mb-1">Análisis de Opciones:</h4>
-                            <p id="favScenarioText" class="text-xs text-gray-200 italic">Selecciona un piloto favorito para calcular sus opciones de campeonato.</p>
+                        <div class="mt-5 pt-4 border-t border-f1border">
+                            <h4 class="text-xs font-semibold text-gray-400 mb-1.5">Análisis de Opciones:</h4>
+                            <p id="favScenarioText" class="text-xs text-gray-200 italic leading-relaxed">Selecciona un piloto favorito para calcular sus opciones de campeonato.</p>
                         </div>
                     </div>
 
-                    <!-- Tabla de Puntuación Interactiva -->
-                    <div class="bg-f1card border border-gray-800 rounded-xl p-6 shadow-xl">
-                        <div class="flex border-b border-gray-800 mb-4">
-                            <button onclick="switchTableTab('drivers')" id="tabDriversBtn" class="flex-1 pb-2 font-bold text-xs border-b-2 border-f1red text-white uppercase tracking-wider">Pilotos</button>
-                            <button onclick="switchTableTab('teams')" id="tabTeamsBtn" class="flex-1 pb-2 font-bold text-xs border-b-2 border-transparent text-gray-400 uppercase tracking-wider">Constructores</button>
+                    <!-- Tabla de Puntuación -->
+                    <div class="bg-f1card border border-f1border rounded-2xl p-6 shadow-2xl">
+                        <div class="flex border-b border-f1border pb-3 mb-4">
+                            <button onclick="switchTableTab('drivers')" id="tabDriversBtn" class="flex-1 pb-1 font-bold text-xs border-b-2 border-f1red text-white uppercase tracking-wider transition">Pilotos</button>
+                            <button onclick="switchTableTab('teams')" id="tabTeamsBtn" class="flex-1 pb-1 font-bold text-xs border-b-2 border-transparent text-gray-400 uppercase tracking-wider transition">Constructores</button>
                         </div>
 
-                        <div id="driversTableContainer" class="overflow-x-auto max-h-[50vh] overflow-y-auto">
+                        <div id="driversTableContainer" class="overflow-x-auto max-h-[52vh] overflow-y-auto pr-1">
                             <table class="w-full text-left text-sm">
                                 <thead>
-                                    <tr class="text-gray-500 text-xs border-b border-gray-800">
-                                        <th class="pb-2">Pos</th>
-                                        <th class="pb-2">Piloto</th>
-                                        <th class="pb-2 text-right">Pts</th>
+                                    <tr class="text-gray-500 text-xs border-b border-f1border">
+                                        <th class="pb-3">Pos</th>
+                                        <th class="pb-3">Piloto</th>
+                                        <th class="pb-3 text-right">Pts</th>
                                     </tr>
                                 </thead>
-                                <tbody id="driversTableBody" class="divide-y divide-gray-800/50"></tbody>
+                                <tbody id="driversTableBody" class="divide-y divide-f1border/40"></tbody>
                             </table>
                         </div>
 
-                        <div id="teamsTableContainer" class="overflow-x-auto max-h-[50vh] overflow-y-auto hidden">
+                        <div id="teamsTableContainer" class="overflow-x-auto max-h-[52vh] overflow-y-auto pr-1 hidden">
                             <table class="w-full text-left text-sm">
                                 <thead>
-                                    <tr class="text-gray-500 text-xs border-b border-gray-800">
-                                        <th class="pb-2">Pos</th>
-                                        <th class="pb-2">Escudería</th>
-                                        <th class="pb-2 text-right">Pts</th>
+                                    <tr class="text-gray-500 text-xs border-b border-f1border">
+                                        <th class="pb-3">Pos</th>
+                                        <th class="pb-3">Escudería</th>
+                                        <th class="pb-3 text-right">Pts</th>
                                     </tr>
                                 </thead>
-                                <tbody id="teamsTableBody" class="divide-y divide-gray-800/50"></tbody>
+                                <tbody id="teamsTableBody" class="divide-y divide-f1border/40"></tbody>
                             </table>
                         </div>
                     </div>
@@ -100,32 +101,65 @@
 
             <!-- VISTA 2: CALENDARIO -->
             <section id="viewCalendar" class="hidden space-y-6">
-                <div class="bg-f1card border border-gray-800 rounded-xl p-6 shadow-xl">
-                    <h2 class="text-xl font-black italic mb-2 text-f1red">📅 Calendario Actualizado 2026</h2>
-                    <p class="text-sm text-gray-400 mb-6">Próximas citas y circuitos confirmados para la temporada actual.</p>
-                    <div id="calendarContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                <div class="bg-f1card border border-f1border rounded-2xl p-8 shadow-2xl">
+                    <h2 class="text-2xl font-black italic mb-2 text-f1red">📅 Calendario Actualizado 2026</h2>
+                    <p class="text-sm text-gray-400 mb-8">Próximas citas y circuitos confirmados para la temporada actual.</p>
+                    <div id="calendarContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 </div>
             </section>
 
             <!-- VISTA 3: HISTORIAL 10 AÑOS -->
             <section id="viewHistory" class="hidden space-y-6">
-                <div class="bg-f1card border border-gray-800 rounded-xl p-6 shadow-xl">
-                    <h2 class="text-xl font-black italic mb-2 text-f1red">📜 Archivo Histórico (Últimos 10 Años)</h2>
-                    <p class="text-sm text-gray-400 mb-6">Repasa quiénes dominaron la máxima categoría temporada por temporada.</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4" id="historyContainer"></div>
+                <div class="bg-f1card border border-f1border rounded-2xl p-8 shadow-2xl">
+                    <h2 class="text-2xl font-black italic mb-2 text-f1red">📜 Archivo Histórico (Últimos 10 Años)</h2>
+                    <p class="text-sm text-gray-400 mb-8">Repasa quiénes dominaron la máxima categoría temporada por temporada.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6" id="historyContainer"></div>
                 </div>
             </section>
 
             <!-- VISTA 4: CIRCUITOS Y RÉCORDS -->
             <section id="viewCircuits" class="hidden space-y-6">
-                <div class="bg-f1card border border-gray-800 rounded-xl p-6 shadow-xl">
-                    <h2 class="text-xl font-black italic mb-2 text-f1red">🏟️ Rincón de Circuitos & Récords</h2>
-                    <p class="text-sm text-gray-400 mb-6">Estadísticas históricas, récords de vuelta y máximos ganadores por pista.</p>
+                <div class="bg-f1card border border-f1border rounded-2xl p-8 shadow-2xl">
+                    <h2 class="text-2xl font-black italic mb-2 text-f1red">🏟️ Rincón de Circuitos & Récords</h2>
+                    <p class="text-sm text-gray-400 mb-8">Haz clic en cualquier circuito para ver su historia completa, horarios oficiales y probabilidades de Safety Car.</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="circuitsContainer"></div>
                 </div>
             </section>
 
         </main>
+    </div>
+
+    <!-- MODAL DE DETALLES DE CIRCUITO -->
+    <div id="circuitModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-f1card border border-f1border rounded-2xl max-w-xl w-full p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <button onclick="closeCircuitModal()" class="absolute top-6 right-6 text-gray-400 hover:text-white text-xl font-bold bg-gray-800/60 hover:bg-gray-700 w-9 h-9 rounded-full flex items-center justify-center transition">✕</button>
+            <span id="modalCircuitCountry" class="text-xs font-bold text-f1red uppercase tracking-widest">País</span>
+            <h3 id="modalCircuitName" class="text-2xl font-black italic mt-1 mb-4">Nombre del Circuito</h3>
+            
+            <div class="grid grid-cols-2 gap-4 bg-gray-900/60 border border-f1border p-4 rounded-xl mb-6 text-xs">
+                <div>
+                    <span class="text-gray-400 block font-semibold">🕒 Horario Oficial:</span>
+                    <strong id="modalCircuitSchedule" class="text-white text-sm">-</strong>
+                </div>
+                <div>
+                    <span class="text-gray-400 block font-semibold">⚠️ Prob. Safety Car:</span>
+                    <strong id="modalCircuitSafety" class="text-yellow-400 text-sm">-</strong>
+                </div>
+                <div>
+                    <span class="text-gray-400 block font-semibold">⚡ Récord de Vuelta:</span>
+                    <strong id="modalCircuitRecord" class="text-white text-sm">-</strong>
+                </div>
+                <div>
+                    <span class="text-gray-400 block font-semibold">🏆 Máximo Ganador:</span>
+                    <strong id="modalCircuitWins" class="text-white text-sm">-</strong>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Reseña Histórica:</h4>
+                <p id="modalCircuitHistory" class="text-sm text-gray-300 leading-relaxed italic"></p>
+            </div>
+        </div>
     </div>
 
     <!-- Footer Inyectado Dinámicamente -->
