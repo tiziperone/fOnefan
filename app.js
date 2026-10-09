@@ -205,7 +205,7 @@ const COUNTRY_ES = {
   Indonesia:'Indonesia', Morocco:'Marruecos', Vietnam:'Vietnam', Ireland:'Irlanda',
   'New Zealand':'Nueva Zelanda', 'Czech Republic':'República Checa', 'Hong Kong':'Hong Kong',
   Thailand:'Tailandia', Chile:'Chile', Peru:'Perú', Uruguay:'Uruguay', Colombia:'Colombia',
-  Denmark:'Dinamarca', Poland:'Polonia', Rhodesia:'Rodesia', Ukraine:'Ucrania',
+  Denmark:'Dinamarca', Poland:'Polonia', Rhodesia:'Rodesia', Ucraine:'Ucrania',
   Pakistan:'Pakistán', Greece:'Grecia', Finland:'Finlandia', Yugoslavia:'Yugoslavia'
 };
 
@@ -275,7 +275,10 @@ const lastName = n => String(n).split(' ').pop();
 const fmtDate = iso => new Date(iso + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short' });
 const fmtDateY = iso => new Date(iso + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
 const drvName = d => `${d.givenName} ${d.familyName}`;
+
+// Próximo evento cuya carrera aún no ha ocurrido
 const nextRace = () => S.calendar.find(r => !r.done) || null;
+
 const teamColorByName = name => {
   const t = S.teams.find(x => x.name === name);
   return t ? t.color : '#888';
@@ -428,6 +431,9 @@ function parseCalendar(json) {
     sessions.push({ name: 'Carrera', when, tbc: !r.time });
     sessions.sort((a, b) => new Date(a.when) - new Date(b.when));
 
+    // Identificar la primera sesión del fin de semana (ej: P1) para la cuenta regresiva
+    const firstSessionWhen = sessions.length > 0 ? sessions[0].when : (local?.start ? `${local.start}T00:00:00` : when);
+
     return {
       round: +r.round,
       id: 'r' + r.round,
@@ -435,6 +441,7 @@ function parseCalendar(json) {
       dateLabel: local?.date || fmtDate(r.date),
       start: r.date,
       when,
+      firstSessionWhen,
       sprint: !!r.Sprint,
       flag: FLAGS[loc.country] || '🏁',
       circuit: r.Circuit.circuitName,
@@ -492,7 +499,9 @@ async function loadSeason() {
 function loadLocal() {
   S.calendar = CALENDAR.map(r => ({
     round: r.r, id: r.id, name: r.name, dateLabel: r.date, start: r.start,
-    when: r.start + 'T23:59:59', sprint: r.sprint, flag: r.flag,
+    when: r.start + 'T23:59:59',
+    firstSessionWhen: r.start + 'T00:00:00',
+    sprint: r.sprint, flag: r.flag,
     circuit: '', circuitId: null, circuitUrl: null, country: '', locality: '',
     lat: null, lon: null, place: '', sessions: [], done: r.done
   }));
@@ -1142,7 +1151,8 @@ function renderHome() {
   if (next) {
     $('#nextName').textContent = next.name;
     $('#nextDate').textContent = `${next.dateLabel} · ${next.sprint ? 'Formato Sprint' : 'Fin de semana estándar'}`;
-    startCountdown(next.when);
+    // Se inicia la cuenta regresiva apuntando al inicio de las prácticas (P1) o primera sesión
+    startCountdown(next.firstSessionWhen || next.when);
   } else {
     $('#nextName').textContent = 'Temporada finalizada';
     $('#nextDate').textContent = '';
@@ -2057,8 +2067,8 @@ if (drvSearchEl) {
 
 /* ============ INICIALIZACIÓN ============ */
 function renderAll() {
-  setupUserFooter();          // <--- Inyecta tu footer personalizado exacto
-  mergeCalendarIntoStandings(); // <--- Mantiene el calendario dentro de campeonato
+  setupUserFooter();          // Inyecta el footer personalizado
+  mergeCalendarIntoStandings(); // Mantiene el calendario dentro de campeonato
   renderHome();
   renderCalendar();
   renderStandings();
