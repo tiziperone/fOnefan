@@ -1,59 +1,47 @@
-# 🏎️ fOnefan — Plataforma de Información & Estrategia de Fórmula 1
+# 🏎️ fOnefan — Tu Centro de Control de Fórmula 1
 
-**fOnefan** es una aplicación web interactiva diseñada para fanáticos y entusiastas de la Fórmula 1. Reúne en un solo lugar la información en tiempo real de la **temporada actual**, estadísticas históricas, análisis de circuitos, simulador de campeonato, pilotos y escuderias.
-
----
-
-## 🌟 Características Principales
-
-### 🏁 1. Inicio & Próximo Gran Premio
-* **Cuenta Regresiva Dinámica:** Contador en tiempo real configurado hacia la **primera sesión del fin de semana (Práctica 1)**.
-* **Horarios Locales (ART):** Conversión automática de todas las sesiones de cada GP a la hora oficial de Argentina (`America/Argentina/Buenos_Aires`).
-* **Estado de la Temporada:** Resumen de carreras disputadas, pendientes y líder actual del mundial de pilotos.
-
-### 🏆 2. Campeonato & Calendario
-* **Pestañas Integradas:** Alterna fácilmente entre la tabla de posiciones (Pilotos y Constructores) y el cronograma del año.
-* **Formatos de Fin de Semana:** Identificación clara entre el formato tradicional y las carreras con **Sprint**.
-* **Resultados Detallados:** Modal dinámico con Top 10 de carrera, clasificación, sprint y estado del mundial post-carrera.
-
-### 🏎️ 3. Pilotos
-* **Parrilla Actual (2026):** Fichas técnicas de los 20 pilotos en activo con cascos vectoriales generados según los colores de cada escudería.
-* **Historial de la F1:** Buscador e historial desde 1950 hasta la actualidad con estadísticas de victorias, podios, poles y Grandes Premios.
-* **Salón de la Fama:** Listado de todos los campeones del mundo de la historia ordenados por número de títulos.
-
-### 🛡️ 4. Escuderías *(Próximamente / En Desarrollo)*
-* **Escuderías Actuales:** Monoplazas F1 vectorizados mediante SVG dinámico renderizados con la paleta de colores de cada equipo.
-* **Historial de Constructores:** Registro completo de marcas y constructores que han competido en la máxima categoría.
-* **Salón de la Fama de Constructores:** Ranking histórico de marcas ordenadas por Campeonatos Mundiales de Constructores.
-
-### 🎯 5. Simulador de Estrategia
-* **Calculadora de Campeonato:** Asigna posiciones estimadas a las carreras y sprints restantes.
-* **Proyección en Tiempo Real:** Actualización inmediata de la tabla de posiciones de pilotos y equipos según las combinaciones simuladas.
-* **Análisis de Opciones al Título:** Selección de un piloto favorito para evaluar la brecha de puntos y el rendimiento necesario por carrera.
-
-### 🗺️ 6. Circuitos & Récords
-* **Renderizado SVG:** Integración de trazados vectoriales interactivos para cada circuito.
-* **Ficha Técnica & Récords:** Vuelta rápida histórica, pilotos/escuderías más ganadores y registros de cada Gran Premio desde el año 2000 a la fecha.
-
-### 📚 7. Glosario & Términos de F1
-* Sección informativa interactiva sobre terminología técnica (*Undercut, Porpoising, overtake, ERS, Parc Fermé, Slipstream*, tipos de neumáticos, reglamentos técnicos y sanciones).
+**fOnefan** es una plataforma web creada por y para apasionados del automovilismo. Su objetivo es muy simple: darte toda la información de la **temporada actual de Fórmula 1**, datos históricos, mapas de circuitos y herramientas interactivas para que no te pierdas ni un solo detalle del campeonato.
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## 🌟 ¿Qué vas a encontrar en la plataforma?
 
-* **HTML5:** Estructura semántica adaptada a estándares accesibles.
-* **CSS3:** Diseño moderno con *Glassmorphism*, temas oscuros, animaciones clave y *Responsive Design*.
-* **JavaScript Vanilla (ES6+):** Lógica orientada a eventos, procesamiento asíncrono (`async/await`), manipulaciones del DOM y caching con `localStorage`.
-* **API REST:** Consumo de datos en vivo desde [Jolpica F1 API (Ergast Replacement)](https://api.jolpi.ca/ergast/f1).
-* **SVG Vectorial:** Ilustraciones dinámicas para cascos de pilotos, trazados de circuitos y monoplazas F1.
+### 🏁 1. Próximo Gran Premio y Cuenta Regresiva
+* **Inicio en vivo:** Un contador en tiempo real que te avisa exactamente cuánto falta para que arranque la primera práctica en pista.
+* **Horarios en tu zona:** Todos los horarios de las prácticas, clasificaciones y carreras adaptados automáticamente a la hora de Argentina.
+
+### 🏆 2. Campeonato y Calendario
+* **Tabla de Posiciones:** Consulta los puntos de los pilotos y de los equipos al instante.
+* **Calendario de Carreras:** Sigue el cronograma completo de la temporada e identifica qué fines de semana tienen carrera Sprint.
+* **Resultados al detalle:** Revisa quiénes quedaron en el Top 10, los tiempos de clasificación y los puntos repartidos tras cada fecha.
+
+### 🗺️ 3. Circuitos y Récords
+* **Mapas de las Pistas:** Visualiza la forma y el trazado exacto de cada circuito.
+* **Datos Históricos:** Descubre quién tiene el récord de vuelta rápida, las escuderías más ganadoras de cada pista y los ganadores desde el año 2000.
+
+### 🏎️ 4. Pilotos
+* **Parrilla 2026:** Fichas completas de todos los pilotos en competencia con sus cascos diseñados a medida con los colores de sus equipos.
+* **Buscador Histórico:** Un catálogo con los pilotos que han pasado por la categoría desde 1950 hasta hoy.
+* **Salón de la Fama:** Un rincón especial dedicado a las grandes leyendas que ganaron un título mundial.
+
+### 🛡️ 5. Escuderías
+* **Diseños Exclusivos:** Tarjetas con las ilustraciones de los autos de cada equipo usando sus colores representativos.
+* **Historia de Equipos:** Registro de las marcas y constructoras que han marcado época en las pistas.
+* **Campeones de Constructores:** Las escuderías más ganadoras de la historia ordenadas por copas del mundo.
+
+### 📚 6. Glosario de F1
+* Explicaciones sencillas para entender términos de carrera como *Undercut, Overtake, Pit Stop, Porpoising* y las reglas básicas sin complicaciones.
+  
+### 🎯 7. Simulador de Estrategia
+* **Calculadora de Campeón:** ¿Querés saber qué necesita tu piloto para salir campeón? Asigna puestos a las carreras que faltan y mira cómo cambia la tabla en tiempo real.
+
+
 
 ---
 
-## 🚀 Instalación y Uso Local
+## 👤 Creador
 
-No requiere de compiladores ni frameworks pesados para ejecutarse.
+Diseñado y desarrollado por **Tiziano Perone**.
 
-1. **Clonar el repositorio:**
-   ```bash
-   git clone [https://github.com/tu-usuario/fOnefan.git](https://github.com/tu-usuario/fOnefan.git)
+---
+*fOnefan es un proyecto independiente con fines recreativos e informativos. No está afiliado ni respaldado por la Formula 1.*
