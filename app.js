@@ -991,6 +991,12 @@ async function renderDrivers() {
   tools.style.display = drvTab === 'hist' ? 'flex' : 'none';
   document.querySelectorAll('#drvTabs .chip').forEach(c => c.classList.toggle('on', c.dataset.dt === drvTab));
 
+  if (drvTab === 'hof') {
+    status.textContent = 'Todos los pilotos que alguna vez ganaron un título mundial.';
+    renderHOF();
+    return;
+  }
+
   if (S.source === 'local') {
     grid.innerHTML = '';
     status.textContent = 'Los pilotos requieren conexión a la API.';
@@ -1617,7 +1623,7 @@ async function openCircuitDetail(id, src) {
         <div style="font-weight: 600; font-size: 15px;">${rec ? esc(rec.drv) : 'Sin datos'}</div>
         <div class="muted" style="font-size: 13px; margin-top: 4px;">${rec ? rec.season + ' · ' + esc(rec.team) : ''}</div>
       </div>
-      
+
       <div style="background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 14px; padding: 18px;">
         <span class="eyebrow" style="font-size: 10px;">Grandes Premios Disputados</span>
         <div style="font-family: var(--f-disp); font-size: 32px; font-weight: 900; margin: 6px 0; font-style: italic;">
@@ -1637,7 +1643,7 @@ async function openCircuitDetail(id, src) {
           </div>
         `).join('') : '<p class="muted">Sin datos</p>'}
       </div>
-      
+
       <div style="background: rgba(0,0,0,.3); border: 1px solid var(--line); border-radius: 14px; padding: 16px;">
         <span class="eyebrow" style="font-size: 11px; display: block; margin-bottom: 10px;">🛡️ Escuderías más ganadoras</span>
         ${w && w.topTeams.length ? w.topTeams.map(([name, count], i) => `
@@ -1653,7 +1659,7 @@ async function openCircuitDetail(id, src) {
   $('#mBody').innerHTML = `
     <span class="eyebrow">${flag} ${esc(cty(country))}</span>
     <h3 class="display m-title">${esc(name)}</h3>
-    
+
     <div class="m-grid">
       <div class="svg-box track">${trackBox}</div>
       <div class="box">
@@ -1692,9 +1698,8 @@ async function openCircuitDetail(id, src) {
 
 /* ============ SALÓN DE LA FAMA ============ */
 function renderHOF() {
-  const grid = $('#hofGrid');
+  const grid = $('#drvGrid');
   if (!grid) return;
-  grid.classList.toggle('hof', true);
 
   const map = {};
   S.champs.forEach(c => {
@@ -2059,7 +2064,6 @@ function renderAll() {
   renderStandings();
   ensureCircTabs();
   renderCircuits();
-  renderHOF();
   renderSim();
 }
 
@@ -2073,9 +2077,11 @@ function renderAll() {
   }
   renderAll();
   if (S.source === 'api') {
-    loadAllChamps(() => renderHOF()).catch(err => console.warn('Campeones:', err));
+    loadAllChamps(() => {
+      if (drvTab === 'hof') renderHOF();
+    }).catch(err => console.warn('Campeones:', err));
   } else {
     S.champsDone = true;
-    renderHOF();
+    if (drvTab === 'hof') renderHOF();
   }
 })();
