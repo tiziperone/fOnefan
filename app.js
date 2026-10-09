@@ -1413,12 +1413,6 @@ const openRacesList = () => S.calendar
 // Límite de nodos de la búsqueda: evita que la página se trabe en casos muy complejos
 const SEARCH_LIMIT = 300000;
 
-// Busca un reparto de puntos que cumpla los topes de cada rival.
-// Cada sesión (carrera principal o Sprint) necesita sus puestos de puntos (P2..P10 o S2..S8),
-// y cada puesto va a un piloto distinto dentro de esa sesión.
-// Al asignar, se prueba primero el rival más cercano al candidato (menor tope restante),
-// así los pilotos con chances reales aparecen sumando cuando el margen lo permite.
-// Si no hay reparto posible, devuelve null.
 function solveSlots(slots, others, cap) {
   const capL = { ...cap };
   const used = {};
@@ -1448,44 +1442,133 @@ function solveSlots(slots, others, cap) {
 }
 
 // Escenario de referencia para que un piloto sea campeón.
-// Gana todas las carreras que quedan (su mejor caso). Los puntos restantes se reparten
-// entre los demás, y ninguno puede terminar con más puntos que el total final del candidato.
-// Un empate se considera posible. Devuelve null si ese reparto no es posible.
+// Para cada sesión (carrera o sprint), calcula cuál es el PEOR puesto que puede 
+// obtener el candidato asumiendo que gana todas las demás sesiones restantes.
+// Devuelve null si no puede ser campeón ni sumando el máximo de puntos.
 function scenarioFor(id, drivers, open) {
   const me = drivers.find(d => d.id === id);
   if (!me) return null;
-  const final = me.pts + open.reduce((s, r) => s + PTS[0] + (r.sprint ? SPR[0] : 0), 0);
+
+  // Máximo posible asumiendo que gana todo lo que queda
+  const baseMaxPts = me.pts + open.reduce((s, r) => s + PTS[0] + (r.sprint ? SPR[0] : 0), 0);
   const others = drivers.filter(d => d.id !== id);
 
-  const cap = {};
+  // Verificación temprana: ¿Le alcanza ganando todo?
+  const cap0 = {};
+  let canWin = true;
   for (const o of others) {
-    cap[o.id] = final - o.pts;          // puntos máximos que puede sumar cada rival
-    if (cap[o.id] < 0) return null;     // ya supera el total final de este piloto
+    cap0[o.id] = baseMaxPts - o.pts;
+    if (cap0[o.id] < 0) { canWin = false; break; }
   }
-  const cap0 = { ...cap };
+  if (!canWin) return null;
 
-  // Lista de sesiones con sus puestos de puntos
-  const slots = [];
+  const roundsResult = [];
+
   for (const r of open) {
+    const roundData = { race: r, mainPos: {}, sprPos: {}, candMain: '', candSpr: '' };
+
+    // 1) Testear peor escenario en el Sprint (si hay) asumiendo que gana lo demás
     if (r.sprint) {
-      SPR.slice(1).forEach((v, k) => slots.push({ sess: r.id + '-s', v, pos: k + 2 }));
+      let bestSpr = null, bestSprAssign = null;
+      // Probamos desde fuera de puntos (-1) hasta S1 (0)
+      const testIndices = [-1, 7, 6, 5, 4, 3, 2, 1, 0];
+      
+      for (const sIdx of testIndices) {
+        const candPts = sIdx === -1 ? 0 : SPR[sIdx];
+        const testFinal = baseMaxPts - SPR[0] + candPts; // Ajuste de sus puntos finales
+
+        const cap = {};
+        let valid = true;
+        for (const o of others) {
+          cap[o.id] = testFinal - o.pts;
+          if (cap[o.id] < 0) { valid = false; break; }
+        }
+        if (!valid) continue;
+
+        // Construir slots disponibles para los rivales
+        const slots = [];
+        for (const or of open) {
+          if (or.id === r.id) {
+            // En esta ronda, los rivales toman todo el sprint excepto el puesto del candidato
+            SPR.forEach((v, k) => { if (k !== sIdx) slots.push({ sess: or.id + '-s', v, pos: k + 1 }); });
+            // El candidato gana la carrera principal de esta ronda
+            PTS.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-m', v, pos: k + 2 }));
+          } else {
+            // En el resto de rondas, el candidato gana todo (dejando del P2/S2 para abajo a rivales)
+            if (or.sprint) SPR.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-s', v, pos: k + 2 }));
+            PTS.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-m', v, pos: k + 2 }));
+          }
+        }
+        
+        const assign = solveSlots(slots, others, cap);
+        if (assign) {
+          bestSpr = sIdx;
+          bestSprAssign = { assign, slots };
+          break; // Encontramos el peor puesto posible
+        }
+      }
+      
+      roundData.candSpr = bestSpr === -1 ? 'fuera de puntos' : `S${bestSpr + 1}`;
+      if (bestSprAssign) {
+        bestSprAssign.slots.forEach((s, i) => {
+          if (s.sess === r.id + '-s') roundData.sprPos[bestSprAssign.assign[i]] = s.pos;
+        });
+      }
     }
-    PTS.slice(1).forEach((v, k) => slots.push({ sess: r.id + '-m', v, pos: k + 2 }));
+
+    // 2) Testear peor escenario en la Carrera Principal asumiendo que gana lo demás
+    let bestMain = null, bestMainAssign = null;
+    // Probamos desde fuera de puntos (-1) hasta P1 (0)
+    const testIndicesMain = [-1, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+    
+    for (const mIdx of testIndicesMain) {
+      const candPts = mIdx === -1 ? 0 : PTS[mIdx];
+      const testFinal = baseMaxPts - PTS[0] + candPts;
+
+      const cap = {};
+      let valid = true;
+      for (const o of others) {
+        cap[o.id] = testFinal - o.pts;
+        if (cap[o.id] < 0) { valid = false; break; }
+      }
+      if (!valid) continue;
+
+      const slots = [];
+      for (const or of open) {
+        if (or.id === r.id) {
+          // El candidato gana el Sprint de esta ronda (si hay)
+          if (or.sprint) SPR.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-s', v, pos: k + 2 }));
+          // En esta carrera principal, los rivales toman todo excepto el puesto del candidato
+          PTS.forEach((v, k) => { if (k !== mIdx) slots.push({ sess: or.id + '-m', v, pos: k + 1 }); });
+        } else {
+          // En el resto de rondas, el candidato gana todo
+          if (or.sprint) SPR.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-s', v, pos: k + 2 }));
+          PTS.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-m', v, pos: k + 2 }));
+        }
+      }
+      
+      const assign = solveSlots(slots, others, cap);
+      if (assign) {
+        bestMain = mIdx;
+        bestMainAssign = { assign, slots };
+        break; // Encontramos el peor puesto posible
+      }
+    }
+    
+    // Por si el solver corta por límite de nodos sin éxito
+    if (bestMain === null) return null; 
+
+    roundData.candMain = bestMain === -1 ? 'fuera de puntos' : `P${bestMain + 1}`;
+    if (bestMainAssign) {
+      bestMainAssign.slots.forEach((s, i) => {
+        if (s.sess === r.id + '-m') roundData.mainPos[bestMainAssign.assign[i]] = s.pos;
+      });
+    }
+    
+    roundsResult.push(roundData);
   }
 
-  const assign = solveSlots(slots, others, cap);
-  if (!assign) return null;
-
-  const rounds = open.map(r => ({ race: r, mainPos: {}, sprPos: {} }));
-  const byId = Object.fromEntries(rounds.map(x => [x.race.id, x]));
-  slots.forEach((s, i) => {
-    const key = s.sess.slice(0, -2);
-    const rr = byId[key];
-    if (s.sess.endsWith('-s')) rr.sprPos[assign[i]] = s.pos;
-    else rr.mainPos[assign[i]] = s.pos;
-  });
-
-  return { final, cap0, rounds };
+  return { final: baseMaxPts, cap0: cap0, rounds: roundsResult };
 }
 
 function contenderData() {
@@ -1588,7 +1671,6 @@ function renderContenders() {
 }
 
 // Modal con el escenario carrera por carrera para que un piloto sea campeón.
-// Muestra solo al piloto elegido y a los contendientes que todavía tienen chances.
 function openChampPath(id) {
   const { drivers, open, cands, scen } = contenderData();
   const d = drivers.find(x => x.id === id);
@@ -1600,7 +1682,7 @@ function openChampPath(id) {
   const byId = Object.fromEntries(drivers.map(x => [x.id, x]));
   const leader = drivers[0];
   const col = teamColorByName(d.teamName);
-  const maxPossible = PTS[1] * N + SPR[1] * sprints;   // P2 en todas las carreras y S2 en todos los Sprints
+  const maxPossible = PTS[1] * N + SPR[1] * sprints;
 
   // Contendientes que siguen con chances, sin el piloto elegido
   const rivalIds = cands.map(c => c.id).filter(x => x !== id);
@@ -1609,7 +1691,7 @@ function openChampPath(id) {
     ? (drivers[1] ? `Lidera por ${d.pts - drivers[1].pts} pts` : 'Lidera')
     : `−${leader.pts - d.pts} pts vs ${lastName(leader.name)}`;
 
-  const roundsHTML = sc.rounds.map(({ race, mainPos, sprPos }) => {
+  const roundsHTML = sc.rounds.map(({ race, mainPos, sprPos, candMain, candSpr }) => {
     const rivals = rivalIds.map(rid => {
       const o = byId[rid];
       const main = mainPos[rid] ? `P${mainPos[rid]}` : 'fuera de puntos';
@@ -1618,13 +1700,18 @@ function openChampPath(id) {
         : '';
       return `<span class="tpill" style="--c:${teamColorByName(o.teamName)}">${esc(lastName(o.name))} · ${main}${spr}</span>`;
     }).join('');
+    
+    // Generación dinámica del puesto del candidato en el DOM
+    const cMainStr = candMain;
+    const cSprStr = race.sprint ? (candSpr.includes('fuera') ? ' · Sprint fuera de puntos' : ` · ${candSpr}`) : '';
+
     return `
       <div class="pl-row">
         <span class="pl-k">R${String(race.round).padStart(2, '0')}</span>
         <div class="pl-t">
           <b>${esc(raceEs(race.name))}${race.sprint ? ' · Sprint' : ''}</b>
           <div class="tpills">
-            <span class="tpill now" style="--c:${col}">${esc(lastName(d.name))} · P1${race.sprint ? ' · S1' : ''}</span>
+            <span class="tpill now" style="--c:${col}">${esc(lastName(d.name))} · ${cMainStr}${cSprStr}</span>
             ${rivals || '<span class="muted">Ningún otro contendiente tiene chances en esta carrera</span>'}
           </div>
         </div>
@@ -1655,15 +1742,15 @@ function openChampPath(id) {
     </div>
 
     <div class="box" style="margin-top:18px">
-      <h4>🏁 Escenario carrera por carrera</h4>
-      <p class="muted note-s" style="margin:0 0 12px">${esc(lastName(d.name))} gana todas las carreras que quedan, que es su mejor caso. Abajo aparecen solo los contendientes que todavía tienen chances, con el puesto donde tienen que terminar. Este es un escenario posible entre varios; un empate se considera posible.</p>
+      <h4>🏁 Escenario límite sesión a sesión</h4>
+      <p class="muted note-s" style="margin:0 0 12px">Mostrando el <b>peor puesto necesario en cada sesión</b> (asumiendo que gana las demás) con el que ${esc(lastName(d.name))} aseguraría el título matemáticamente. Los contendientes muestran su posición en ese reparto límite.</p>
       <div class="pl-list">${roundsHTML}</div>
     </div>
 
     <div class="box" style="margin-top:18px">
       <h4>🎯 Límite de puntos de los rivales</h4>
       <div class="pl-others">${topes || '<p class="muted">Ningún rival tiene un límite ajustado: con los puntos que quedan no pueden superarlo.</p>'}</div>
-      <p class="muted note-s">Si un rival supera ese límite, ${esc(lastName(d.name))} deja de ser campeón. Se muestran los 8 rivales más ajustados.</p>
+      <p class="muted note-s">Si un rival supera ese límite en la temporada, ${esc(lastName(d.name))} deja de ser campeón. Se muestran los 8 rivales más ajustados.</p>
     </div>`);
 }
 
@@ -1962,10 +2049,10 @@ async function openCircuitDetail(id, src) {
         ${lineRow('Localidad', locality || '—')}
         ${lineRow('País', cty(country))}
         ${isVig
-          ? lineRow('Ronda 2026', `${info.round} · ${info.dateLabel}`)
+          ? lineRow('Ronda 2026', `${info.round} ·${info.dateLabel}`)
           : lineRow('Estado', 'Ya no forma parte del calendario de F1')}
         ${lineRow('Primera carrera', firstSeason || '—')}
-        ${w ? lineRow('Última victoria', `${w.lastSeason} · ${w.lastWinner}`) : ''}
+        ${w ? lineRow('Última victoria', `${w.lastSeason} ·${w.lastWinner}`) : ''}
       </div>
     </div>
 
@@ -2044,7 +2131,7 @@ function openChampDriver(id) {
     </div>
     <div class="box" style="margin-top:18px">
       <h4>🏆 Temporadas campeonas</h4>
-      <div class="yrs">${list.map(t => `<span class="yr" data-season="${t.season}">${t.season} · ${esc(teamFull(t.team))}</span>`).join('')}</div>
+      <div class="yrs">${list.map(t => `<span class="yr" data-season="${t.season}">${t.season} ·${esc(teamFull(t.team))}</span>`).join('')}</div>
     </div>`);
 }
 
@@ -2104,7 +2191,7 @@ function seasonHTML(c, d) {
         return `<b>Ronda ${r.round} · ${esc(raceEs(r.name))}</b><br>
           <span class="muted">${esc(fmtDateY(r.date))} · ${faltan === 0
             ? 'Se consagró en la última carrera de la temporada'
-            : `Faltaban ${faltan} ${faltan === 1 ? 'carrera' : 'carreras'} para el final`}</span>`;
+            : `Faltaban ${faltan}${faltan === 1 ? 'carrera' : 'carreras'} para el final`}</span>`;
       })();
 
   const rowsHTML = d.rows.map((r, i) => {
