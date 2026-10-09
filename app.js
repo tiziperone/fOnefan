@@ -205,7 +205,7 @@ const COUNTRY_ES = {
   Indonesia:'Indonesia', Morocco:'Marruecos', Vietnam:'Vietnam', Ireland:'Irlanda',
   'New Zealand':'Nueva Zelanda', 'Czech Republic':'República Checa', 'Hong Kong':'Hong Kong',
   Thailand:'Tailandia', Chile:'Chile', Peru:'Perú', Uruguay:'Uruguay', Colombia:'Colombia',
-  Denmark:'Dinamarca', Poland:'Polonia', Rhodesia:'Rodesia', Ucraine:'Ucrania',
+  Denmark:'Dinamarca', Poland:'Polonia', Rhodesia:'Rodesia', Ukraine:'Ucrania',
   Pakistan:'Pakistán', Greece:'Grecia', Finland:'Finlandia', Yugoslavia:'Yugoslavia'
 };
 
@@ -244,6 +244,29 @@ const SESSION_NAMES = {
   Qualifying: 'Clasificación'
 };
 
+const TYRE = {
+  SOFT: 'Blando (rojo)', MEDIUM: 'Medio (amarillo)', HARD: 'Duro (blanco)',
+  INTERMEDIATE: 'Intermedio (verde)', WET: 'Mojado (azul)'
+};
+
+const ALIAS = {
+  montmelo: 'barcelona', barcelonacatalunya: 'barcelona', catalunya: 'barcelona', circuitdebarcelonacatalunya: 'barcelona',
+  spielberg: 'austria', redbullring: 'austria',
+  spafrancorchamps: 'spa', circuitdespafrancorchamps: 'spa',
+  budapest: 'hungaroring',
+  sopaulo: 'saopaulo', interlagos: 'saopaulo', autodromojosecarlospace: 'saopaulo',
+  yasisland: 'abudhabi', yasmarina: 'abudhabi', yasmarinacircuit: 'abudhabi',
+  marinabay: 'singapore', marinabaystreetcircuit: 'singapore',
+  montecarlo: 'monaco', montecarlocircuit: 'monaco',
+  mexicocity: 'mexico', hermanosrodriguez: 'mexico', autodromohermanosrodriguez: 'mexico',
+  miamigardens: 'miami', miamiinternationalautodrome: 'miami',
+  sakhir: 'bahrain', bahraininternationalcircuit: 'bahrain',
+  madring: 'madrid', ifema: 'madrid',
+  lusail: 'qatar', losailinternationalcircuit: 'qatar',
+  gillesvilleneuve: 'montreal', circuitgillesvilleneuve: 'montreal',
+  sepanginternationalcircuit: 'sepang'
+};
+
 const S = {
   source: 'api',
   calendar: [],
@@ -275,10 +298,7 @@ const lastName = n => String(n).split(' ').pop();
 const fmtDate = iso => new Date(iso + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short' });
 const fmtDateY = iso => new Date(iso + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
 const drvName = d => `${d.givenName} ${d.familyName}`;
-
-// Próximo evento cuya carrera aún no ha ocurrido
 const nextRace = () => S.calendar.find(r => !r.done) || null;
-
 const teamColorByName = name => {
   const t = S.teams.find(x => x.name === name);
   return t ? t.color : '#888';
@@ -310,14 +330,10 @@ function ageOn(dob, ref) {
   return a;
 }
 
-/* ============ INYECCIÓN DE TU FOOTER PERSONALIZADO ============ */
+/* ============ FOOTER ============ */
 function setupUserFooter() {
   let existingFooter = document.querySelector('footer');
-  const footerHTML = `
-    <footer class="border-t border-white/5 py-6 text-center text-xs text-gray-500 bg-[#0a0a0c]/80 mt-16">
-        <p>fOnefan • Plataforma de información sobre Fórmula 1</p>
-    </footer>`;
-
+  const footerHTML = `<footer><p>fOnefan • Plataforma de información sobre Fórmula 1</p></footer>`;
   if (existingFooter) {
     existingFooter.outerHTML = footerHTML;
   } else {
@@ -431,7 +447,6 @@ function parseCalendar(json) {
     sessions.push({ name: 'Carrera', when, tbc: !r.time });
     sessions.sort((a, b) => new Date(a.when) - new Date(b.when));
 
-    // Identificar la primera sesión del fin de semana (ej: P1) para la cuenta regresiva
     const firstSessionWhen = sessions.length > 0 ? sessions[0].when : (local?.start ? `${local.start}T00:00:00` : when);
 
     return {
@@ -1151,7 +1166,6 @@ function renderHome() {
   if (next) {
     $('#nextName').textContent = next.name;
     $('#nextDate').textContent = `${next.dateLabel} · ${next.sprint ? 'Formato Sprint' : 'Fin de semana estándar'}`;
-    // Se inicia la cuenta regresiva apuntando al inicio de las prácticas (P1) o primera sesión
     startCountdown(next.firstSessionWhen || next.when);
   } else {
     $('#nextName').textContent = 'Temporada finalizada';
@@ -1380,6 +1394,277 @@ function renderStandings() {
         <div class="bar"><i style="width:${t.pts / maxT * 100}%;background:${t.color}"></i></div></div>
       <span class="pts">${t.pts}</span>
     </div>`).join('');
+
+  renderContenders();
+}
+
+/* ============ CONTENDIENTES AL TÍTULO ============ */
+// Una carrera simulada en el simulador cuenta como decidida
+const simTouched = id => {
+  const r = S.sim[id];
+  return !!r && (r.race.some(Boolean) || r.sprint.some(Boolean));
+};
+
+// Carreras que todavía pueden cambiar el campeonato
+const openRacesList = () => S.calendar
+  .filter(r => !r.done && !simTouched(r.id))
+  .map(r => ({ id: r.id, name: r.name, round: r.round, sprint: r.sprint }));
+
+// Límite de nodos de la búsqueda: evita que la página se trabe en casos muy complejos
+const SEARCH_LIMIT = 300000;
+
+// Busca un reparto de puntos que cumpla los topes de cada rival.
+// Cada sesión (carrera principal o Sprint) necesita sus puestos de puntos (P2..P10 o S2..S8),
+// y cada puesto va a un piloto distinto dentro de esa sesión.
+// Al asignar, se prueba primero el rival más cercano al candidato (menor tope restante),
+// así los pilotos con chances reales aparecen sumando cuando el margen lo permite.
+// Si no hay reparto posible, devuelve null.
+function solveSlots(slots, others, cap) {
+  const capL = { ...cap };
+  const used = {};
+  const assign = new Array(slots.length);
+  let nodes = 0;
+
+  const dfs = i => {
+    if (i === slots.length) return true;
+    if (++nodes > SEARCH_LIMIT) return false;
+    const s = slots[i];
+    const u = (used[s.sess] ??= new Set());
+    const opts = others
+      .filter(o => !u.has(o.id) && capL[o.id] >= s.v)
+      .sort((a, b) => (capL[a.id] - capL[b.id]) || (b.pts - a.pts));
+    for (const o of opts) {
+      capL[o.id] -= s.v;
+      u.add(o.id);
+      assign[i] = o.id;
+      if (dfs(i + 1)) return true;
+      capL[o.id] += s.v;
+      u.delete(o.id);
+    }
+    return false;
+  };
+
+  return dfs(0) ? assign : null;
+}
+
+// Escenario de referencia para que un piloto sea campeón.
+// Gana todas las carreras que quedan (su mejor caso). Los puntos restantes se reparten
+// entre los demás, y ninguno puede terminar con más puntos que el total final del candidato.
+// Un empate se considera posible. Devuelve null si ese reparto no es posible.
+function scenarioFor(id, drivers, open) {
+  const me = drivers.find(d => d.id === id);
+  if (!me) return null;
+  const final = me.pts + open.reduce((s, r) => s + PTS[0] + (r.sprint ? SPR[0] : 0), 0);
+  const others = drivers.filter(d => d.id !== id);
+
+  const cap = {};
+  for (const o of others) {
+    cap[o.id] = final - o.pts;          // puntos máximos que puede sumar cada rival
+    if (cap[o.id] < 0) return null;     // ya supera el total final de este piloto
+  }
+  const cap0 = { ...cap };
+
+  // Lista de sesiones con sus puestos de puntos
+  const slots = [];
+  for (const r of open) {
+    if (r.sprint) {
+      SPR.slice(1).forEach((v, k) => slots.push({ sess: r.id + '-s', v, pos: k + 2 }));
+    }
+    PTS.slice(1).forEach((v, k) => slots.push({ sess: r.id + '-m', v, pos: k + 2 }));
+  }
+
+  const assign = solveSlots(slots, others, cap);
+  if (!assign) return null;
+
+  const rounds = open.map(r => ({ race: r, mainPos: {}, sprPos: {} }));
+  const byId = Object.fromEntries(rounds.map(x => [x.race.id, x]));
+  slots.forEach((s, i) => {
+    const key = s.sess.slice(0, -2);
+    const rr = byId[key];
+    if (s.sess.endsWith('-s')) rr.sprPos[assign[i]] = s.pos;
+    else rr.mainPos[assign[i]] = s.pos;
+  });
+
+  return { final, cap0, rounds };
+}
+
+function contenderData() {
+  const { drivers } = standings(S.sim);
+  const leader = drivers[0];
+  const open = openRacesList();
+  const pool = open.reduce((s, r) => s + PTS[0] + (r.sprint ? SPR[0] : 0), 0);
+
+  const scen = {};
+  drivers.forEach(d => {
+    const sc = scenarioFor(d.id, drivers, open);
+    if (sc) scen[d.id] = sc;
+  });
+  const cands = drivers
+    .filter(d => scen[d.id])
+    .map(d => ({ ...d, max: d.pts + pool }));
+
+  return { drivers, leader, open, pool, cands, scen };
+}
+
+function ensureContendBox() {
+  let box = $('#contenders');
+  if (box) return box;
+  box = document.createElement('div');
+  box.id = 'contenders';
+  box.className = 'glass contend';
+  const teamPanel = $('#teamTable')?.parentElement;
+  if (teamPanel && teamPanel.parentElement) {
+    const side = document.createElement('div');
+    side.className = 'side';
+    teamPanel.parentElement.replaceChild(side, teamPanel);
+    side.appendChild(teamPanel);
+    side.appendChild(box);
+  } else {
+    ($('#champ-pos') || $('#v-standings')).appendChild(box);
+  }
+  return box;
+}
+
+function renderContenders() {
+  if (S.source === 'local') {
+    const b = $('#contenders');
+    if (b) b.style.display = 'none';
+    return;
+  }
+  const box = ensureContendBox();
+  box.style.display = '';
+
+  const { drivers, leader, open, pool, cands } = contenderData();
+  const N = open.length;
+
+  const head = `
+    <div class="ct-head">
+      <span class="eyebrow">Matemática del título</span>
+      <h3 class="display">Pilotos con chances</h3>
+      <p class="muted">${N
+        ? `Quedan ${N} ${N === 1 ? 'carrera' : 'carreras'} · hasta ${pool} pts por sumar`
+        : 'No quedan carreras por disputar'}</p>
+    </div>`;
+
+  if (!N) {
+    box.innerHTML = `${head}
+      <div class="ct-decided">
+        <span class="ct-lead">Campeón</span>
+        <b>${esc(leader.name)}</b>
+        <span class="muted">${leader.pts} pts · ${esc(teamFull(leader.teamName))}</span>
+      </div>`;
+    return;
+  }
+
+  const top = Math.max(leader.pts, ...cands.map(c => c.max), 1);
+
+  const cards = cands.map((d, i) => {
+    const col = teamColorByName(d.teamName);
+    const gap = leader.pts - d.pts;
+    const now = d.pts / top * 100;
+    const potW = (d.max - d.pts) / top * 100;
+    const isLead = d.id === leader.id;
+    const meta = isLead ? '<span>Lidera el campeonato</span>' : `<span>Vs líder −${gap}</span>`;
+    return `
+    <article class="glass ct-card" data-ct-drv="${esc(d.id)}" tabindex="0" role="button" style="--c:${col};animation-delay:${i * 50}ms">
+      <div class="ct-row">
+        <span class="ct-pos">P${i + 1}</span>
+        <div class="ct-info">
+          <h3>${esc(d.name)}</h3>
+          <p class="dteam"><span class="dot" style="background:${col}"></span>${esc(teamFull(d.teamName))}</p>
+        </div>
+        <div class="ct-pts"><b>${d.pts}</b><span>pts</span></div>
+      </div>
+      <div class="ct-bar">
+        <i class="now" style="width:${now.toFixed(2)}%"></i>
+        <i class="pot" style="left:${now.toFixed(2)}%;width:${potW.toFixed(2)}%"></i>
+      </div>
+      <div class="ct-meta">${meta}<span>Máximo ${d.max}</span></div>
+      <div class="ct-cta"><span>${isLead ? 'Ver cómo mantenerse campeón' : 'Ver cómo salir campeón'}</span><i>→</i></div>
+    </article>`;
+  }).join('');
+
+  box.innerHTML = `${head}<div class="ct-list">${cards}</div>`;
+}
+
+// Modal con el escenario carrera por carrera para que un piloto sea campeón.
+// Muestra solo al piloto elegido y a los contendientes que todavía tienen chances.
+function openChampPath(id) {
+  const { drivers, open, cands, scen } = contenderData();
+  const d = drivers.find(x => x.id === id);
+  const sc = scen[id];
+  if (!d || !sc || !open.length) return;
+
+  const N = open.length;
+  const sprints = open.filter(r => r.sprint).length;
+  const byId = Object.fromEntries(drivers.map(x => [x.id, x]));
+  const leader = drivers[0];
+  const col = teamColorByName(d.teamName);
+  const maxPossible = PTS[1] * N + SPR[1] * sprints;   // P2 en todas las carreras y S2 en todos los Sprints
+
+  // Contendientes que siguen con chances, sin el piloto elegido
+  const rivalIds = cands.map(c => c.id).filter(x => x !== id);
+
+  const margin = d.id === leader.id
+    ? (drivers[1] ? `Lidera por ${d.pts - drivers[1].pts} pts` : 'Lidera')
+    : `−${leader.pts - d.pts} pts vs ${lastName(leader.name)}`;
+
+  const roundsHTML = sc.rounds.map(({ race, mainPos, sprPos }) => {
+    const rivals = rivalIds.map(rid => {
+      const o = byId[rid];
+      const main = mainPos[rid] ? `P${mainPos[rid]}` : 'fuera de puntos';
+      const spr = race.sprint
+        ? (sprPos[rid] ? ` · S${sprPos[rid]}` : ' · Sprint fuera de puntos')
+        : '';
+      return `<span class="tpill" style="--c:${teamColorByName(o.teamName)}">${esc(lastName(o.name))} · ${main}${spr}</span>`;
+    }).join('');
+    return `
+      <div class="pl-row">
+        <span class="pl-k">R${String(race.round).padStart(2, '0')}</span>
+        <div class="pl-t">
+          <b>${esc(raceEs(race.name))}${race.sprint ? ' · Sprint' : ''}</b>
+          <div class="tpills">
+            <span class="tpill now" style="--c:${col}">${esc(lastName(d.name))} · P1${race.sprint ? ' · S1' : ''}</span>
+            ${rivals || '<span class="muted">Ningún otro contendiente tiene chances en esta carrera</span>'}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const topes = Object.entries(sc.cap0)
+    .filter(([rid, c]) => rid !== id && c < maxPossible)
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, 8)
+    .map(([rid, c]) => {
+      const o = byId[rid];
+      return `
+        <div class="pl-other">
+          <span><span class="dot" style="background:${teamColorByName(o.teamName)}"></span>${esc(o.name)}</span>
+          <strong>puede sumar como máximo ${c} pts más</strong>
+        </div>`;
+    }).join('');
+
+  openModal(`
+    <span class="eyebrow">Camino al título · ${SEASON}</span>
+    <h3 class="display m-title">${esc(d.name)}</h3>
+    <div class="m-grid">
+      <div class="stat"><span>Puntos actuales</span><strong>${d.pts}</strong></div>
+      <div class="stat"><span>Máximo posible</span><strong>${sc.final} pts</strong></div>
+      <div class="stat"><span>Frente al líder</span><strong>${esc(margin)}</strong></div>
+      <div class="stat"><span>Carreras que quedan</span><strong>${N}${sprints ? ` · ${sprints} con Sprint` : ''}</strong></div>
+    </div>
+
+    <div class="box" style="margin-top:18px">
+      <h4>🏁 Escenario carrera por carrera</h4>
+      <p class="muted note-s" style="margin:0 0 12px">${esc(lastName(d.name))} gana todas las carreras que quedan, que es su mejor caso. Abajo aparecen solo los contendientes que todavía tienen chances, con el puesto donde tienen que terminar. Este es un escenario posible entre varios; un empate se considera posible.</p>
+      <div class="pl-list">${roundsHTML}</div>
+    </div>
+
+    <div class="box" style="margin-top:18px">
+      <h4>🎯 Límite de puntos de los rivales</h4>
+      <div class="pl-others">${topes || '<p class="muted">Ningún rival tiene un límite ajustado: con los puntos que quedan no pueden superarlo.</p>'}</div>
+      <p class="muted note-s">Si un rival supera ese límite, ${esc(lastName(d.name))} deja de ser campeón. Se muestran los 8 rivales más ajustados.</p>
+    </div>`);
 }
 
 /* ============ TRAZADOS ============ */
@@ -1565,10 +1850,10 @@ function buildCircuitHistory(wins, poles) {
     wins.MRData.RaceTable.Races.forEach(r => {
       const year = +r.season;
       if (year >= 2000) {
-        history[year] = { 
-          year, 
-          winner: drvName(r.Results[0].Driver), 
-          team: r.Results[0].Constructor.name 
+        history[year] = {
+          year,
+          winner: drvName(r.Results[0].Driver),
+          team: r.Results[0].Constructor.name
         };
       }
     });
@@ -1677,10 +1962,10 @@ async function openCircuitDetail(id, src) {
         ${lineRow('Localidad', locality || '—')}
         ${lineRow('País', cty(country))}
         ${isVig
-          ? lineRow('Ronda 2026', `${info.round} ·${info.dateLabel}`)
+          ? lineRow('Ronda 2026', `${info.round} · ${info.dateLabel}`)
           : lineRow('Estado', 'Ya no forma parte del calendario de F1')}
         ${lineRow('Primera carrera', firstSeason || '—')}
-        ${w ? lineRow('Última victoria', `${w.lastSeason} ·${w.lastWinner}`) : ''}
+        ${w ? lineRow('Última victoria', `${w.lastSeason} · ${w.lastWinner}`) : ''}
       </div>
     </div>
 
@@ -1754,12 +2039,12 @@ function openChampDriver(id) {
       <div style="display:grid;gap:12px;align-content:start">
         <div class="stat"><span>Primer título</span><strong>${list[0].season}</strong></div>
         <div class="stat"><span>Último título</span><strong>${list[list.length - 1].season}</strong></div>
-        <div class="stat"><span>Escuderías</span><strong>${teams.map(esc).join(' · ')}</strong></div>
+        <div class="stat"><span>Escuderías</span><strong>${teams.map(t => esc(teamFull(t))).join(' · ')}</strong></div>
       </div>
     </div>
     <div class="box" style="margin-top:18px">
       <h4>🏆 Temporadas campeonas</h4>
-      <div class="yrs">${list.map(t => `<span class="yr" data-season="${t.season}">${t.season} ·${esc(t.team)}</span>`).join('')}</div>
+      <div class="yrs">${list.map(t => `<span class="yr" data-season="${t.season}">${t.season} · ${esc(teamFull(t.team))}</span>`).join('')}</div>
     </div>`);
 }
 
@@ -1819,7 +2104,7 @@ function seasonHTML(c, d) {
         return `<b>Ronda ${r.round} · ${esc(raceEs(r.name))}</b><br>
           <span class="muted">${esc(fmtDateY(r.date))} · ${faltan === 0
             ? 'Se consagró en la última carrera de la temporada'
-            : `Faltaban ${faltan}${faltan === 1 ? 'carrera' : 'carreras'} para el final`}</span>`;
+            : `Faltaban ${faltan} ${faltan === 1 ? 'carrera' : 'carreras'} para el final`}</span>`;
       })();
 
   const rowsHTML = d.rows.map((r, i) => {
@@ -1842,7 +2127,7 @@ function seasonHTML(c, d) {
   return `
     <span class="eyebrow">Temporada ${c.season} · Campeón del mundo</span>
     <h3 class="display m-title">${esc(c.name)}</h3>
-    <span class="sea-team"><span class="dot" style="background:${color}"></span>${esc(c.team)}</span>
+    <span class="sea-team"><span class="dot" style="background:${color}"></span>${esc(teamFull(c.team))}</span>
 
     <div class="hero-stats">
       <div class="hs"><b>${d.champPts}</b><span>Puntos</span></div>
@@ -1959,6 +2244,9 @@ document.addEventListener('click', e => {
   const viewBtn = e.target.closest('[data-view]');
   if (viewBtn) return show(viewBtn.dataset.view);
 
+  const ctDrv = e.target.closest('[data-ct-drv]');
+  if (ctDrv) return openChampPath(ctDrv.dataset.ctDrv);
+
   const champTabBtn = e.target.closest('[data-champ-tab]');
   if (champTabBtn) {
     document.querySelectorAll('#champTabs .chip').forEach(c => c.classList.toggle('on', c === champTabBtn));
@@ -2021,6 +2309,11 @@ document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.logo')) {
     e.preventDefault();
     show('home');
+    return;
+  }
+  if (e.key === 'Enter' && e.target.matches?.('.ct-card')) {
+    e.preventDefault();
+    openChampPath(e.target.dataset.ctDrv);
   }
 });
 
@@ -2067,8 +2360,8 @@ if (drvSearchEl) {
 
 /* ============ INICIALIZACIÓN ============ */
 function renderAll() {
-  setupUserFooter();          // Inyecta el footer personalizado
-  mergeCalendarIntoStandings(); // Mantiene el calendario dentro de campeonato
+  setupUserFooter();
+  mergeCalendarIntoStandings();
   renderHome();
   renderCalendar();
   renderStandings();
