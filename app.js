@@ -307,19 +307,30 @@ function ageOn(dob, ref) {
   return a;
 }
 
-/* ============ REESTRUCTURACIÓN DE DOM (CAMPEONATO & CALENDARIO) ============ */
+/* ============ INYECCIÓN DE TU FOOTER PERSONALIZADO ============ */
+function setupUserFooter() {
+  let existingFooter = document.querySelector('footer');
+  const footerHTML = `
+    <footer class="border-t border-white/5 py-6 text-center text-xs text-gray-500 bg-[#0a0a0c]/80 mt-16">
+        <p>fOnefan • Plataforma de información sobre Fórmula 1</p>
+    </footer>`;
+
+  if (existingFooter) {
+    existingFooter.outerHTML = footerHTML;
+  } else {
+    document.body.insertAdjacentHTML('beforeend', footerHTML);
+  }
+}
+
+/* ============ FUSIÓN CALENDARIO DENTRO DE CAMPEONATO ============ */
 function mergeCalendarIntoStandings() {
-  // Eliminamos el botón de calendario del navbar para limpiar el header
   const navCal = document.querySelector('nav [data-view="calendar"]');
   if (navCal) navCal.remove();
 
   const vStandings = $('#v-standings');
   const vCalendar = $('#v-calendar');
-  
-  // Si no existen las vistas o ya se fusionó, abortamos
   if (!vStandings || !vCalendar || $('#champTabs')) return;
 
-  // Actualizamos el encabezado de Campeonato
   const head = vStandings.querySelector('.sec-head');
   if (head) {
     const h2 = head.querySelector('h2');
@@ -328,24 +339,20 @@ function mergeCalendarIntoStandings() {
     if (p) p.innerHTML = 'Posiciones actuales del mundial y cronograma de la temporada 2026.';
   }
 
-  // Envolvemos el contenido original de las tablas de puntos
   const posWrapper = document.createElement('div');
   posWrapper.id = 'champ-pos';
   Array.from(vStandings.children).forEach(node => {
     if (node !== head) posWrapper.appendChild(node);
   });
 
-  // Preparamos el contenedor del calendario, oculto por defecto
   const calWrapper = document.createElement('div');
   calWrapper.id = 'champ-cal';
   calWrapper.style.display = 'none';
 
-  // Movemos todos los filtros y la grilla del calendario acá
   Array.from(vCalendar.children).forEach(node => {
     if (!node.classList.contains('sec-head')) calWrapper.appendChild(node);
   });
 
-  // Inyectamos las pestañas estilo chips
   const tabsHTML = `
     <div class="chips" id="champTabs" style="margin-bottom: 24px;">
       <button class="chip on" data-champ-tab="pos">Tabla de Posiciones</button>
@@ -355,11 +362,8 @@ function mergeCalendarIntoStandings() {
   if (head) head.insertAdjacentHTML('afterend', tabsHTML);
   else vStandings.insertAdjacentHTML('afterbegin', tabsHTML);
 
-  // Agregamos ambos contenedores funcionales dentro de la vista Campeonato
   vStandings.appendChild(posWrapper);
   vStandings.appendChild(calWrapper);
-
-  // Borramos la vista vieja e inútil del calendario
   vCalendar.remove();
 }
 
@@ -504,7 +508,7 @@ function loadLocal() {
   S.source = 'local';
 }
 
-/* ============ CAMPEONES (para "Pilotos campeones") ============ */
+/* ============ CAMPEONES ============ */
 async function loadChampYear(y) {
   const key = CHAMP_CACHE + y;
   if (y < SEASON) {
@@ -563,7 +567,6 @@ async function loadAllChamps(onProgress) {
   return S.champs;
 }
 
-/* Detalle de una temporada: campeón, carrera por carrera y consagración */
 async function loadSeasonDetail(y) {
   if (C.season[y]) return C.season[y];
 
@@ -637,7 +640,7 @@ async function loadSeasonDetail(y) {
   return out;
 }
 
-/* ============ PILOTOS: ESTADÍSTICAS DE TODA LA HISTORIA ============ */
+/* ============ PILOTOS ============ */
 let lastCall = 0;
 async function pace() {
   const wait = lastCall + 300 - Date.now();
@@ -1363,7 +1366,7 @@ function renderStandings() {
     </div>`).join('');
 }
 
-/* ============ TRAZADOS (SVG de julesr0y/pitlaneinsider) ============ */
+/* ============ TRAZADOS ============ */
 const trackPaths = {};
 
 function nearestTrack(lat, lon) {
@@ -1424,10 +1427,10 @@ async function loadCardTracks(list) {
   });
 }
 
-/* ============ CIRCUITOS: VIGENTES / HISTORIAL ============ */
+/* ============ CIRCUITOS ============ */
 function ensureCircTabs() {
   const view = $('#v-circuits');
-  if (view.querySelector('#circTabs')) return;
+  if (!view || view.querySelector('#circTabs')) return;
   view.querySelector('.sec-head p').textContent =
     'Vigentes: los circuitos del calendario 2026. Historial: todos los que alguna vez albergaron una carrera de F1.';
   view.querySelector('.sec-head').insertAdjacentHTML('afterend', `
@@ -1454,6 +1457,7 @@ async function loadCircuitHistory() {
 
 async function renderCircuits() {
   const grid = $('#circGrid');
+  if (!grid) return;
 
   if (C.tab === 'vig') {
     if (S.source === 'local') {
@@ -1538,7 +1542,6 @@ function lapRecord(json) {
   return best;
 }
 
-// Procesa los datos históricos desde el 2000 cruzando victorias y pole positions
 function buildCircuitHistory(wins, poles) {
   const history = {};
 
@@ -1604,7 +1607,6 @@ async function openCircuitDetail(id, src) {
     ? trackSVG(track)
     : `<p class="muted" style="text-align:center;padding:40px 10px">Trazado no disponible para este circuito.</p>`;
 
-  // Diseño de Récords con mapeo corregido
   const recordsHTML = `
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 14px;">
       <div style="background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 14px; padding: 18px;">
@@ -1688,9 +1690,10 @@ async function openCircuitDetail(id, src) {
   `;
 }
 
-/* ============ SALÓN DE LA FAMA: PILOTOS CAMPEONES ============ */
+/* ============ SALÓN DE LA FAMA ============ */
 function renderHOF() {
   const grid = $('#hofGrid');
+  if (!grid) return;
   grid.classList.toggle('hof', true);
 
   const map = {};
@@ -1867,21 +1870,25 @@ const slots = (type, rid, n) => Array.from({ length: n }, (_, i) => `
 function renderSim() {
   const rem = S.calendar.filter(r => !r.done);
   DRIVER_OPTS = S.drivers.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join('');
-  $('#simFav').innerHTML = '<option value="">Elige un piloto…</option>' + DRIVER_OPTS;
+  const simFav = $('#simFav');
+  if (simFav) simFav.innerHTML = '<option value="">Elige un piloto…</option>' + DRIVER_OPTS;
 
-  $('#simRaces').innerHTML = rem.length
-    ? rem.map((r, i) => `
-      <details class="glass acc" ${i === 0 ? 'open' : ''}>
-        <summary>
-          <span class="mono muted" style="font-size:13px">R${r.round}</span>
-          <strong>${r.flag} ${esc(r.name)}</strong>
-          <span class="badge ${r.sprint ? 'b-sprint' : 'b-done'}">${r.sprint ? 'Sprint' : 'Estándar'}</span>
-        </summary>
-        <div class="sub-label">Carrera principal</div>
-        <div class="slots">${slots('race', r.id, 10)}</div>
-        ${r.sprint ? `<div class="sub-label">Sprint</div><div class="slots">${slots('sprint', r.id, 8)}</div>` : ''}
-      </details>`).join('')
-    : '<p class="glass muted" style="padding:24px;text-align:center">No quedan carreras por simular.</p>';
+  const simRaces = $('#simRaces');
+  if (simRaces) {
+    simRaces.innerHTML = rem.length
+      ? rem.map((r, i) => `
+        <details class="glass acc" ${i === 0 ? 'open' : ''}>
+          <summary>
+            <span class="mono muted" style="font-size:13px">R${r.round}</span>
+            <strong>${r.flag} ${esc(r.name)}</strong>
+            <span class="badge ${r.sprint ? 'b-sprint' : 'b-done'}">${r.sprint ? 'Sprint' : 'Estándar'}</span>
+          </summary>
+          <div class="sub-label">Carrera principal</div>
+          <div class="slots">${slots('race', r.id, 10)}</div>
+          ${r.sprint ? `<div class="sub-label">Sprint</div><div class="slots">${slots('sprint', r.id, 8)}</div>` : ''}
+        </details>`).join('')
+      : '<p class="glass muted" style="padding:24px;text-align:center">No quedan carreras por simular.</p>';
+  }
 
   updateSummary();
 }
@@ -1889,33 +1896,46 @@ function renderSim() {
 function updateSummary() {
   const { drivers, teams } = standings(S.sim);
   const leader = drivers[0];
-  const fav = drivers.find(d => d.id === $('#simFav').value);
+  const simFav = $('#simFav');
+  const fav = simFav ? drivers.find(d => d.id === simFav.value) : null;
   const remaining = S.calendar.filter(r => !r.done).length;
 
-  $('#simRank').innerHTML = drivers.slice(0, 6).map((d, i) => `
-    <div class="line"><span><span class="muted mono">${i + 1}.</span> &nbsp;${esc(lastName(d.name))}</span>
-    <strong style="color:${teamColorByName(d.teamName)}">${d.pts}</strong></div>`).join('');
+  const simRank = $('#simRank');
+  if (simRank) {
+    simRank.innerHTML = drivers.slice(0, 6).map((d, i) => `
+      <div class="line"><span><span class="muted mono">${i + 1}.</span> &nbsp;${esc(lastName(d.name))}</span>
+      <strong style="color:${teamColorByName(d.teamName)}">${d.pts}</strong></div>`).join('');
+  }
 
-  $('#simTeams').innerHTML = teams.slice(0, 5).map(t => `
-    <div class="line"><span><span class="dot" style="background:${t.color}"></span>${esc(t.name)}</span><strong>${t.pts}</strong></div>`).join('');
+  const simTeams = $('#simTeams');
+  if (simTeams) {
+    simTeams.innerHTML = teams.slice(0, 5).map(t => `
+      <div class="line"><span><span class="dot" style="background:${t.color}"></span>${esc(t.name)}</span><strong>${t.pts}</strong></div>`).join('');
+  }
+
+  const simFavPts = $('#simFavPts');
+  const simFavName = $('#simFavName');
+  const simNote = $('#simNote');
 
   if (!fav) {
-    $('#simFavPts').textContent = '—';
-    $('#simFavName').textContent = 'Sin seleccionar';
-    $('#simNote').innerHTML = 'Elige un piloto para analizar su camino al título.';
+    if (simFavPts) simFavPts.textContent = '—';
+    if (simFavName) simFavName.textContent = 'Sin seleccionar';
+    if (simNote) simNote.innerHTML = 'Elige un piloto para analizar su camino al título.';
     return;
   }
 
-  $('#simFavPts').innerHTML = `${fav.pts}<small>pts</small>`;
-  $('#simFavName').textContent = fav.name;
+  if (simFavPts) simFavPts.innerHTML = `${fav.pts}<small>pts</small>`;
+  if (simFavName) simFavName.textContent = fav.name;
 
-  if (fav.id === leader.id) {
-    $('#simNote').innerHTML = '<b>Líder proyectado.</b> Mantiene el destino del campeonato en sus manos.';
-  } else {
-    const gap = leader.pts - fav.pts;
-    $('#simNote').innerHTML = remaining
-      ? `<b>Brecha de ${gap} pts</b> con ${esc(lastName(leader.name))}. Para alcanzarlo necesitaría superar al líder por un promedio de <b>${(gap / remaining).toFixed(1)} pts</b> en cada carrera restante.`
-      : `<b>Diferencia final: ${gap} pts.</b> No quedan carreras por disputar.`;
+  if (simNote) {
+    if (fav.id === leader.id) {
+      simNote.innerHTML = '<b>Líder proyectado.</b> Mantiene el destino del campeonato en sus manos.';
+    } else {
+      const gap = leader.pts - fav.pts;
+      simNote.innerHTML = remaining
+        ? `<b>Brecha de ${gap} pts</b> con ${esc(lastName(leader.name))}. Para alcanzarlo necesitaría superar al líder por un promedio de <b>${(gap / remaining).toFixed(1)} pts</b> en cada carrera restante.`
+        : `<b>Diferencia final: ${gap} pts.</b> No quedan carreras por disputar.`;
+    }
   }
 }
 
@@ -1924,7 +1944,6 @@ document.addEventListener('click', e => {
   const viewBtn = e.target.closest('[data-view]');
   if (viewBtn) return show(viewBtn.dataset.view);
 
-  // Manejo de pestañas dentro de "Campeonato & Calendario"
   const champTabBtn = e.target.closest('[data-champ-tab]');
   if (champTabBtn) {
     document.querySelectorAll('#champTabs .chip').forEach(c => c.classList.toggle('on', c === champTabBtn));
@@ -1990,39 +2009,51 @@ document.addEventListener('keydown', e => {
   }
 });
 
-$('#simRaces').addEventListener('change', e => {
-  const s = e.target;
-  if (!s.dataset.r) return;
-  const { r, t } = s.dataset, i = +s.dataset.i, v = s.value;
-  S.sim[r] ??= { race: Array(10).fill(''), sprint: Array(8).fill('') };
-  S.sim[r][t][i] = v;
-  if (v) S.sim[r][t].forEach((x, j) => {
-    if (j !== i && x === v) {
-      S.sim[r][t][j] = '';
-      const other = document.querySelector(`select[data-r="${r}"][data-t="${t}"][data-i="${j}"]`);
-      if (other) other.value = '';
-    }
+const simRacesEl = $('#simRaces');
+if (simRacesEl) {
+  simRacesEl.addEventListener('change', e => {
+    const s = e.target;
+    if (!s.dataset.r) return;
+    const { r, t } = s.dataset, i = +s.dataset.i, v = s.value;
+    S.sim[r] ??= { race: Array(10).fill(''), sprint: Array(8).fill('') };
+    S.sim[r][t][i] = v;
+    if (v) S.sim[r][t].forEach((x, j) => {
+      if (j !== i && x === v) {
+        S.sim[r][t][j] = '';
+        const other = document.querySelector(`select[data-r="${r}"][data-t="${t}"][data-i="${j}"]`);
+        if (other) other.value = '';
+      }
+    });
+    renderStandings();
+    updateSummary();
   });
-  renderStandings();
-  updateSummary();
-});
+}
 
-$('#simFav').addEventListener('change', updateSummary);
-$('#simReset').addEventListener('click', () => {
-  Object.keys(S.sim).forEach(k => delete S.sim[k]);
-  document.querySelectorAll('#simRaces select').forEach(s => s.value = '');
-  renderStandings();
-  updateSummary();
-});
+const simFavEl = $('#simFav');
+if (simFavEl) simFavEl.addEventListener('change', updateSummary);
 
-$('#drvSearch').addEventListener('input', e => {
-  drvQuery = e.target.value;
-  if (drvTab === 'hist' && C.drv) renderDrivers();
-});
+const simResetEl = $('#simReset');
+if (simResetEl) {
+  simResetEl.addEventListener('click', () => {
+    Object.keys(S.sim).forEach(k => delete S.sim[k]);
+    document.querySelectorAll('#simRaces select').forEach(s => s.value = '');
+    renderStandings();
+    updateSummary();
+  });
+}
+
+const drvSearchEl = $('#drvSearch');
+if (drvSearchEl) {
+  drvSearchEl.addEventListener('input', e => {
+    drvQuery = e.target.value;
+    if (drvTab === 'hist' && C.drv) renderDrivers();
+  });
+}
 
 /* ============ INICIALIZACIÓN ============ */
 function renderAll() {
-  mergeCalendarIntoStandings(); // <--- Hace la magia estructural en el HTML
+  setupUserFooter();          // <--- Inyecta tu footer personalizado exacto
+  mergeCalendarIntoStandings(); // <--- Mantiene el calendario dentro de campeonato
   renderHome();
   renderCalendar();
   renderStandings();
