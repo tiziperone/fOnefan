@@ -1,13 +1,13 @@
 # 🏎️ fOnefan — Plataforma de Información & Estrategia de Fórmula 1
 
-**fOnefan** es una aplicación web interactiva diseñada para fanáticos y entusiastas de la Fórmula 1. Reúne en un solo lugar la información en tiempo real de la **temporada 2026**, estadísticas históricas, análisis de circuitos, simulador de campeonato y componentes vectoriales adaptativos.
+**fOnefan** es una aplicación web interactiva diseñada para fanáticos y entusiastas de la Fórmula 1. Reúne en un solo lugar la información en tiempo real de la **temporada actual**, estadísticas históricas, análisis de circuitos, simulador de campeonato, pilotos y escuderias.
 
 ---
 
 ## 🌟 Características Principales
 
 ### 🏁 1. Inicio & Próximo Gran Premio
-* **Cuenta Regresiva Dinámica:** Contador en tiempo real configurado hacia la **primera sesión del fin de semana (Práctica 1 / Clasificación Sprint)**.
+* **Cuenta Regresiva Dinámica:** Contador en tiempo real configurado hacia la **primera sesión del fin de semana (Práctica 1)**.
 * **Horarios Locales (ART):** Conversión automática de todas las sesiones de cada GP a la hora oficial de Argentina (`America/Argentina/Buenos_Aires`).
 * **Estado de la Temporada:** Resumen de carreras disputadas, pendientes y líder actual del mundial de pilotos.
 
@@ -35,8 +35,8 @@
 * **Renderizado SVG:** Integración de trazados vectoriales interactivos para cada circuito.
 * **Ficha Técnica & Récords:** Vuelta rápida histórica, pilotos/escuderías más ganadores y registros de cada Gran Premio desde el año 2000 a la fecha.
 
-### 📚 7. Glosario & Términos de F1 *(Próximamente)*
-* Sección informativa interactiva sobre terminología técnica (*Undercut, Porpoising, DRS, ERS, Parc Fermé, Slipstream*, tipos de neumáticos, reglamentos técnicos y sanciones).
+### 📚 7. Glosario & Términos de F1
+* Sección informativa interactiva sobre terminología técnica (*Undercut, Porpoising, overtake, ERS, Parc Fermé, Slipstream*, tipos de neumáticos, reglamentos técnicos y sanciones).
 
 ---
 
