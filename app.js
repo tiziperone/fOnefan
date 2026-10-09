@@ -307,6 +307,62 @@ function ageOn(dob, ref) {
   return a;
 }
 
+/* ============ REESTRUCTURACIÓN DE DOM (CAMPEONATO & CALENDARIO) ============ */
+function mergeCalendarIntoStandings() {
+  // Eliminamos el botón de calendario del navbar para limpiar el header
+  const navCal = document.querySelector('nav [data-view="calendar"]');
+  if (navCal) navCal.remove();
+
+  const vStandings = $('#v-standings');
+  const vCalendar = $('#v-calendar');
+  
+  // Si no existen las vistas o ya se fusionó, abortamos
+  if (!vStandings || !vCalendar || $('#champTabs')) return;
+
+  // Actualizamos el encabezado de Campeonato
+  const head = vStandings.querySelector('.sec-head');
+  if (head) {
+    const h2 = head.querySelector('h2');
+    const p = head.querySelector('p');
+    if (h2) h2.innerHTML = 'Campeonato & Calendario';
+    if (p) p.innerHTML = 'Posiciones actuales del mundial y cronograma de la temporada 2026.';
+  }
+
+  // Envolvemos el contenido original de las tablas de puntos
+  const posWrapper = document.createElement('div');
+  posWrapper.id = 'champ-pos';
+  Array.from(vStandings.children).forEach(node => {
+    if (node !== head) posWrapper.appendChild(node);
+  });
+
+  // Preparamos el contenedor del calendario, oculto por defecto
+  const calWrapper = document.createElement('div');
+  calWrapper.id = 'champ-cal';
+  calWrapper.style.display = 'none';
+
+  // Movemos todos los filtros y la grilla del calendario acá
+  Array.from(vCalendar.children).forEach(node => {
+    if (!node.classList.contains('sec-head')) calWrapper.appendChild(node);
+  });
+
+  // Inyectamos las pestañas estilo chips
+  const tabsHTML = `
+    <div class="chips" id="champTabs" style="margin-bottom: 24px;">
+      <button class="chip on" data-champ-tab="pos">Tabla de Posiciones</button>
+      <button class="chip" data-champ-tab="cal">Calendario de Carreras</button>
+    </div>
+  `;
+  if (head) head.insertAdjacentHTML('afterend', tabsHTML);
+  else vStandings.insertAdjacentHTML('afterbegin', tabsHTML);
+
+  // Agregamos ambos contenedores funcionales dentro de la vista Campeonato
+  vStandings.appendChild(posWrapper);
+  vStandings.appendChild(calWrapper);
+
+  // Borramos la vista vieja e inútil del calendario
+  vCalendar.remove();
+}
+
 /* ============ HORA ARGENTINA ============ */
 const fmtART = iso => {
   const t = new Date(iso).toLocaleString('es', {
@@ -1548,7 +1604,7 @@ async function openCircuitDetail(id, src) {
     ? trackSVG(track)
     : `<p class="muted" style="text-align:center;padding:40px 10px">Trazado no disponible para este circuito.</p>`;
 
-  // Diseño de Récords con mapeo corregido de variables
+  // Diseño de Récords con mapeo corregido
   const recordsHTML = `
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 14px;">
       <div style="background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 14px; padding: 18px;">
@@ -1868,6 +1924,19 @@ document.addEventListener('click', e => {
   const viewBtn = e.target.closest('[data-view]');
   if (viewBtn) return show(viewBtn.dataset.view);
 
+  // Manejo de pestañas dentro de "Campeonato & Calendario"
+  const champTabBtn = e.target.closest('[data-champ-tab]');
+  if (champTabBtn) {
+    document.querySelectorAll('#champTabs .chip').forEach(c => c.classList.toggle('on', c === champTabBtn));
+    const t = champTabBtn.dataset.champTab;
+    const pos = $('#champ-pos');
+    const cal = $('#champ-cal');
+    if (pos) pos.style.display = t === 'pos' ? 'block' : 'none';
+    if (cal) cal.style.display = t === 'cal' ? 'block' : 'none';
+    if (t === 'cal') renderCalendar();
+    return;
+  }
+
   const retry = e.target.closest('[data-retry]');
   if (retry) {
     C.drvPromise = null;
@@ -1953,6 +2022,7 @@ $('#drvSearch').addEventListener('input', e => {
 
 /* ============ INICIALIZACIÓN ============ */
 function renderAll() {
+  mergeCalendarIntoStandings(); // <--- Hace la magia estructural en el HTML
   renderHome();
   renderCalendar();
   renderStandings();
