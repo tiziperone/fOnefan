@@ -1,7 +1,4 @@
 // ================= DATOS DRIVERWIN · TEMPORADA 2026 =================
-// Puntos de campeonato: tras la ronda 16 (GP de Baréin, 4 oct 2026).
-// Fuentes: formula1.com (constructores), Sky Sports (constructores),
-// Supersport y F1 Fansite (pilotos). Ver notas al final del archivo.
 
 const PTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 const SPR = [8, 7, 6, 5, 4, 3, 2, 1];
@@ -28,25 +25,23 @@ const DRIVERS = [
   { id: 'norris',    name: 'Lando Norris',          team: 'mclaren',  basePts: 188 },
   { id: 'verstappen',name: 'Max Verstappen',        team: 'redbull',  basePts: 188 },
   { id: 'piastri',   name: 'Oscar Piastri',         team: 'mclaren',  basePts: 128 },
-  { id: 'hadjar',    name: 'Isack Hadjar',          team: 'redbull',  basePts: 110 }, // derivado: Red Bull 298 − Verstappen 188
-  { id: 'lawson',    name: 'Liam Lawson',           team: 'rb',       basePts: 65  }, // ver notas
-  { id: 'lindblad',  name: 'Arvid Lindblad',        team: 'rb',       basePts: 25  }, // derivado: Racing Bulls 90 − Lawson 65
+  { id: 'hadjar',    name: 'Isack Hadjar',          team: 'redbull',  basePts: 110 },
+  { id: 'lawson',    name: 'Liam Lawson',           team: 'rb',       basePts: 65  },
+  { id: 'lindblad',  name: 'Arvid Lindblad',        team: 'rb',       basePts: 25  },
   { id: 'gasly',     name: 'Pierre Gasly',          team: 'alpine',   basePts: 41  },
   { id: 'colapinto', name: 'Franco Colapinto',      team: 'alpine',   basePts: 27  },
   { id: 'bearman',   name: 'Oliver Bearman',        team: 'haas',     basePts: 20  },
   { id: 'ocon',      name: 'Esteban Ocon',          team: 'haas',     basePts: 7   },
   { id: 'bortoleto', name: 'Gabriel Bortoleto',     team: 'audi',     basePts: 10  },
   { id: 'hulkenberg',name: 'Nico Hülkenberg',       team: 'audi',     basePts: 7   },
-  { id: 'albon',     name: 'Alexander Albon',       team: 'williams', basePts: 6   }, // ver notas
-  { id: 'sainz',     name: 'Carlos Sainz',          team: 'williams', basePts: 6   }, // ver notas
+  { id: 'albon',     name: 'Alexander Albon',       team: 'williams', basePts: 6   },
+  { id: 'sainz',     name: 'Carlos Sainz',          team: 'williams', basePts: 6   },
   { id: 'alonso',    name: 'Fernando Alonso',       team: 'aston',    basePts: 7   },
   { id: 'stroll',    name: 'Lance Stroll',          team: 'aston',    basePts: 0   },
   { id: 'bottas',    name: 'Valtteri Bottas',       team: 'cadillac', basePts: 0   },
   { id: 'perez',     name: 'Sergio Pérez',          team: 'cadillac', basePts: 0   }
 ];
 
-// Calendario 2026 (23 rondas). done = ya disputada.
-// sprint: formato con Sprint — verificar en formula1.com antes de usar en serio.
 const CALENDAR = [
   { r: 1,  id: 'australia',   name: 'GP de Australia',            date: '06 - 08 Mar',    start: '2026-03-06', sprint: false, done: true,  flag: '🇦🇺' },
   { r: 2,  id: 'china',       name: 'GP de China',                date: '13 - 15 Mar',    start: '2026-03-13', sprint: true,  done: true,  flag: '🇨🇳' },
@@ -73,14 +68,12 @@ const CALENDAR = [
   { r: 23, id: 'abudhabi',    name: 'GP de Abu Dabi',             date: '04 - 06 Dic',    start: '2026-12-04', sprint: false, done: false, flag: '🇦🇪' }
 ];
 
-// Campeones recientes
 const HISTORY = [
   { y: 2025, d: 'Lando Norris',     t: 'McLaren' },
   { y: 2024, d: 'Max Verstappen',   t: 'McLaren (constructores)' },
   { y: 2023, d: 'Max Verstappen',   t: 'Red Bull Racing' }
 ];
 
-// Circuitos (trazados esquemáticos; datos básicos verificables)
 const CIRCUITS = [
   {
     id: 'monza', name: 'Monza', country: 'Italia',
@@ -99,17 +92,3 @@ const CIRCUITS = [
     path: 'M20,50 L20,30 L40,30 L40,15 L60,15 L60,35 L80,35 L80,60 L60,60 L60,80 L35,80 L35,65 L20,65 Z'
   }
 ];
-
-/* ---------- NOTAS DE VERIFICACIÓN ----------
- * 1. Constructores (Mercedes 556, Ferrari 405, McLaren 316, Red Bull 298, Racing Bulls 90,
- *    Alpine 68, Haas 27, Audi 17, Williams 12, Aston Martin 7, Cadillac 0): coinciden en
- *    formula1.com y Sky Sports.
- * 2. Pilotos Antonelli, Russell, Hamilton, Leclerc, Norris, Verstappen, Piastri: coinciden
- *    en varias fuentes.
- * 3. Pilotos del puesto 8 en adelante: las fuentes no coinciden. Algunos valores están
- *    derivados para cuadrar con los totales de constructor (marcados arriba).
- *    Confirmar en formula1.com/en/results/2026/drivers.
- * 4. Resultados por carrera (top 10, clasificación, prácticas): NO incluidos porque no
- *    pude verificarlos. Se añadirán desde la fuente oficial.
- * 5. Sprints: verificar el formato de cada fin de semana.
- */
