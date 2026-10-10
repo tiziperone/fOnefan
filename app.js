@@ -1458,6 +1458,13 @@ function standings(sim = {}) {
   return { drivers, teams };
 }
 
+/* ============ ESTADO DEL FIN DE SEMANA ============ */
+// Una sesión ya se disputó si su horario ya pasó.
+const sessionDone = s => new Date(s.when) < new Date();
+
+// Fin de semana en curso: hay sesiones ya disputadas, pero la carrera todavía no.
+const isLive = r => !r.done && r.sessions.some(sessionDone);
+
 /* ============ INICIO ============ */
 let cdTimer = null;
 function renderHome() {
@@ -1466,8 +1473,11 @@ function renderHome() {
 
   if (next) {
     $('#nextName').textContent = next.name;
-    $('#nextDate').textContent = `${next.dateLabel} · ${next.sprint ? 'Formato Sprint' : 'Fin de semana estándar'}`;
-    startCountdown(next.firstSessionWhen || next.when);
+    $('#nextDate').textContent = `${next.dateLabel} · ${isLive(next)
+      ? 'Fin de semana en curso · cuenta regresiva a la carrera'
+      : (next.sprint ? 'Formato Sprint' : 'Fin de semana estándar')}`;
+    // La cuenta regresiva apunta a la CARRERA (no a la primera sesión)
+    startCountdown(next.when);
   } else {
     $('#nextName').textContent = 'Temporada finalizada';
     $('#nextDate').textContent = '';
@@ -1480,7 +1490,7 @@ function renderHome() {
   $('#stLeaderPts').textContent = `${leader.pts} pts · ${leader.teamName}`;
 
   $('#upList').innerHTML = S.calendar.filter(r => !r.done).slice(0, 5).map(r =>
-    `<div class="up" data-race="${r.id}"><span>${r.flag} &nbsp;${esc(r.name)}</span><small>${esc(r.dateLabel)}</small></div>`
+    `<div class="up" data-race="${r.id}"><span>${r.flag} &nbsp;${esc(r.name)}${isLive(r) ? ' · En curso' : ''}</span><small>${esc(r.dateLabel)}</small></div>`
   ).join('');
 }
 
@@ -1509,14 +1519,18 @@ function renderCalendar() {
 
   $('#calGrid').innerHTML = list.map(r => {
     const isNext = next && r.id === next.id;
-    const label = r.done ? 'Finalizada' : (isNext ? 'Próxima' : 'Programada');
-    const cls = r.done ? 'b-done' : (isNext ? 'b-next' : 'b-soon');
+    const live = isLive(r);
+    const label = r.done ? 'Finalizada' : (live ? 'En curso' : (isNext ? 'Próxima' : 'Programada'));
+    const cls = r.done ? 'b-done' : (live ? 'b-sprint' : (isNext ? 'b-next' : 'b-soon'));
+    const sub = live
+      ? 'Sesiones previas disputadas · carrera pendiente'
+      : (r.sprint ? '⚡ Formato Sprint' : 'Fin de semana estándar');
     return `
     <article class="glass race ${r.done ? 'done' : ''} ${isNext ? 'next' : ''}" data-race="${r.id}">
       <div class="rnd">RONDA ${String(r.round).padStart(2, '0')} · ${esc(r.dateLabel)}</div>
       <div class="flag">${r.flag}</div>
       <h3>${esc(r.name)}</h3>
-      <div class="sub">${r.sprint ? '⚡ Formato Sprint' : 'Fin de semana estándar'}</div>
+      <div class="sub">${sub}</div>
       <div class="foot">
         <span class="badge ${cls}">${label}</span>
         <span>${r.done ? 'Ver resultados →' : 'Ver ficha →'}</span>
@@ -1558,22 +1572,40 @@ function sessionsHTML(r) {
   }).join('')}</div>`;
 }
 
+// Resultados de las sesiones ya disputadas (clasificación y Sprint) en un fin de semana en curso
+function liveResultsHTML(r, d) {
+  const quali = d.quali.map(q =>
+    `<div class="line"><span>P${q.pos} · ${esc(q.name)}</span><strong>${esc(q.time)}</strong></div>`).join('');
+  const sprint = d.sprint.map(s =>
+    `<div class="line"><span>P${s.pos} · ${esc(s.name)}</span><strong>+${s.pts}</strong></div>`).join('');
+  return `
+    <div class="m-grid">
+      <div class="box"><h4>🏁 Clasificación · Top 3</h4>${quali || '<p class="muted">Todavía no hay resultados.</p>'}</div>
+      ${r.sprint ? `<div class="box"><h4>⚡ Sprint · Top 3</h4>${sprint || '<p class="muted">Todavía no hay resultados.</p>'}</div>` : ''}
+    </div>
+    <p class="muted" style="font-size:13px;line-height:1.6;margin-top:12px">Los resultados de la carrera se mostrarán aquí cuando termine.</p>`;
+}
+
 async function openRace(id) {
   const r = S.calendar.find(x => x.id === id);
   if (!r) return;
 
   if (!r.done) {
+    const live = isLive(r);
     const next = nextRace();
-    const estado = next && next.id === r.id ? 'Próximo Gran Premio' : 'Programado';
+    const estado = live
+      ? 'Fin de semana en curso'
+      : (next && next.id === r.id ? 'Próximo Gran Premio' : 'Programado');
     const notes = r.sprint
       ? 'Fin de semana con Sprint. La clasificación Sprint fija la parrilla de la Carrera Sprint, que reparte puntos del 1.º al 8.º (8-7-6-5-4-3-2-1). La clasificación principal fija la parrilla de la carrera.'
       : 'Fin de semana estándar. La clasificación principal fija la parrilla de la carrera, que reparte puntos del 1.º al 10.º (25-18-15-12-10-8-6-4-2-1).';
 
-    return openModal(`${modalHead(r)}
+    openModal(`${modalHead(r)}
       <div class="box" style="margin-bottom:18px">
         <h4>📅 Horarios · Hora de Argentina (ART)</h4>
         ${sessionsHTML(r)}
       </div>
+      ${live ? '<div id="liveRes" style="margin-bottom:18px"><p class="muted" style="font-size:14px">Cargando resultados de las sesiones ya disputadas…</p></div>' : ''}
       <div class="m-grid">
         <div class="box">
           <h4>ℹ️ Detalles</h4>
@@ -1588,6 +1620,22 @@ async function openRace(id) {
           <p class="muted" style="font-size:14px;line-height:1.7;margin-top:10px">Los horarios se muestran en hora de Argentina (UTC−3), sin cambio de horario.</p>
         </div>
       </div>`);
+
+    if (live) {
+      const box = () => document.getElementById('liveRes');
+      if (S.source === 'local') {
+        if (box()) box().innerHTML = '<div class="box"><p class="muted">Los resultados requieren conexión a la API.</p></div>';
+        return;
+      }
+      try {
+        const d = await loadDetail(r.round);
+        if (box()) box().innerHTML = liveResultsHTML(r, d);
+      } catch (e) {
+        console.warn(e);
+        if (box()) box().innerHTML = '<div class="box"><p class="muted">No se pudieron cargar los resultados de las sesiones. Intenta más tarde.</p></div>';
+      }
+    }
+    return;
   }
 
   if (S.source === 'local') {
@@ -1636,7 +1684,8 @@ async function loadDetail(round) {
     })))
   };
 
-  S.details[round] = d;
+  // Solo se guarda en caché cuando la carrera ya tiene resultados (un fin de semana en curso puede actualizarse)
+  if (d.race.length) S.details[round] = d;
   return d;
 }
 
@@ -2717,7 +2766,7 @@ function infoSearchHTML(q) {
     .filter(x => x.items.length);
   if (!hits.length) return `<p class="empty-msg">No encontramos nada para "${escI(q)}". Prueba con otra palabra.</p>`;
   return hits.map(({ s, items }) =>
-    `<h3 class="info-result-h">${s.icon} ${escI(s.title)} <small>${items.length}</small></h3>${infoGroup(items)}`
+    `<h3 class="info-result-h">${s.icon} ${escI(s.title)}</h3>${infoGroup(items)}`
   ).join('');
 }
 
@@ -2768,7 +2817,6 @@ function renderInfo() {
           <button class="info-nav-btn" data-info-sec="${s.id}">
             <span class="ico">${s.icon}</span>
             <span>${escI(s.title)}</span>
-            <small>${s.items.length}</small>
           </button>`).join('')}
       </nav>
       <div class="info-body" id="infoBody"></div>
