@@ -244,11 +244,6 @@ const SESSION_NAMES = {
   Qualifying: 'Clasificación'
 };
 
-const TYRE = {
-  SOFT: 'Blando (rojo)', MEDIUM: 'Medio (amarillo)', HARD: 'Duro (blanco)',
-  INTERMEDIATE: 'Intermedio (verde)', WET: 'Mojado (azul)'
-};
-
 const ALIAS = {
   montmelo: 'barcelona', barcelonacatalunya: 'barcelona', catalunya: 'barcelona', circuitdebarcelonacatalunya: 'barcelona',
   spielberg: 'austria', redbullring: 'austria',
@@ -291,6 +286,8 @@ const C = {
 let drvTab = 'act';
 let drvQuery = '';
 let drvModalId = null;
+let teamTab = 'act';
+let teamQuery = '';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1061,7 +1058,6 @@ function driverModalHTML(id, failed = false) {
   const v = k => (loading ? '…' : (d[k] ?? 0));
   const titles = S.champs.filter(c => c.driverId === id).sort((a, b) => a.season - b.season);
   const active = !!cur || yearOf(d.last) === String(SEASON);
-  const col = teamColorFor(team);
   const edad = active ? ageOn(dob, new Date()) : ageOn(dob, d.last);
   const names = teamsFor(id, d);
   const teamsLoading = !C.dteams[id] && !failed;
@@ -1131,12 +1127,157 @@ function openDriver(id) {
   });
 }
 
+/* ============ ESCUDERÍAS ============ */
+// Sucesiones de nombres: cuando una escudería cambió de nombre, se agrupa bajo el nombre actual.
+// Los casos no cubiertos se muestran con su nombre original.
+const TEAM_SUCCESSION = {
+  'benetton': 'Renault', 'renault': 'Renault', 'alpine f1 team': 'Alpine F1 Team', 'alpine': 'Alpine F1 Team',
+  'toyota': 'Toyota', 'jordan': 'Jordan', 'midland': 'Midland', 'spyker': 'Spyker',
+  'force india': 'Racing Point', 'racing point': 'Racing Point', 'aston martin': 'Aston Martin',
+  'sauber': 'Sauber', 'alfa romeo': 'Sauber', 'kick sauber': 'Sauber',
+  'toro rosso': 'RB', 'alphatauri': 'RB', 'rb f1 team': 'RB', 'racing bulls': 'RB',
+  'haas f1 team': 'Haas F1 Team', 'williams': 'Williams', 'mclaren': 'McLaren',
+  'ferrari': 'Ferrari', 'mercedes': 'Mercedes', 'red bull': 'Red Bull', 'audi': 'Audi', 'cadillac': 'Cadillac'
+};
+
+const teamKey = name => {
+  const n = String(name || '').toLowerCase().trim();
+  return TEAM_SUCCESSION[n] || name;
+};
+
+// Dos monoplazas de frente, uno al lado del otro, con los colores de la escudería.
+// Es un dibujo genérico, no una réplica de un modelo oficial.
+function carFrontSVG(teamName, id) {
+  const L = teamLook(teamName);
+  const gid = 'cg' + String(id).replace(/[^a-z0-9]/gi, '');
+  const car = x => `
+    <g transform="translate(${x},0)">
+      <rect x="-14" y="150" width="28" height="22" rx="4" fill="#0b0b10"/>
+      <rect x="-40" y="20" width="80" height="18" rx="4" fill="${L.acc}"/>
+      <path d="M-22 40 L22 40 L26 110 L-26 110 Z" fill="url(#${gid})"/>
+      <path d="M-12 50 L12 50 L14 90 L-14 90 Z" fill="#0b0b10" opacity=".7"/>
+      <ellipse cx="0" cy="92" rx="10" ry="8" fill="#0b0b10"/>
+      <rect x="-34" y="110" width="68" height="18" rx="6" fill="${L.sec}"/>
+      <rect x="-64" y="100" width="22" height="34" rx="4" fill="#0b0b10"/>
+      <rect x="42" y="100" width="22" height="34" rx="4" fill="#0b0b10"/>
+      <circle cx="-64" cy="128" r="2" fill="#777"/>
+      <circle cx="64" cy="128" r="2" fill="#777"/>
+    </g>`;
+  return `<svg class="car-front" viewBox="0 0 240 180" aria-hidden="true">
+    <defs>
+      <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${shade(L.main, .3)}"/>
+        <stop offset="1" stop-color="${shade(L.main, -.4)}"/>
+      </linearGradient>
+    </defs>
+    ${car(70)}${car(170)}
+  </svg>`;
+}
+
+// Escuderías actuales: una tarjeta por equipo con sus dos autos de frente
+function renderTeamsCurrent(grid, status) {
+  status.textContent = `${S.teams.length} escuderías en la parrilla 2026`;
+  grid.innerHTML = S.teams.map((t, i) => {
+    const drivers = S.drivers.filter(d => d.team === t.id);
+    const col = t.color;
+    return `
+    <article class="glass dcard team-card" data-team="${esc(t.name)}" style="--c:${col};animation-delay:${i * 40}ms">
+      <div class="dc-hel team-hel">${carFrontSVG(t.name, t.id)}</div>
+      <div class="dhead"><span class="dnum" style="font-size:22px">${t.pts}</span><span class="dcode">${esc(t.name.split(' ')[0].slice(0, 3).toUpperCase())}</span></div>
+      <h3>${esc(teamFull(t.name))}</h3>
+      <p class="dteam"><span class="dot" style="background:${col}"></span>${drivers.map(d => esc(lastName(d.name))).join(' · ') || '—'}</p>
+      <div class="dfoot"><span>${drivers.length} pilotos</span><span>${i + 1}.º en el mundial</span></div>
+    </article>`;
+  }).join('');
+}
+
+// Agrupa todos los constructores de la historia por su nombre actual
+function buildTeamHistory() {
+  const map = {};
+  (C.drv?.list || []).forEach(d => (d.teams || []).forEach(t => {
+    const k = teamKey(t);
+    map[k] ??= { key: k, names: new Set(), drivers: new Set() };
+    map[k].names.add(t);
+    map[k].drivers.add(d.name);
+  }));
+  return Object.values(map);
+}
+
+async function renderTeamsHistory(grid, status) {
+  if (!C.drv) {
+    grid.innerHTML = '';
+    status.textContent = 'Cargando historial de escuderías…';
+    try { await ensureDrv(); }
+    catch (e) {
+      console.warn(e);
+      grid.innerHTML = '';
+      status.innerHTML = `No se pudo cargar el historial. <button class="btn-sm" data-retry>Reintentar</button>`;
+      return;
+    }
+    if (teamTab !== 'hist') return;
+  }
+  const q = norm(teamQuery);
+  const list = buildTeamHistory()
+    .filter(t => !q || norm(t.key).includes(q))
+    .sort((a, b) => b.drivers.size - a.drivers.size);
+
+  status.textContent = `${list.length} ${list.length === 1 ? 'escudería' : 'escuderías'} en la historia de la F1`;
+  grid.innerHTML = list.map((t, i) => {
+    const names = [...t.names];
+    const col = teamColorFor(names[0]);
+    const drivers = [...t.drivers].slice(0, 6);
+    return `
+    <article class="glass hcard" style="--c:${col};animation-delay:${Math.min(i, 30) * 18}ms">
+      <div class="hc-head">
+        <span class="hc-years">${esc(names.map(teamFull).join(' → '))}</span>
+      </div>
+      <h3>${esc(teamFull(t.key))}</h3>
+      <p class="hc-sub">${t.drivers.size} pilotos pasaron por el equipo</p>
+      <div class="hc-teams">${drivers.map(n => `<span class="tpill" style="--c:${col}">${esc(n)}</span>`).join('')}${t.drivers.size > 6 ? `<span class="tpill more">+${t.drivers.size - 6}</span>` : ''}</div>
+    </article>`;
+  }).join('');
+}
+
+// Salón de la Fama de escuderías: constructores que ganaron campeonatos de pilotos
+function renderTeamsHOF(grid, status) {
+  const map = {};
+  S.champs.forEach(c => {
+    const k = teamKey(c.team);
+    map[k] ??= { key: k, titles: [] };
+    map[k].titles.push(c);
+  });
+  const list = Object.values(map).sort((a, b) => b.titles.length - a.titles.length);
+  status.textContent = 'Escuderías que alguna vez ganaron un campeonato mundial.';
+  grid.innerHTML = list.map((t, i) => `
+    <article class="glass dc" style="animation-delay:${Math.min(i, 20) * 30}ms">
+      <div class="dc-top"><span class="dc-num">${t.titles.length}</span><span class="dc-lbl">${t.titles.length === 1 ? 'título' : 'títulos'}</span></div>
+      <h3>${esc(teamFull(t.key))}</h3>
+      <div class="yrs">${t.titles.sort((a, b) => a.season - b.season).map(x => `<span class="yr">${x.season}</span>`).join('')}</div>
+    </article>`).join('');
+}
+
+function renderTeams() {
+  const grid = $('#teamGrid'), status = $('#teamStatus'), tools = $('#teamTools');
+  if (!grid) return;
+  tools.style.display = teamTab === 'hist' ? 'flex' : 'none';
+  document.querySelectorAll('#teamTabs .chip').forEach(c => c.classList.toggle('on', c.dataset.tt === teamTab));
+  if (S.source === 'local') {
+    grid.innerHTML = '';
+    status.textContent = 'Las escuderías requieren conexión a la API.';
+    return;
+  }
+  if (teamTab === 'act') return renderTeamsCurrent(grid, status);
+  if (teamTab === 'hof') return renderTeamsHOF(grid, status);
+  renderTeamsHistory(grid, status);
+}
+
 /* ============ NAVEGACIÓN ============ */
 function show(v) {
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.view === v));
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (v === 'pilotos') renderDrivers();
+  if (v === 'escuderias') renderTeams();
 }
 
 function standings(sim = {}) {
@@ -1399,194 +1540,107 @@ function renderStandings() {
 }
 
 /* ============ CONTENDIENTES AL TÍTULO ============ */
-// Una carrera simulada en el simulador cuenta como decidida
-const simTouched = id => {
-  const r = S.sim[id];
-  return !!r && (r.race.some(Boolean) || r.sprint.some(Boolean));
-};
-
 // Carreras que todavía pueden cambiar el campeonato
 const openRacesList = () => S.calendar
-  .filter(r => !r.done && !simTouched(r.id))
+  .filter(r => !r.done)
   .map(r => ({ id: r.id, name: r.name, round: r.round, sprint: r.sprint }));
 
-// Límite de nodos de la búsqueda: evita que la página se trabe en casos muy complejos
-const SEARCH_LIMIT = 300000;
+// Sesiones que quedan: carrera principal y, si la hay, Carrera Sprint de cada fin de semana
+const buildSessions = open => open.flatMap(r => {
+  const list = [{ key: r.id + '-m', race: r, sprint: false }];
+  if (r.sprint) list.push({ key: r.id + '-s', race: r, sprint: true });
+  return list;
+});
 
-function solveSlots(slots, others, cap) {
-  const capL = { ...cap };
-  const used = {};
-  const assign = new Array(slots.length);
+// Límite de nodos del solver: si se supera, esa combinación se toma como imposible
+const SEARCH_LIMIT = 40000;
+
+// Reparte los puestos de puntos entre los rivales sin superar sus topes.
+// Un piloto ocupa como máximo un puesto por sesión. Devuelve true si es posible.
+function canDistribute(slots, ids, cap) {
+  const capL = {};
+  const usedBy = {};
+  ids.forEach(id => { capL[id] = cap[id]; usedBy[id] = new Set(); });
+
+  const suffix = new Array(slots.length + 1).fill(0);
+  for (let i = slots.length - 1; i >= 0; i--) suffix[i] = suffix[i + 1] + slots[i].v;
+
   let nodes = 0;
-
   const dfs = i => {
     if (i === slots.length) return true;
     if (++nodes > SEARCH_LIMIT) return false;
+
+    let total = 0;
+    for (const id of ids) total += capL[id];
+    if (total < suffix[i]) return false;
+
     const s = slots[i];
-    const u = (used[s.sess] ??= new Set());
-    const opts = others
-      .filter(o => !u.has(o.id) && capL[o.id] >= s.v)
-      .sort((a, b) => (capL[a.id] - capL[b.id]) || (b.pts - a.pts));
-    for (const o of opts) {
-      capL[o.id] -= s.v;
-      u.add(o.id);
-      assign[i] = o.id;
+    const opts = ids
+      .filter(id => !usedBy[id].has(s.sess) && capL[id] >= s.v)
+      .sort((a, b) => (capL[a] - capL[b]) || (a < b ? -1 : 1));
+
+    const tried = new Set();
+    for (const id of opts) {
+      const sig = capL[id] + '|' + [...usedBy[id]].sort().join(',');
+      if (tried.has(sig)) continue;
+      tried.add(sig);
+
+      capL[id] -= s.v;
+      usedBy[id].add(s.sess);
       if (dfs(i + 1)) return true;
-      capL[o.id] += s.v;
-      u.delete(o.id);
+      usedBy[id].delete(s.sess);
+      capL[id] += s.v;
     }
     return false;
   };
 
-  return dfs(0) ? assign : null;
+  return dfs(0);
 }
 
-// Escenario de referencia para que un piloto sea campeón.
-// Para cada sesión (carrera o sprint), calcula cuál es el PEOR puesto que puede 
-// obtener el candidato asumiendo que gana todas las demás sesiones restantes.
-// Devuelve null si no puede ser campeón ni sumando el máximo de puntos.
-function scenarioFor(id, drivers, open) {
+// Un piloto sigue en carrera si, ganando todas las sesiones, puede quedar por delante
+// de todos los demás según los topes de cada rival.
+function isContender(id, drivers, sessions) {
   const me = drivers.find(d => d.id === id);
-  if (!me) return null;
+  let candPts = 0;
+  sessions.forEach(s => { candPts += s.sprint ? SPR[0] : PTS[0]; });
+  const final = me.pts + candPts;
 
-  // Máximo posible asumiendo que gana todo lo que queda
-  const baseMaxPts = me.pts + open.reduce((s, r) => s + PTS[0] + (r.sprint ? SPR[0] : 0), 0);
   const others = drivers.filter(d => d.id !== id);
-
-  // Verificación temprana: ¿Le alcanza ganando todo?
-  const cap0 = {};
-  let canWin = true;
+  const cap = {};
   for (const o of others) {
-    cap0[o.id] = baseMaxPts - o.pts;
-    if (cap0[o.id] < 0) { canWin = false; break; }
-  }
-  if (!canWin) return null;
-
-  const roundsResult = [];
-
-  for (const r of open) {
-    const roundData = { race: r, mainPos: {}, sprPos: {}, candMain: '', candSpr: '' };
-
-    // 1) Testear peor escenario en el Sprint (si hay) asumiendo que gana lo demás
-    if (r.sprint) {
-      let bestSpr = null, bestSprAssign = null;
-      // Probamos desde fuera de puntos (-1) hasta S1 (0)
-      const testIndices = [-1, 7, 6, 5, 4, 3, 2, 1, 0];
-      
-      for (const sIdx of testIndices) {
-        const candPts = sIdx === -1 ? 0 : SPR[sIdx];
-        const testFinal = baseMaxPts - SPR[0] + candPts; // Ajuste de sus puntos finales
-
-        const cap = {};
-        let valid = true;
-        for (const o of others) {
-          cap[o.id] = testFinal - o.pts;
-          if (cap[o.id] < 0) { valid = false; break; }
-        }
-        if (!valid) continue;
-
-        // Construir slots disponibles para los rivales
-        const slots = [];
-        for (const or of open) {
-          if (or.id === r.id) {
-            // En esta ronda, los rivales toman todo el sprint excepto el puesto del candidato
-            SPR.forEach((v, k) => { if (k !== sIdx) slots.push({ sess: or.id + '-s', v, pos: k + 1 }); });
-            // El candidato gana la carrera principal de esta ronda
-            PTS.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-m', v, pos: k + 2 }));
-          } else {
-            // En el resto de rondas, el candidato gana todo (dejando del P2/S2 para abajo a rivales)
-            if (or.sprint) SPR.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-s', v, pos: k + 2 }));
-            PTS.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-m', v, pos: k + 2 }));
-          }
-        }
-        
-        const assign = solveSlots(slots, others, cap);
-        if (assign) {
-          bestSpr = sIdx;
-          bestSprAssign = { assign, slots };
-          break; // Encontramos el peor puesto posible
-        }
-      }
-      
-      roundData.candSpr = bestSpr === -1 ? 'fuera de puntos' : `S${bestSpr + 1}`;
-      if (bestSprAssign) {
-        bestSprAssign.slots.forEach((s, i) => {
-          if (s.sess === r.id + '-s') roundData.sprPos[bestSprAssign.assign[i]] = s.pos;
-        });
-      }
-    }
-
-    // 2) Testear peor escenario en la Carrera Principal asumiendo que gana lo demás
-    let bestMain = null, bestMainAssign = null;
-    // Probamos desde fuera de puntos (-1) hasta P1 (0)
-    const testIndicesMain = [-1, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
-    
-    for (const mIdx of testIndicesMain) {
-      const candPts = mIdx === -1 ? 0 : PTS[mIdx];
-      const testFinal = baseMaxPts - PTS[0] + candPts;
-
-      const cap = {};
-      let valid = true;
-      for (const o of others) {
-        cap[o.id] = testFinal - o.pts;
-        if (cap[o.id] < 0) { valid = false; break; }
-      }
-      if (!valid) continue;
-
-      const slots = [];
-      for (const or of open) {
-        if (or.id === r.id) {
-          // El candidato gana el Sprint de esta ronda (si hay)
-          if (or.sprint) SPR.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-s', v, pos: k + 2 }));
-          // En esta carrera principal, los rivales toman todo excepto el puesto del candidato
-          PTS.forEach((v, k) => { if (k !== mIdx) slots.push({ sess: or.id + '-m', v, pos: k + 1 }); });
-        } else {
-          // En el resto de rondas, el candidato gana todo
-          if (or.sprint) SPR.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-s', v, pos: k + 2 }));
-          PTS.slice(1).forEach((v, k) => slots.push({ sess: or.id + '-m', v, pos: k + 2 }));
-        }
-      }
-      
-      const assign = solveSlots(slots, others, cap);
-      if (assign) {
-        bestMain = mIdx;
-        bestMainAssign = { assign, slots };
-        break; // Encontramos el peor puesto posible
-      }
-    }
-    
-    // Por si el solver corta por límite de nodos sin éxito
-    if (bestMain === null) return null; 
-
-    roundData.candMain = bestMain === -1 ? 'fuera de puntos' : `P${bestMain + 1}`;
-    if (bestMainAssign) {
-      bestMainAssign.slots.forEach((s, i) => {
-        if (s.sess === r.id + '-m') roundData.mainPos[bestMainAssign.assign[i]] = s.pos;
-      });
-    }
-    
-    roundsResult.push(roundData);
+    cap[o.id] = final - o.pts;
+    if (cap[o.id] < 0) return false;
   }
 
-  return { final: baseMaxPts, cap0: cap0, rounds: roundsResult };
+  const slots = [];
+  sessions.forEach(s => {
+    const table = s.sprint ? SPR : PTS;
+    table.forEach((v, k) => { if (k > 0) slots.push({ sess: s.key, pos: k + 1, v }); });
+  });
+  slots.sort((a, b) => b.v - a.v);
+
+  return canDistribute(slots, others.map(o => o.id), cap);
 }
+
+let contMemo = { key: '', val: null };
 
 function contenderData() {
   const { drivers } = standings(S.sim);
-  const leader = drivers[0];
   const open = openRacesList();
+  const key = JSON.stringify([drivers.map(d => [d.id, d.pts]), open.map(r => [r.id, r.sprint])]);
+  if (contMemo.key === key) return contMemo.val;
+
+  const leader = drivers[0];
+  const sessions = buildSessions(open);
   const pool = open.reduce((s, r) => s + PTS[0] + (r.sprint ? SPR[0] : 0), 0);
 
-  const scen = {};
-  drivers.forEach(d => {
-    const sc = scenarioFor(d.id, drivers, open);
-    if (sc) scen[d.id] = sc;
-  });
   const cands = drivers
-    .filter(d => scen[d.id])
+    .filter(d => isContender(d.id, drivers, sessions))
     .map(d => ({ ...d, max: d.pts + pool }));
 
-  return { drivers, leader, open, pool, cands, scen };
+  const val = { drivers, leader, open, pool, cands };
+  contMemo = { key, val };
+  return val;
 }
 
 function ensureContendBox() {
@@ -1640,16 +1694,21 @@ function renderContenders() {
   }
 
   const top = Math.max(leader.pts, ...cands.map(c => c.max), 1);
+  const sprints = open.filter(r => r.sprint).length;
 
   const cards = cands.map((d, i) => {
     const col = teamColorByName(d.teamName);
+    const isLead = d.id === leader.id;
+    const second = drivers[1];
+    const ventaja = isLead ? d.pts - (second ? second.pts : 0) : 0;
     const gap = leader.pts - d.pts;
     const now = d.pts / top * 100;
     const potW = (d.max - d.pts) / top * 100;
-    const isLead = d.id === leader.id;
-    const meta = isLead ? '<span>Lidera el campeonato</span>' : `<span>Vs líder −${gap}</span>`;
+    const need = isLead
+      ? `<span class="ct-need">Ventaja de ${ventaja} pts</span>`
+      : `<span class="ct-need">Recortar ${gap} pts a ${esc(lastName(leader.name))}</span>`;
     return `
-    <article class="glass ct-card" data-ct-drv="${esc(d.id)}" tabindex="0" role="button" style="--c:${col};animation-delay:${i * 50}ms">
+    <article class="glass ct-card" style="--c:${col};animation-delay:${i * 50}ms">
       <div class="ct-row">
         <span class="ct-pos">P${i + 1}</span>
         <div class="ct-info">
@@ -1662,96 +1721,12 @@ function renderContenders() {
         <i class="now" style="width:${now.toFixed(2)}%"></i>
         <i class="pot" style="left:${now.toFixed(2)}%;width:${potW.toFixed(2)}%"></i>
       </div>
-      <div class="ct-meta">${meta}<span>Máximo ${d.max}</span></div>
-      <div class="ct-cta"><span>${isLead ? 'Ver cómo mantenerse campeón' : 'Ver cómo salir campeón'}</span><i>→</i></div>
+      <div class="ct-meta">${isLead ? '<span>Lidera el campeonato</span>' : `<span>Vs líder −${gap}</span>`}<span>Máximo ${d.max}</span></div>
+      <div class="ct-meta">${need}<span>${N} ${N === 1 ? 'carrera' : 'carreras'}${sprints ? ` · ${sprints} Sprint` : ''}</span></div>
     </article>`;
   }).join('');
 
   box.innerHTML = `${head}<div class="ct-list">${cards}</div>`;
-}
-
-// Modal con el escenario carrera por carrera para que un piloto sea campeón.
-function openChampPath(id) {
-  const { drivers, open, cands, scen } = contenderData();
-  const d = drivers.find(x => x.id === id);
-  const sc = scen[id];
-  if (!d || !sc || !open.length) return;
-
-  const N = open.length;
-  const sprints = open.filter(r => r.sprint).length;
-  const byId = Object.fromEntries(drivers.map(x => [x.id, x]));
-  const leader = drivers[0];
-  const col = teamColorByName(d.teamName);
-  const maxPossible = PTS[1] * N + SPR[1] * sprints;
-
-  // Contendientes que siguen con chances, sin el piloto elegido
-  const rivalIds = cands.map(c => c.id).filter(x => x !== id);
-
-  const margin = d.id === leader.id
-    ? (drivers[1] ? `Lidera por ${d.pts - drivers[1].pts} pts` : 'Lidera')
-    : `−${leader.pts - d.pts} pts vs ${lastName(leader.name)}`;
-
-  const roundsHTML = sc.rounds.map(({ race, mainPos, sprPos, candMain, candSpr }) => {
-    const rivals = rivalIds.map(rid => {
-      const o = byId[rid];
-      const main = mainPos[rid] ? `P${mainPos[rid]}` : 'fuera de puntos';
-      const spr = race.sprint
-        ? (sprPos[rid] ? ` · S${sprPos[rid]}` : ' · Sprint fuera de puntos')
-        : '';
-      return `<span class="tpill" style="--c:${teamColorByName(o.teamName)}">${esc(lastName(o.name))} · ${main}${spr}</span>`;
-    }).join('');
-    
-    // Generación dinámica del puesto del candidato en el DOM
-    const cMainStr = candMain;
-    const cSprStr = race.sprint ? (candSpr.includes('fuera') ? ' · Sprint fuera de puntos' : ` · ${candSpr}`) : '';
-
-    return `
-      <div class="pl-row">
-        <span class="pl-k">R${String(race.round).padStart(2, '0')}</span>
-        <div class="pl-t">
-          <b>${esc(raceEs(race.name))}${race.sprint ? ' · Sprint' : ''}</b>
-          <div class="tpills">
-            <span class="tpill now" style="--c:${col}">${esc(lastName(d.name))} · ${cMainStr}${cSprStr}</span>
-            ${rivals || '<span class="muted">Ningún otro contendiente tiene chances en esta carrera</span>'}
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-
-  const topes = Object.entries(sc.cap0)
-    .filter(([rid, c]) => rid !== id && c < maxPossible)
-    .sort((a, b) => a[1] - b[1])
-    .slice(0, 8)
-    .map(([rid, c]) => {
-      const o = byId[rid];
-      return `
-        <div class="pl-other">
-          <span><span class="dot" style="background:${teamColorByName(o.teamName)}"></span>${esc(o.name)}</span>
-          <strong>puede sumar como máximo ${c} pts más</strong>
-        </div>`;
-    }).join('');
-
-  openModal(`
-    <span class="eyebrow">Camino al título · ${SEASON}</span>
-    <h3 class="display m-title">${esc(d.name)}</h3>
-    <div class="m-grid">
-      <div class="stat"><span>Puntos actuales</span><strong>${d.pts}</strong></div>
-      <div class="stat"><span>Máximo posible</span><strong>${sc.final} pts</strong></div>
-      <div class="stat"><span>Frente al líder</span><strong>${esc(margin)}</strong></div>
-      <div class="stat"><span>Carreras que quedan</span><strong>${N}${sprints ? ` · ${sprints} con Sprint` : ''}</strong></div>
-    </div>
-
-    <div class="box" style="margin-top:18px">
-      <h4>🏁 Escenario límite sesión a sesión</h4>
-      <p class="muted note-s" style="margin:0 0 12px">Mostrando el <b>peor puesto necesario en cada sesión</b> (asumiendo que gana las demás) con el que ${esc(lastName(d.name))} aseguraría el título matemáticamente. Los contendientes muestran su posición en ese reparto límite.</p>
-      <div class="pl-list">${roundsHTML}</div>
-    </div>
-
-    <div class="box" style="margin-top:18px">
-      <h4>🎯 Límite de puntos de los rivales</h4>
-      <div class="pl-others">${topes || '<p class="muted">Ningún rival tiene un límite ajustado: con los puntos que quedan no pueden superarlo.</p>'}</div>
-      <p class="muted note-s">Si un rival supera ese límite en la temporada, ${esc(lastName(d.name))} deja de ser campeón. Se muestran los 8 rivales más ajustados.</p>
-    </div>`);
 }
 
 /* ============ TRAZADOS ============ */
@@ -2049,10 +2024,10 @@ async function openCircuitDetail(id, src) {
         ${lineRow('Localidad', locality || '—')}
         ${lineRow('País', cty(country))}
         ${isVig
-          ? lineRow('Ronda 2026', `${info.round} ·${info.dateLabel}`)
+          ? lineRow('Ronda 2026', `${info.round} · ${info.dateLabel}`)
           : lineRow('Estado', 'Ya no forma parte del calendario de F1')}
         ${lineRow('Primera carrera', firstSeason || '—')}
-        ${w ? lineRow('Última victoria', `${w.lastSeason} ·${w.lastWinner}`) : ''}
+        ${w ? lineRow('Última victoria', `${w.lastSeason} · ${w.lastWinner}`) : ''}
       </div>
     </div>
 
@@ -2131,7 +2106,7 @@ function openChampDriver(id) {
     </div>
     <div class="box" style="margin-top:18px">
       <h4>🏆 Temporadas campeonas</h4>
-      <div class="yrs">${list.map(t => `<span class="yr" data-season="${t.season}">${t.season} ·${esc(teamFull(t.team))}</span>`).join('')}</div>
+      <div class="yrs">${list.map(t => `<span class="yr" data-season="${t.season}">${t.season} · ${esc(teamFull(t.team))}</span>`).join('')}</div>
     </div>`);
 }
 
@@ -2191,7 +2166,7 @@ function seasonHTML(c, d) {
         return `<b>Ronda ${r.round} · ${esc(raceEs(r.name))}</b><br>
           <span class="muted">${esc(fmtDateY(r.date))} · ${faltan === 0
             ? 'Se consagró en la última carrera de la temporada'
-            : `Faltaban ${faltan}${faltan === 1 ? 'carrera' : 'carreras'} para el final`}</span>`;
+            : `Faltaban ${faltan} ${faltan === 1 ? 'carrera' : 'carreras'} para el final`}</span>`;
       })();
 
   const rowsHTML = d.rows.map((r, i) => {
@@ -2246,93 +2221,10 @@ function seasonHTML(c, d) {
     </div>`;
 }
 
-/* ============ SIMULADOR ============ */
-let DRIVER_OPTS = '';
-const slots = (type, rid, n) => Array.from({ length: n }, (_, i) => `
-  <label class="slot">
-    <span>${type === 'race' ? 'P' : 'S'}${i + 1} · ${type === 'race' ? PTS[i] : SPR[i]} pts</span>
-    <select data-r="${rid}" data-t="${type}" data-i="${i}"><option value="">—</option>${DRIVER_OPTS}</select>
-  </label>`).join('');
-
-function renderSim() {
-  const rem = S.calendar.filter(r => !r.done);
-  DRIVER_OPTS = S.drivers.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join('');
-  const simFav = $('#simFav');
-  if (simFav) simFav.innerHTML = '<option value="">Elige un piloto…</option>' + DRIVER_OPTS;
-
-  const simRaces = $('#simRaces');
-  if (simRaces) {
-    simRaces.innerHTML = rem.length
-      ? rem.map((r, i) => `
-        <details class="glass acc" ${i === 0 ? 'open' : ''}>
-          <summary>
-            <span class="mono muted" style="font-size:13px">R${r.round}</span>
-            <strong>${r.flag} ${esc(r.name)}</strong>
-            <span class="badge ${r.sprint ? 'b-sprint' : 'b-done'}">${r.sprint ? 'Sprint' : 'Estándar'}</span>
-          </summary>
-          <div class="sub-label">Carrera principal</div>
-          <div class="slots">${slots('race', r.id, 10)}</div>
-          ${r.sprint ? `<div class="sub-label">Sprint</div><div class="slots">${slots('sprint', r.id, 8)}</div>` : ''}
-        </details>`).join('')
-      : '<p class="glass muted" style="padding:24px;text-align:center">No quedan carreras por simular.</p>';
-  }
-
-  updateSummary();
-}
-
-function updateSummary() {
-  const { drivers, teams } = standings(S.sim);
-  const leader = drivers[0];
-  const simFav = $('#simFav');
-  const fav = simFav ? drivers.find(d => d.id === simFav.value) : null;
-  const remaining = S.calendar.filter(r => !r.done).length;
-
-  const simRank = $('#simRank');
-  if (simRank) {
-    simRank.innerHTML = drivers.slice(0, 6).map((d, i) => `
-      <div class="line"><span><span class="muted mono">${i + 1}.</span> &nbsp;${esc(lastName(d.name))}</span>
-      <strong style="color:${teamColorByName(d.teamName)}">${d.pts}</strong></div>`).join('');
-  }
-
-  const simTeams = $('#simTeams');
-  if (simTeams) {
-    simTeams.innerHTML = teams.slice(0, 5).map(t => `
-      <div class="line"><span><span class="dot" style="background:${t.color}"></span>${esc(t.name)}</span><strong>${t.pts}</strong></div>`).join('');
-  }
-
-  const simFavPts = $('#simFavPts');
-  const simFavName = $('#simFavName');
-  const simNote = $('#simNote');
-
-  if (!fav) {
-    if (simFavPts) simFavPts.textContent = '—';
-    if (simFavName) simFavName.textContent = 'Sin seleccionar';
-    if (simNote) simNote.innerHTML = 'Elige un piloto para analizar su camino al título.';
-    return;
-  }
-
-  if (simFavPts) simFavPts.innerHTML = `${fav.pts}<small>pts</small>`;
-  if (simFavName) simFavName.textContent = fav.name;
-
-  if (simNote) {
-    if (fav.id === leader.id) {
-      simNote.innerHTML = '<b>Líder proyectado.</b> Mantiene el destino del campeonato en sus manos.';
-    } else {
-      const gap = leader.pts - fav.pts;
-      simNote.innerHTML = remaining
-        ? `<b>Brecha de ${gap} pts</b> con ${esc(lastName(leader.name))}. Para alcanzarlo necesitaría superar al líder por un promedio de <b>${(gap / remaining).toFixed(1)} pts</b> en cada carrera restante.`
-        : `<b>Diferencia final: ${gap} pts.</b> No quedan carreras por disputar.`;
-    }
-  }
-}
-
 /* ============ EVENTOS ============ */
 document.addEventListener('click', e => {
   const viewBtn = e.target.closest('[data-view]');
   if (viewBtn) return show(viewBtn.dataset.view);
-
-  const ctDrv = e.target.closest('[data-ct-drv]');
-  if (ctDrv) return openChampPath(ctDrv.dataset.ctDrv);
 
   const champTabBtn = e.target.closest('[data-champ-tab]');
   if (champTabBtn) {
@@ -2349,8 +2241,15 @@ document.addEventListener('click', e => {
   const retry = e.target.closest('[data-retry]');
   if (retry) {
     C.drvPromise = null;
+    if (document.querySelector('#v-escuderias.active')) return renderTeams();
     if (drvModalId) return openDriver(drvModalId);
     return renderDrivers();
+  }
+
+  const tt = e.target.closest('[data-tt]');
+  if (tt) {
+    teamTab = tt.dataset.tt;
+    return renderTeams();
   }
 
   const dt = e.target.closest('[data-dt]');
@@ -2396,46 +2295,8 @@ document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.logo')) {
     e.preventDefault();
     show('home');
-    return;
-  }
-  if (e.key === 'Enter' && e.target.matches?.('.ct-card')) {
-    e.preventDefault();
-    openChampPath(e.target.dataset.ctDrv);
   }
 });
-
-const simRacesEl = $('#simRaces');
-if (simRacesEl) {
-  simRacesEl.addEventListener('change', e => {
-    const s = e.target;
-    if (!s.dataset.r) return;
-    const { r, t } = s.dataset, i = +s.dataset.i, v = s.value;
-    S.sim[r] ??= { race: Array(10).fill(''), sprint: Array(8).fill('') };
-    S.sim[r][t][i] = v;
-    if (v) S.sim[r][t].forEach((x, j) => {
-      if (j !== i && x === v) {
-        S.sim[r][t][j] = '';
-        const other = document.querySelector(`select[data-r="${r}"][data-t="${t}"][data-i="${j}"]`);
-        if (other) other.value = '';
-      }
-    });
-    renderStandings();
-    updateSummary();
-  });
-}
-
-const simFavEl = $('#simFav');
-if (simFavEl) simFavEl.addEventListener('change', updateSummary);
-
-const simResetEl = $('#simReset');
-if (simResetEl) {
-  simResetEl.addEventListener('click', () => {
-    Object.keys(S.sim).forEach(k => delete S.sim[k]);
-    document.querySelectorAll('#simRaces select').forEach(s => s.value = '');
-    renderStandings();
-    updateSummary();
-  });
-}
 
 const drvSearchEl = $('#drvSearch');
 if (drvSearchEl) {
@@ -2445,16 +2306,36 @@ if (drvSearchEl) {
   });
 }
 
+const teamSearchEl = $('#teamSearch');
+if (teamSearchEl) {
+  teamSearchEl.addEventListener('input', e => {
+    teamQuery = e.target.value;
+    if (teamTab === 'hist') renderTeams();
+  });
+}
+
+/* ============ ESTRATEGIA: quitar la sección ============ */
+function removeStrategySection() {
+  document.querySelectorAll('nav [data-view]').forEach(btn => {
+    if (/estrategia/i.test(btn.textContent)) {
+      const v = btn.dataset.view;
+      btn.remove();
+      document.getElementById('v-' + v)?.remove();
+    }
+  });
+  document.getElementById('simRaces')?.closest('.view')?.remove();
+}
+
 /* ============ INICIALIZACIÓN ============ */
 function renderAll() {
   setupUserFooter();
   mergeCalendarIntoStandings();
+  removeStrategySection();
   renderHome();
   renderCalendar();
   renderStandings();
   ensureCircTabs();
   renderCircuits();
-  renderSim();
 }
 
 (async function init() {

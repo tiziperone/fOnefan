@@ -23,13 +23,10 @@
           </linearGradient>
         </defs>
         <rect width="64" height="64" rx="16" fill="url(#lgMark)"/>
-        <!-- alerón trasero -->
         <path d="M7 15H39Q41 15 41 17V19H7Z" fill="#fff"/>
         <rect x="5" y="12" width="4" height="13" rx="2" fill="#fff"/>
         <path d="M9 21H37V23H9Z" fill="#fff" opacity=".6"/>
-        <!-- carrocería -->
         <path d="M14 30Q18 25 30 26L46 27Q53 28 55 36V40H14Z" fill="#fff"/>
-        <!-- rueda trasera: neumático, flanco amarillo y buje verde -->
         <circle cx="42" cy="44" r="13" fill="#0d0d12"/>
         <circle cx="42" cy="44" r="10" fill="none" stroke="#ffd60a" stroke-width="2.6"/>
         <circle cx="42" cy="44" r="6.5" fill="#1d1d26"/>
@@ -43,7 +40,7 @@
       <button class="tab" data-view="standings">Campeonato</button>
       <button class="tab" data-view="circuits">Circuitos</button>
       <button class="tab" data-view="pilotos">Pilotos</button>
-      <button class="tab" data-view="sim">Estrategia</button>
+      <button class="tab" data-view="escuderias">Escuderías</button>
     </div>
   </nav>
 </header>
@@ -57,10 +54,10 @@
       <div class="hero-l">
         <span class="eyebrow">Temporada 2026 · Fórmula 1</span>
         <h1 class="display"><span class="grad-word">Bienvenido<br>al gran show.</span></h1>
-        <p class="lead">Calendario, campeonato, circuitos y estrategia en un solo lugar. Todo lo que necesitas para seguir cada vuelta.</p>
+        <p class="lead">Calendario, campeonato, circuitos y escuderías en un solo lugar. Todo lo que necesitas para seguir cada vuelta.</p>
         <div class="cta">
           <button class="btn" data-view="calendar">Ver calendario</button>
-          <button class="btn ghost" data-view="sim">Abrir estrategia</button>
+          <button class="btn ghost" data-view="escuderias">Ver escuderías</button>
         </div>
       </div>
       <div class="hero-r">
@@ -139,32 +136,22 @@
     <div class="drv-grid" id="drvGrid"></div>
   </section>
 
-  <!-- ESTRATEGIA -->
-  <section class="view" id="v-sim">
+  <!-- ESCUDERÍAS -->
+  <section class="view" id="v-escuderias">
     <div class="sec-head">
-      <div><span class="eyebrow">Simulador</span><h2 class="display">Zona de Estrategia</h2></div>
-      <p>Descubre en qué posición necesita salir tu piloto para lograr ser campeón este año</p>
+      <div><span class="eyebrow">Constructores</span><h2 class="display">Escuderías</h2></div>
+      <p>Equipos actuales, su recorrido por la historia y los equipos del Salón de la Fama.</p>
     </div>
-    <div class="sim">
-      <div>
-        <div class="glass sim-card">
-          <div class="field">
-            <label for="simFav">Piloto a seguir</label>
-            <select id="simFav"></select>
-          </div>
-        </div>
-        <div id="simRaces"></div>
-        <div style="margin-top:16px"><button class="btn-sm" id="simReset">Borrar simulación</button></div>
-      </div>
-      <aside class="glass sim-card" style="position:sticky;top:110px">
-        <span class="eyebrow">Proyección</span>
-        <div class="score" style="margin-top:10px" id="simFavPts">—</div>
-        <p class="muted" style="font-size:13px;margin-top:6px" id="simFavName">Sin seleccionar</p>
-        <p class="note" id="simNote"></p>
-        <div style="margin-top:20px"><span class="eyebrow" style="font-size:10px">Top 6 pilotos</span><div id="simRank" style="margin-top:8px"></div></div>
-        <div style="margin-top:18px"><span class="eyebrow" style="font-size:10px">Constructores</span><div id="simTeams" style="margin-top:8px"></div></div>
-      </aside>
+    <div class="chips" id="teamTabs">
+      <button class="chip on" data-tt="act">Escuderías actuales</button>
+      <button class="chip" data-tt="hist">A lo largo de la historia</button>
+      <button class="chip" data-tt="hof">Salón de la Fama</button>
     </div>
+    <div class="drv-tools" id="teamTools" style="display:none">
+      <input id="teamSearch" type="search" placeholder="Buscar escudería…" autocomplete="off">
+    </div>
+    <p id="teamStatus" class="muted"></p>
+    <div class="drv-grid" id="teamGrid"></div>
   </section>
 </main>
 

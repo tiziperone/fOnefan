@@ -1,4 +1,5 @@
 // ================= DATOS DRIVERWIN · TEMPORADA 2026 =================
+// Respaldo sin conexión: lo usa app.js solo si la API no responde.
 
 const PTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 const SPR = [8, 7, 6, 5, 4, 3, 2, 1];
@@ -66,29 +67,4 @@ const CALENDAR = [
   { r: 21, id: 'lasvegas',    name: 'GP de Las Vegas',            date: '19 - 21 Nov',    start: '2026-11-19', sprint: false, done: false, flag: '🇺🇸' },
   { r: 22, id: 'qatar',       name: 'GP de Catar',                date: '27 - 29 Nov',    start: '2026-11-27', sprint: true,  done: false, flag: '🇶🇦' },
   { r: 23, id: 'abudhabi',    name: 'GP de Abu Dabi',             date: '04 - 06 Dic',    start: '2026-12-04', sprint: false, done: false, flag: '🇦🇪' }
-];
-
-const HISTORY = [
-  { y: 2025, d: 'Lando Norris',     t: 'McLaren' },
-  { y: 2024, d: 'Max Verstappen',   t: 'McLaren (constructores)' },
-  { y: 2023, d: 'Max Verstappen',   t: 'Red Bull Racing' }
-];
-
-const CIRCUITS = [
-  {
-    id: 'monza', name: 'Monza', country: 'Italia',
-    firstGP: '1950', length: '5,793 km',
-    record: '1:21.046 (Barrichello, 2004)',
-    wins: 'Michael Schumacher y Lewis Hamilton (5 cada uno)',
-    history: 'Conocido como "El Templo de la Velocidad", Monza es uno de los circuitos más antiguos del calendario y uno de los de mayor velocidad media.',
-    path: 'M30,80 C10,80 10,60 20,40 L40,15 C45,5 60,5 70,15 C85,30 90,60 80,75 C70,90 50,80 30,80 Z'
-  },
-  {
-    id: 'singapur', name: 'Marina Bay', country: 'Singapur',
-    firstGP: '2008', length: '4,940 km',
-    record: 'Consultar formula1.com',
-    wins: 'Consultar formula1.com',
-    history: 'Circuito urbano nocturno. Su combinación de calor, humedad y curvas lentas lo convierte en una de las pruebas físicas más exigentes del calendario.',
-    path: 'M20,50 L20,30 L40,30 L40,15 L60,15 L60,35 L80,35 L80,60 L60,60 L60,80 L35,80 L35,65 L20,65 Z'
-  }
 ];
