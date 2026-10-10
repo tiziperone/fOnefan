@@ -2417,15 +2417,14 @@ const tyreSVG = (color, letter) => {
   </svg>`;
 };
 
-// Cada tema tiene un único texto explicativo por tarjeta (sin separar niveles).
 const INFO_SECTIONS = [
   { id: 'fundamentos', icon: '🏁', title: 'Fundamentos',
     intro: 'Cómo se arma un fin de semana de Gran Premio y cómo se reparten los puntos.',
     items: [
       { type: 'card', icon: '📅', title: 'El fin de semana',
-        t: 'El viernes hay prácticas libres, el sábado la clasificación y el domingo la carrera. Algunos fines de semana tienen formato Sprint: una práctica menos y una carrera corta de unos 100 km el sábado, cuya parrilla define la Clasificación Sprint.' },
+        t: 'Un fin de semana estándar tiene tres prácticas libres, la clasificación y la carrera. Los fines de semana con Sprint cambian la estructura: hay una sola práctica, una clasificación Sprint y una carrera corta el sábado.' },
       { type: 'card', icon: '🏁', title: 'La parrilla',
-        t: 'Es el orden de salida. El piloto más rápido en clasificación sale primero (pole position). Antes de largar hay una vuelta de formación para calentar neumáticos y frenos.' },
+        t: 'Es el orden de salida. El piloto más rápido de la clasificación sale primero (pole position). Antes de largar hay una vuelta de formación para calentar neumáticos y frenos.' },
       { type: 'card', icon: '🥇', title: 'Puntos',
         t: 'Puntúan los 10 primeros de la carrera: 25, 18, 15, 12, 10, 8, 6, 4, 2 y 1. En el Sprint puntúan los 8 primeros, del 8 al 1.' },
       { type: 'card', icon: '🏎️', title: 'Pilotos y escuderías',
@@ -2434,9 +2433,51 @@ const INFO_SECTIONS = [
         t: 'Desde la clasificación hasta la carrera el coche queda bajo control del equipo técnico, lo que limita los cambios de puesta a punto. Cambiar piezas de motor o caja implica penalización de parrilla.' }
     ] },
 
-  { id: 'neumaticos', icon: '🛞', title: 'Neumáticos',
-    intro: 'Son el único contacto del coche con la pista. Elegir bien la mezcla es media carrera.',
+  { id: 'practicas', icon: '🔧', title: 'Prácticas',
+    intro: 'Son las sesiones donde los equipos preparan el coche. No cuentan para la parrilla, pero definen todo lo que viene.',
     items: [
+      { type: 'card', icon: '🎯', title: '¿Para qué sirven?',
+        t: 'Los equipos prueban la puesta a punto (alerones, suspensión, frenos), los neumáticos y el comportamiento del coche. También sirven para que los pilotos se adapten a la pista, que cambia mucho entre el viernes y el domingo por la temperatura y el asfalto.' },
+      { type: 'card', icon: '⏱️', title: '¿Cuánto duran y cuántas son?',
+        t: 'Cada práctica dura 60 minutos. En un fin de semana estándar hay tres (FP1, FP2 y FP3). En un fin de semana Sprint hay una sola (FP1), y el sábado se usa para la clasificación Sprint.' },
+      { type: 'card', icon: '1️⃣', title: 'FP1 · viernes',
+        t: 'Es la primera toma de contacto. Se prueban configuraciones base y los equipos suelen probar piezas nuevas. A veces se usa para que un piloto de reserva o novato pruebe el coche.' },
+      { type: 'card', icon: '2️⃣', title: 'FP2 · viernes',
+        t: 'Es la sesión clave para el ritmo de carrera. Los equipos simulan tandas largas con combustible de carrera para ver cómo se degradan los neumáticos y cuál es el ritmo real de cada auto.' },
+      { type: 'card', icon: '3️⃣', title: 'FP3 · sábado',
+        t: 'Es la última práctica antes de la clasificación. Se ajusta el coche para buscar la vuelta rápida y se prueban los neumáticos de clasificación.' },
+      { type: 'card', icon: '💡', title: 'Cómo leer las prácticas',
+        t: 'Los tiempos de práctica no cuentan para la parrilla, pero los equipos los usan para estimar quién tiene mejor ritmo de carrera. Un buen ritmo en FP2 suele anticipar quién pelea el podio.' }
+    ] },
+
+  { id: 'clasificacion', icon: '⏳', title: 'Clasificación',
+    intro: 'Define la parrilla de salida. Se divide en tres fases eliminatorias: Q1, Q2 y Q3.',
+    items: [
+      { type: 'card', icon: '🧭', title: 'Cómo funciona',
+        t: 'Es una sesión de tiempo: cada piloto intenta marcar la vuelta más rápida posible. Se corre en tres tandas (Q1, Q2 y Q3) y, al final de cada una, los más lentos quedan eliminados. Solo cuenta la vuelta, no la carrera.' },
+      { type: 'card', icon: '🔴', title: 'Q1 · 18 minutos',
+        t: 'Salen todos los pilotos. Los peores tiempos, habitualmente los cinco más lentos, quedan eliminados y se ubican en los últimos puestos de la parrilla. Los demás pasan a Q2.' },
+      { type: 'card', icon: '🟡', title: 'Q2 · 15 minutos',
+        t: 'Solo siguen los que quedaron en Q1. Otro grupo queda eliminado, habitualmente cinco pilotos, que se ubican entre los puestos 11 y 15 de la parrilla. Los diez más rápidos pasan a Q3.' },
+      { type: 'card', icon: '🟢', title: 'Q3 · 12 minutos',
+        t: 'Los diez mejores pelean por la pole position. Sus posiciones, del 1 al 10, dependen del tiempo marcado en esta última tanda.' },
+      { type: 'card', icon: '🔁', title: 'La diferencia clave entre Q1, Q2 y Q3',
+        t: 'Q1 y Q2 eliminan pilotos y definen los puestos de atrás. Q3 solo define los diez primeros lugares, así que la última vuelta es la decisiva. Si llegas a Q3 tienes más tiempo para atacar, pero también menos margen de error.' },
+      { type: 'card', icon: '🛞', title: 'Neumáticos en clasificación',
+        t: 'Los pilotos que llegan a Q3 deben largar la carrera con el mismo juego de neumáticos con el que marcaron su mejor tiempo en Q2. Por eso Q2 también es una decisión de estrategia, no solo de velocidad.' },
+      { type: 'card', icon: '🏃', title: 'Clasificación Sprint',
+        t: 'En los fines de semana Sprint existe una versión más corta: Q1 de 12 minutos, Q2 de 10 minutos y Q3 de 8 minutos. Define la parrilla de la carrera Sprint.' }
+    ] },
+
+  { id: 'neumaticos', icon: '🛞', title: 'Neumáticos',
+    intro: 'Son el único contacto del coche con la pista. Elegir bien la mezcla y administrar el cupo es media carrera.',
+    items: [
+      { type: 'card', icon: '📦', title: 'Cupo fijo para todo el fin de semana',
+        t: 'Cada piloto tiene un número limitado de juegos de neumáticos secos para el fin de semana (en los últimos años fueron 13). No se pueden pedir juegos nuevos a demanda: lo que se usa en las prácticas se descuenta del cupo, así que cada decisión cuenta.' },
+      { type: 'card', icon: '🎯', title: 'Pirelli elige los compuestos',
+        t: 'Para cada Gran Premio, Pirelli nomina tres compuestos consecutivos de su gama, que va de C1 (el más duro) a C5 (el más blando). Esos son los neumáticos disponibles ese fin de semana, identificados como blando, medio y duro.' },
+      { type: 'card', icon: '🧩', title: 'Cada escudería decide cuál usar',
+        t: 'Con esos tres compuestos, cada equipo elige cuántos juegos llevar de cada uno según el circuito, su coche y su estrategia. Un juego que se usa en clasificación no siempre sirve para la carrera, por eso cada decisión se planifica desde el viernes.' },
       { type: 'tyre', color: '#ef4444', letter: 'S', name: 'Blando (Soft)', sub: 'Aro rojo',
         t: 'Es el que más agarra, pero se desgasta rápido: ideal para clasificar o tramos cortos. Si se degrada demasiado aparecen ampollas en la superficie (blistering).' },
       { type: 'tyre', color: '#facc15', letter: 'M', name: 'Medio (Medium)', sub: 'Aro amarillo',
@@ -2448,7 +2489,7 @@ const INFO_SECTIONS = [
       { type: 'tyre', color: '#3b82f6', letter: 'W', name: 'Lluvia (Wet)', sub: 'Aro azul',
         t: 'Para lluvia intensa, con mucho dibujo para expulsar agua. Cuando la pista se seca se vuelve muy lento y hay que cambiarlo.' },
       { type: 'card', icon: '🔁', title: 'Regla de los dos compuestos',
-        t: 'En una carrera seca hay que usar al menos dos tipos de neumático distintos. Es la base de casi todas las estrategias de paradas.' },
+        t: 'En una carrera seca hay que usar al menos dos compuestos distintos. Es la base de casi todas las estrategias de paradas.' },
       { type: 'card', icon: '⏱️', title: 'La parada en boxes',
         t: 'Cambiar los cuatro neumáticos lleva unos 2 a 3 segundos con el coche detenido. Los equipos entrenan para reducirlo al mínimo, y a eso se suma el tiempo de entrar y salir de la calle de boxes.' },
       { type: 'card', icon: '🌡️', title: 'Temperatura',
@@ -2506,9 +2547,9 @@ const INFO_SECTIONS = [
     intro: 'Un monoplaza combina aerodinámica, motor híbrido y electrónica. Estas son sus piezas clave.',
     items: [
       { type: 'card', icon: '🌬️', title: 'Aerodinámica activa',
-        t: 'Desde 2026 los alerones se mueven según la zona: en recta reducen la resistencia para ir más rápido, y en curva generan carga para pegar el coche al asfalto. Reemplaza al antiguo DRS.' },
+        t: 'Desde 2026 los alerones cambian de posición según la zona del circuito: en recta reducen la resistencia para ganar velocidad, y en curva generan carga para pegar el coche al asfalto.' },
       { type: 'card', icon: '⚡', title: 'Modo adelantamiento',
-        t: 'Un piloto que se acerca al auto de adelante, dentro de zonas marcadas, recibe una potencia eléctrica extra para intentar el pasaje, sin depender de un ala móvil.' },
+        t: 'Es un extra de potencia eléctrica que se habilita solo en determinadas vueltas de la carrera. Para usarlo, el piloto debe estar a menos de 1 segundo del auto de adelante al pasar por el punto de detección. Reemplaza al antiguo DRS.' },
       { type: 'card', icon: '🔋', title: 'Unidad de potencia',
         t: 'Combina un motor de combustión con energía eléctrica que se recupera al frenar. Desde 2026 la parte eléctrica pesa cerca de la mitad de la potencia total, se elimina la MGU-H y el combustible es 100 % sostenible.' },
       { type: 'card', icon: '🌪️', title: 'Efecto suelo',
@@ -2543,6 +2584,10 @@ const INFO_SECTIONS = [
   { id: 'glosario', icon: '📖', title: 'Glosario',
     intro: 'Las palabras que usan los comentaristas, explicadas en una línea.',
     items: [
+      { type: 'term', term: 'Q1, Q2 y Q3', t: 'Las tres fases de la clasificación. Q1 elimina a los más lentos, Q2 deja a los diez mejores y Q3 define la pole.' },
+      { type: 'term', term: 'FP (práctica libre)', t: 'Free Practice: FP1, FP2 y FP3 son las prácticas de un fin de semana estándar.' },
+      { type: 'term', term: 'Modo adelantamiento', t: 'Extra de potencia eléctrica que se habilita en vueltas determinadas, si el piloto está a menos de 1 segundo del auto de adelante.' },
+      { type: 'term', term: 'Juego de neumáticos', t: 'Conjunto de cuatro neumáticos del mismo compuesto. Cada piloto tiene un cupo limitado por fin de semana.' },
       { type: 'term', term: 'Apex', t: 'Punto de la curva donde el coche pasa más cerca del interior.' },
       { type: 'term', term: 'Chicane', t: 'Serie de curvas cerradas alternadas que frenan a los autos.' },
       { type: 'term', term: 'Stint', t: 'Tramo de vueltas entre dos paradas en boxes con el mismo juego de neumáticos.' },
@@ -2685,11 +2730,11 @@ function renderInfoBody() {
     const idx = Math.max(0, INFO_SECTIONS.findIndex(s => s.id === INFO.sec));
     const s = INFO_SECTIONS[idx];
     body.innerHTML = `
-      <header class="info-sec-head">
+      <div class="info-sec-head">
         <span class="eyebrow">${s.icon} Sección ${idx + 1} de ${INFO_SECTIONS.length}</span>
         <h3 class="display">${escI(s.title)}</h3>
         <p class="info-intro">${escI(s.intro)}</p>
-      </header>
+      </div>
       ${infoGroup(s.items)}
       ${s.quiz ? `<div id="infoQuiz">${infoQuizHTML()}</div>` : ''}`;
   }
@@ -2714,7 +2759,7 @@ function renderInfo() {
         <span class="eyebrow">Aprende F1</span>
         <h2 class="display info-title">Todo sobre la Fórmula 1</h2>
       </div>
-      <input id="infoSearch" type="search" placeholder="Buscar: banderas, neumáticos, Safety Car…" autocomplete="off">
+      <input id="infoSearch" type="search" placeholder="Buscar: Q1, neumáticos, Safety Car…" autocomplete="off">
     </div>
     <div class="info-layout">
       <nav class="info-nav glass" aria-label="Secciones de Info">
