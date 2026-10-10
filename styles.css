@@ -341,3 +341,6 @@ footer{text-align:center;color:var(--muted);font-family:var(--f-nav);font-size:1
   .contend{padding:20px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Casco de Verstappen: recorte con fondo transparente, sin máscara */
+.helmet-img[src*="CascoVerstappen"]{ -webkit-mask-image:none; mask-image:none; }
