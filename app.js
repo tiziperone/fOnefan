@@ -1500,7 +1500,8 @@ function startCountdown(iso) {
 }
 
 /* ============ CALENDARIO ============ */
-let calFilter = 'all';
+// Filtro por defecto: 'upcoming' (Próximas). Luego 'done' (Finalizadas) y 'all' (Todas).
+let calFilter = 'upcoming';
 function renderCalendar() {
   const next = nextRace();
   const list = S.calendar.filter(r =>
