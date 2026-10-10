@@ -1,5 +1,6 @@
 // ================= DATOS DRIVERWIN · TEMPORADA 2026 =================
 // Respaldo sin conexión: lo usa app.js solo si la API no responde.
+// Los cascos se buscan en Fotos/Casco<Nombre>.webp usando el id del piloto.
 
 const PTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 const SPR = [8, 7, 6, 5, 4, 3, 2, 1];

@@ -2,7 +2,6 @@
 
 const API = 'https://api.jolpi.ca/ergast/f1';
 const SEASON = 2026;
-const CHAMP_FROM = 2000;
 const FIRST_SEASON = 1950;
 const CHAMP_CACHE = 'dw_champ_v1_';
 const DRV_CACHE = 'dw_drv_agg_v4';
@@ -10,6 +9,24 @@ const SDRV_CACHE = 'dw_sdrv_v1_';
 const DCONS_CACHE = 'dw_dcons_v1_';
 const DRV_FROM = 1950;
 const ART = 'America/Argentina/Buenos_Aires';
+
+// Pilotos que no forman parte de la parrilla 2026 (se filtran de la lista actual)
+const EXCLUDED_CURRENT = new Set(['tsunoda']);
+
+// Cascos oficiales: Fotos/Casco<Apellido>.webp
+// La clave es el apellido normalizado (sin tildes, en minúsculas). Así coincide aunque
+// Jolpica use IDs como "max_verstappen" en lugar de "verstappen".
+const HELMET_DIR = 'Fotos/';
+const HELMET_FILES = {
+  albon: 'CascoAlbon.webp', alonso: 'CascoAlonso.webp', antonelli: 'CascoAntonelli.webp',
+  bearman: 'CascoBearman.webp', bortoleto: 'CascoBortoleto.webp', bottas: 'CascoBottas.webp',
+  colapinto: 'CascoColapinto.webp', gasly: 'CascoGasly.webp', hadjar: 'CascoHadjar.webp',
+  hamilton: 'CascoHamilton.webp', hulkenberg: 'CascoHulkenberg.webp', lawson: 'CascoLawson.webp',
+  leclerc: 'CascoLeclerc.webp', lindblad: 'CascoLindblad.webp', norris: 'CascoNorris.webp',
+  ocon: 'CascoOcon.webp', perez: 'CascoPerez.webp', piastri: 'CascoPiastri.webp',
+  russell: 'CascoRussell.webp', sainz: 'CascoSainz.webp', stroll: 'CascoStroll.webp',
+  verstappen: 'CascoVerstappen.webp'
+};
 
 // Trazados: SVG de julesr0y/pitlaneinsider (78 circuitos de la historia de F1)
 const TRACK_RAW = 'https://raw.githubusercontent.com/julesr0y/pitlaneinsider/main/public/img/circuits/';
@@ -483,7 +500,7 @@ function parseDrivers(json) {
     teamName: s.Constructors[0]?.name || '—',
     basePts: +s.points,
     pos: +s.position
-  }));
+  })).filter(d => !EXCLUDED_CURRENT.has(d.id) && !EXCLUDED_CURRENT.has(norm(lastName(d.name))));
 }
 
 function parseTeams(json) {
@@ -517,7 +534,7 @@ function loadLocal() {
     circuit: '', circuitId: null, circuitUrl: null, country: '', locality: '',
     lat: null, lon: null, place: '', sessions: [], done: r.done
   }));
-  S.drivers = DRIVERS.map(d => ({
+  S.drivers = DRIVERS.filter(d => !EXCLUDED_CURRENT.has(d.id)).map(d => ({
     id: d.id, name: d.name, nat: '', dob: '', code: '', num: '', team: d.team,
     teamName: (TEAMS.find(t => t.id === d.team) || {}).name || '—',
     basePts: d.basePts, pos: 0
@@ -890,6 +907,21 @@ function teamLook(name) {
   return hit ? hit[1] : { main: teamColorFor(name), sec: '#ffffff', acc: '#111111' };
 }
 
+/* ============ CASCOS ============ */
+// Clave de casco: apellido normalizado. Funciona aunque el ID de Jolpica sea distinto.
+const helmetKey = name => norm(lastName(name || ''));
+
+// Casco oficial si existe en Fotos/; si no, casco SVG genérico con los colores del equipo
+function helmetHTML(name, teamName, id, cls = '') {
+  const file = HELMET_FILES[helmetKey(name)];
+  if (file) {
+    return `<img class="helmet-img ${cls}" src="${HELMET_DIR}${file}" alt="Casco ${esc(name)}" loading="lazy"
+      onerror="this.outerHTML=window.__helmetFallback('${esc(id)}','${esc(teamName)}','${cls}')">`;
+  }
+  return helmetSVG(id, teamName, cls);
+}
+window.__helmetFallback = (id, teamName, cls) => helmetSVG(id, teamName, cls);
+
 function helmetSVG(id, teamName, cls = '') {
   const L = teamLook(teamName);
   const gid = 'h' + String(id).replace(/[^a-z0-9]/gi, '') + (cls || 'sm');
@@ -930,7 +962,7 @@ function renderDriversCurrent(grid, status) {
     const edad = ageOn(d.dob || s.dob, new Date());
     return `
     <article class="glass dcard" data-drv="${esc(d.id)}" style="--c:${col};animation-delay:${i * 40}ms">
-      <div class="dc-hel">${helmetSVG(d.id, d.teamName)}</div>
+      <div class="dc-hel">${helmetHTML(d.name, d.teamName, d.id)}</div>
       <div class="dhead"><span class="dnum">${esc(num)}</span><span class="dcode">${esc(code)}</span></div>
       <h3>${esc(d.name)}</h3>
       <p class="dteam"><span class="dot" style="background:${col}"></span>${esc(teamFull(d.teamName))}</p>
@@ -1070,7 +1102,7 @@ function driverModalHTML(id, failed = false) {
     <span class="eyebrow">${cur ? 'Piloto actual · ' + SEASON : 'Historia de la F1'}</span>
     <h3 class="display m-title">${esc(name)}</h3>
     <div class="m-grid">
-      <div class="svg-box dhel">${helmetSVG(id, team, 'big')}</div>
+      <div class="svg-box dhel">${helmetHTML(name || id, team, id, 'big')}</div>
       <div style="display:grid;gap:12px;align-content:start">
         <div class="stat"><span>Número</span><strong>${esc(num)}</strong></div>
         <div class="stat"><span>Nacionalidad</span><strong>${esc(natEs(nat) || '—')}</strong></div>
@@ -1129,7 +1161,6 @@ function openDriver(id) {
 
 /* ============ ESCUDERÍAS ============ */
 // Sucesiones de nombres: cuando una escudería cambió de nombre, se agrupa bajo el nombre actual.
-// Los casos no cubiertos se muestran con su nombre original.
 const TEAM_SUCCESSION = {
   'benetton': 'Renault', 'renault': 'Renault', 'alpine f1 team': 'Alpine F1 Team', 'alpine': 'Alpine F1 Team',
   'toyota': 'Toyota', 'jordan': 'Jordan', 'midland': 'Midland', 'spyker': 'Spyker',
@@ -1140,13 +1171,27 @@ const TEAM_SUCCESSION = {
   'ferrari': 'Ferrari', 'mercedes': 'Mercedes', 'red bull': 'Red Bull', 'audi': 'Audi', 'cadillac': 'Cadillac'
 };
 
+// Datos que Jolpica no entrega. Revisar y corregir según corresponda.
+const TEAM_INFO = {
+  'Mercedes':       { pais: 'Reino Unido',    fundada: 1954, motor: 'Mercedes',             sede: 'Brackley' },
+  'Ferrari':        { pais: 'Italia',         fundada: 1929, motor: 'Ferrari',              sede: 'Maranello' },
+  'McLaren':        { pais: 'Reino Unido',    fundada: 1963, motor: 'Mercedes',             sede: 'Woking' },
+  'Red Bull':       { pais: 'Austria',        fundada: 2005, motor: 'Red Bull Powertrains', sede: 'Milton Keynes' },
+  'RB':             { pais: 'Italia',         fundada: 2006, motor: 'Red Bull Powertrains', sede: 'Faenza' },
+  'Alpine F1 Team': { pais: 'Francia',        fundada: 1955, motor: 'Mercedes',             sede: 'Enstone' },
+  'Haas F1 Team':   { pais: 'Estados Unidos', fundada: 2016, motor: 'Ferrari',              sede: 'Kannapolis' },
+  'Audi':           { pais: 'Alemania',       fundada: 2024, motor: 'Audi',                 sede: 'Hinwil' },
+  'Williams':       { pais: 'Reino Unido',    fundada: 1977, motor: 'Mercedes',             sede: 'Grove' },
+  'Aston Martin':   { pais: 'Reino Unido',    fundada: 2021, motor: 'Honda',                sede: 'Silverstone' },
+  'Cadillac':       { pais: 'Estados Unidos', fundada: 2025, motor: 'Ferrari',              sede: 'Silverstone' }
+};
+
 const teamKey = name => {
   const n = String(name || '').toLowerCase().trim();
   return TEAM_SUCCESSION[n] || name;
 };
 
-// Dos monoplazas de frente, uno al lado del otro, con los colores de la escudería.
-// Es un dibujo genérico, no una réplica de un modelo oficial.
+// Dos monoplazas de frente (SVG genérico), con los colores de la escudería
 function carFrontSVG(teamName, id) {
   const L = teamLook(teamName);
   const gid = 'cg' + String(id).replace(/[^a-z0-9]/gi, '');
@@ -1160,8 +1205,6 @@ function carFrontSVG(teamName, id) {
       <rect x="-34" y="110" width="68" height="18" rx="6" fill="${L.sec}"/>
       <rect x="-64" y="100" width="22" height="34" rx="4" fill="#0b0b10"/>
       <rect x="42" y="100" width="22" height="34" rx="4" fill="#0b0b10"/>
-      <circle cx="-64" cy="128" r="2" fill="#777"/>
-      <circle cx="64" cy="128" r="2" fill="#777"/>
     </g>`;
   return `<svg class="car-front" viewBox="0 0 240 180" aria-hidden="true">
     <defs>
@@ -1174,21 +1217,8 @@ function carFrontSVG(teamName, id) {
   </svg>`;
 }
 
-// Escuderías actuales: una tarjeta por equipo con sus dos autos de frente
-function renderTeamsCurrent(grid, status) {
-  status.textContent = `${S.teams.length} escuderías en la parrilla 2026`;
-  grid.innerHTML = S.teams.map((t, i) => {
-    const drivers = S.drivers.filter(d => d.team === t.id);
-    const col = t.color;
-    return `
-    <article class="glass dcard team-card" data-team="${esc(t.name)}" style="--c:${col};animation-delay:${i * 40}ms">
-      <div class="dc-hel team-hel">${carFrontSVG(t.name, t.id)}</div>
-      <div class="dhead"><span class="dnum" style="font-size:22px">${t.pts}</span><span class="dcode">${esc(t.name.split(' ')[0].slice(0, 3).toUpperCase())}</span></div>
-      <h3>${esc(teamFull(t.name))}</h3>
-      <p class="dteam"><span class="dot" style="background:${col}"></span>${drivers.map(d => esc(lastName(d.name))).join(' · ') || '—'}</p>
-      <div class="dfoot"><span>${drivers.length} pilotos</span><span>${i + 1}.º en el mundial</span></div>
-    </article>`;
-  }).join('');
+function teamInfoOf(name) {
+  return TEAM_INFO[teamKey(name)] || {};
 }
 
 // Agrupa todos los constructores de la historia por su nombre actual
@@ -1201,6 +1231,76 @@ function buildTeamHistory() {
     map[k].drivers.add(d.name);
   }));
   return Object.values(map);
+}
+
+// Ficha completa de una escudería actual
+function openTeamDetail(name) {
+  const t = S.teams.find(x => x.name === name);
+  if (!t) return;
+  const key = norm(teamKey(t.name));
+  const info = teamInfoOf(t.name);
+  const col = t.color;
+  const pos = S.teams.indexOf(t) + 1;
+  const drivers2026 = S.drivers.filter(d => d.team === t.id);
+  const hist = buildTeamHistory().find(h => norm(h.key) === key);
+  const driverTitles = S.champs.filter(c => norm(teamKey(c.team)) === key).length;
+  const pilotosHist = hist ? [...hist.drivers] : [];
+  const nombres = hist ? [...hist.names].map(teamFull).join(' → ') : '—';
+
+  const pilotos = pilotosHist.length
+    ? pilotosHist.slice(0, 60).map(n => `<span class="tpill" style="--c:${col}">${esc(n)}</span>`).join('')
+    : '<span class="muted">Cargando historial…</span>';
+
+  openModal(`
+    <span class="eyebrow">Escudería · Temporada ${SEASON}</span>
+    <h3 class="display m-title">${esc(teamFull(t.name))}</h3>
+    <div class="m-grid">
+      <div class="svg-box team-modal-visual">${carFrontSVG(t.name, t.id)}</div>
+      <div style="display:grid;gap:12px;align-content:start">
+        <div class="stat"><span>País de origen</span><strong>${esc(info.pais || '—')}</strong></div>
+        <div class="stat"><span>Fundada</span><strong>${info.fundada || '—'}</strong></div>
+        <div class="stat"><span>Sede</span><strong>${esc(info.sede || '—')}</strong></div>
+        <div class="stat"><span>Motor</span><strong>${esc(info.motor || '—')}</strong></div>
+        <div class="stat"><span>Posición ${SEASON}</span><strong>${pos}.º · ${t.pts} pts</strong></div>
+      </div>
+    </div>
+
+    <div class="m-grid" style="margin-top:18px">
+      <div class="box">
+        <h4>🏆 Palmarés</h4>
+        ${lineRow('Títulos de pilotos', driverTitles)}
+        ${lineRow('Pilotos en la historia', pilotosHist.length || '—')}
+        ${lineRow('Nombres a lo largo del tiempo', nombres)}
+      </div>
+      <div class="box">
+        <h4>🧑‍✈️ Pilotos ${SEASON}</h4>
+        ${drivers2026.length
+          ? drivers2026.map(x => lineRow(x.name, x.pts + ' pts')).join('')
+          : '<p class="muted">Sin pilotos esta temporada.</p>'}
+      </div>
+    </div>
+
+    <div class="box" style="margin-top:18px">
+      <h4>👥 Pilotos que pasaron por la escudería</h4>
+      <div class="tpills">${pilotos}</div>
+    </div>`);
+}
+
+// Escuderías actuales: tarjetas clickeables
+function renderTeamsCurrent(grid, status) {
+  status.textContent = `${S.teams.length} escuderías en la parrilla ${SEASON}`;
+  grid.innerHTML = S.teams.map((t, i) => {
+    const drivers = S.drivers.filter(d => d.team === t.id);
+    const col = t.color;
+    return `
+    <article class="glass dcard team-card" data-team="${esc(t.name)}" tabindex="0" role="button" style="--c:${col};animation-delay:${i * 40}ms">
+      <div class="dc-hel team-hel">${carFrontSVG(t.name, t.id)}</div>
+      <div class="dhead"><span class="dnum" style="font-size:22px">${t.pts}</span><span class="dcode">${esc(t.name.split(' ')[0].slice(0, 3).toUpperCase())}</span></div>
+      <h3>${esc(teamFull(t.name))}</h3>
+      <p class="dteam"><span class="dot" style="background:${col}"></span>${drivers.map(d => esc(lastName(d.name))).join(' · ') || '—'}</p>
+      <div class="dfoot"><span>${drivers.length} pilotos</span><span>${i + 1}.º en el mundial</span></div>
+    </article>`;
+  }).join('');
 }
 
 async function renderTeamsHistory(grid, status) {
@@ -1238,7 +1338,7 @@ async function renderTeamsHistory(grid, status) {
   }).join('');
 }
 
-// Salón de la Fama de escuderías: constructores que ganaron campeonatos de pilotos
+// Salón de la Fama de escuderías
 function renderTeamsHOF(grid, status) {
   const map = {};
   S.champs.forEach(c => {
@@ -1247,7 +1347,7 @@ function renderTeamsHOF(grid, status) {
     map[k].titles.push(c);
   });
   const list = Object.values(map).sort((a, b) => b.titles.length - a.titles.length);
-  status.textContent = 'Escuderías que alguna vez ganaron un campeonato mundial.';
+  status.textContent = 'Escuderías que alguna vez ganaron un campeonato mundial de pilotos.';
   grid.innerHTML = list.map((t, i) => `
     <article class="glass dc" style="animation-delay:${Math.min(i, 20) * 30}ms">
       <div class="dc-top"><span class="dc-num">${t.titles.length}</span><span class="dc-lbl">${t.titles.length === 1 ? 'título' : 'títulos'}</span></div>
@@ -1540,23 +1640,18 @@ function renderStandings() {
 }
 
 /* ============ CONTENDIENTES AL TÍTULO ============ */
-// Carreras que todavía pueden cambiar el campeonato
 const openRacesList = () => S.calendar
   .filter(r => !r.done)
   .map(r => ({ id: r.id, name: r.name, round: r.round, sprint: r.sprint }));
 
-// Sesiones que quedan: carrera principal y, si la hay, Carrera Sprint de cada fin de semana
 const buildSessions = open => open.flatMap(r => {
   const list = [{ key: r.id + '-m', race: r, sprint: false }];
   if (r.sprint) list.push({ key: r.id + '-s', race: r, sprint: true });
   return list;
 });
 
-// Límite de nodos del solver: si se supera, esa combinación se toma como imposible
 const SEARCH_LIMIT = 40000;
 
-// Reparte los puestos de puntos entre los rivales sin superar sus topes.
-// Un piloto ocupa como máximo un puesto por sesión. Devuelve true si es posible.
 function canDistribute(slots, ids, cap) {
   const capL = {};
   const usedBy = {};
@@ -1597,8 +1692,6 @@ function canDistribute(slots, ids, cap) {
   return dfs(0);
 }
 
-// Un piloto sigue en carrera si, ganando todas las sesiones, puede quedar por delante
-// de todos los demás según los topes de cada rival.
 function isContender(id, drivers, sessions) {
   const me = drivers.find(d => d.id === id);
   let candPts = 0;
@@ -2053,7 +2146,7 @@ async function openCircuitDetail(id, src) {
   `;
 }
 
-/* ============ SALÓN DE LA FAMA ============ */
+/* ============ SALÓN DE LA FAMA (pilotos) ============ */
 function renderHOF() {
   const grid = $('#drvGrid');
   if (!grid) return;
@@ -2226,6 +2319,9 @@ document.addEventListener('click', e => {
   const viewBtn = e.target.closest('[data-view]');
   if (viewBtn) return show(viewBtn.dataset.view);
 
+  const teamCard = e.target.closest('.team-card');
+  if (teamCard) return openTeamDetail(teamCard.dataset.team);
+
   const champTabBtn = e.target.closest('[data-champ-tab]');
   if (champTabBtn) {
     document.querySelectorAll('#champTabs .chip').forEach(c => c.classList.toggle('on', c === champTabBtn));
@@ -2295,6 +2391,11 @@ document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.logo')) {
     e.preventDefault();
     show('home');
+    return;
+  }
+  if (e.key === 'Enter' && e.target.matches?.('.team-card')) {
+    e.preventDefault();
+    openTeamDetail(e.target.dataset.team);
   }
 });
 
@@ -2314,23 +2415,10 @@ if (teamSearchEl) {
   });
 }
 
-/* ============ ESTRATEGIA: quitar la sección ============ */
-function removeStrategySection() {
-  document.querySelectorAll('nav [data-view]').forEach(btn => {
-    if (/estrategia/i.test(btn.textContent)) {
-      const v = btn.dataset.view;
-      btn.remove();
-      document.getElementById('v-' + v)?.remove();
-    }
-  });
-  document.getElementById('simRaces')?.closest('.view')?.remove();
-}
-
 /* ============ INICIALIZACIÓN ============ */
 function renderAll() {
   setupUserFooter();
   mergeCalendarIntoStandings();
-  removeStrategySection();
   renderHome();
   renderCalendar();
   renderStandings();
