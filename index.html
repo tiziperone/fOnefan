@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>fOnefan</title>
 
-<!-- Manifest (queda en la raíz, junto a index.html) -->
+<!-- Manifest -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#06060a">
 <link rel="icon" type="image/png" sizes="192x192" href="Fotos/icon-192.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23e10600'/%3E%3Cpath d='M7 15H39Q41 15 41 17V19H7Z' fill='white'/%3E%3Crect x='5' y='12' width='4' height='13' rx='2' fill='white'/%3E%3Cpath d='M9 21H37V23H9Z' fill='white' opacity='.6'/%3E%3Cpath d='M14 30Q18 25 30 26L46 27Q53 28 55 36V40H14Z' fill='white'/%3E%3Ccircle cx='42' cy='44' r='13' fill='%230d0d12'/%3E%3Ccircle cx='42' cy='44' r='10' fill='none' stroke='%23ffd60a' stroke-width='2.6'/%3E%3Ccircle cx='42' cy='44' r='2.8' fill='%23b6ff2e'/%3E%3C/svg%3E">
 
-<!-- Ícono para iPhone (pantalla de inicio) -->
+<!-- Ícono para iPhone -->
 <link rel="apple-touch-icon" sizes="180x180" href="Fotos/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="fOnefan">
@@ -27,12 +27,10 @@
 
 <style>
 /* =====================================================
-   SECCIÓN MONOPLAZA (visor 3D + piezas numeradas)
+   SECCIÓN MONOPLAZA, VOLANTE E INFO
    ===================================================== */
-.mono-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
-.mono-stage{position:relative;padding:14px}
 .mono-viewer{
-  position:relative;height:560px;border-radius:18px;overflow:hidden;
+  position:relative;height:500px;border-radius:18px;overflow:hidden;
   border:1px solid var(--line);
   background:
     radial-gradient(ellipse 60% 45% at 50% 38%, rgba(60,90,255,.22), transparent 70%),
@@ -41,51 +39,88 @@
 }
 #monoModel{width:100%;height:100%;background:transparent;--poster-color:transparent;--progress-bar-color:var(--red)}
 
-/* Números sobre cada pieza (se muestran solo si la pieza mira hacia la cámara) */
-.mono-hot{
-  position:absolute;transform:translate(-50%,-50%);z-index:2;
-  width:28px;height:28px;padding:0;border-radius:50%;
-  border:2px solid #fff;background:var(--red);color:#fff;
-  font:800 13px/1 var(--f-nav);cursor:pointer;
-  box-shadow:0 0 0 5px rgba(225,6,0,.22);
-  transition:transform .2s ease,background .2s ease;
+.parts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
 }
-.mono-hot:hover{transform:translate(-50%,-50%) scale(1.12)}
-.mono-hot.on{background:#fff;color:var(--red);box-shadow:0 0 0 6px rgba(255,255,255,.25)}
-.mono-hot:not([visible]){display:none}
+.part-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  transition: transform 0.3s, border-color 0.3s;
+}
+.part-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(225,6,0,.4);
+}
+.part-card h4 {
+  font-family: var(--f-nav);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 8px;
+  font-weight: 800;
+}
+.part-card p {
+  font-size: 14px;
+  color: #d6d6e0;
+  line-height: 1.6;
+}
 
-.mono-views{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.mono-note{font-size:12px;color:var(--muted);margin-top:10px;letter-spacing:.02em}
+/* Sección Volante */
+.volante-section {
+  margin-top: 50px;
+  padding: 50px 20px;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  background: 
+    radial-gradient(circle at 50% 40%, rgba(225,6,0,.08), transparent 60%),
+    radial-gradient(circle at 50% 80%, rgba(60,90,255,.08), transparent 60%),
+    rgba(10,10,15, 0.6);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
 
-/* Panel lateral */
-.mono-panel{padding:22px;display:grid;gap:18px;align-content:start;position:sticky;top:96px}
-.mono-name{font-size:clamp(30px,3.6vw,42px);margin:8px 0 12px}
-.mono-steps{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
-.mono-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.mono-item{
-  appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.03);color:#d6d6e0;
-  border-radius:12px;padding:9px 10px;text-align:left;cursor:pointer;
-  font:700 13px/1.2 var(--f-nav);letter-spacing:.06em;text-transform:uppercase;
-  display:flex;gap:8px;align-items:center;
-  transition:background .2s ease,border-color .2s ease;
+@keyframes floating {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-18px); }
+  100% { transform: translateY(0px); }
 }
-.mono-item span{
-  flex:0 0 22px;height:22px;border-radius:50%;background:var(--red);color:#fff;
-  display:grid;place-items:center;font-size:11px;
+
+.volante-img {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  margin: 30px auto;
+  display: block;
+  /* El modo screen borra el negro, pero forzamos el contraste para apagar grises oscuros */
+  mix-blend-mode: screen; 
+  filter: contrast(1.6) brightness(0.9);
+  /* Máscara radial agresiva: opaca en el centro y se vuelve 100% transparente mucho antes del borde */
+  -webkit-mask-image: radial-gradient(ellipse at center, black 35%, transparent 70%);
+  mask-image: radial-gradient(ellipse at center, black 35%, transparent 70%);
+  animation: floating 5s ease-in-out infinite;
 }
-.mono-item:hover{border-color:rgba(225,6,0,.45)}
-.mono-item.on{background:rgba(225,6,0,.16);border-color:rgba(225,6,0,.5);color:#fff}
+
+.volante-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 40px;
+  text-align: left;
+}
 
 @media (max-width:980px){
-  .mono-layout{grid-template-columns:1fr}
-  .mono-panel{position:static}
   .mono-viewer{height:440px}
 }
 @media (max-width:640px){
-  .mono-stage{padding:10px}
-  .mono-list{grid-template-columns:1fr}
-  .mono-viewer{height:380px}
-  .mono-hot{width:24px;height:24px;font-size:11px}
+  .mono-viewer{height:360px}
+  .volante-section { padding: 30px 14px; }
 }
 </style>
 </head>
@@ -165,7 +200,7 @@
     </div>
   </section>
 
-  <!-- CALENDARIO (app.js lo integra dentro de Campeonato) -->
+  <!-- CALENDARIO -->
   <section class="view" id="v-calendar">
     <div class="sec-head">
       <div><span class="eyebrow">Temporada 2026</span><h2 class="display">Calendario</h2></div>
@@ -234,65 +269,135 @@
     <div class="drv-grid" id="teamGrid"></div>
   </section>
 
-  <!-- MONOPLAZA: modelo 3D (Modelos3D/Monoplaza2026.glb) con piezas numeradas -->
+  <!-- MONOPLAZA -->
   <section class="view" id="v-monoplaza">
-    <div class="sec-head">
+    <div class="sec-head" style="margin-bottom: 16px;">
       <div><span class="eyebrow">Diseño 2026</span><h2 class="display">Monoplaza</h2></div>
-      <p>Modelo 3D del monoplaza conceptual 2026. Arrastra para girarlo, usa la rueda del mouse para acercarte y toca un número para conocer cada pieza.</p>
+      <p>Explora el diseño del monoplaza y conoce las piezas y herramientas que lo hacen volar en la pista.</p>
     </div>
-    <div class="mono-layout">
-      <div class="glass mono-stage">
-        <div class="mono-viewer">
-          <model-viewer id="monoModel"
-            src="Modelos3D/Monoplaza2026.glb"
-            alt="Monoplaza 2026 en 3D"
-            camera-controls
-            auto-rotate
-            camera-orbit="35deg 72deg auto"
-            camera-target="auto auto auto"
-            shadow-intensity="0.9"
-            shadow-softness="0.8"
-            exposure="1.05"
-            environment-image="neutral"
-            touch-action="pan-y"
-            interaction-prompt="none">
 
-            <button slot="hotspot-nariz" class="mono-hot" data-part="nariz" data-position="2.60m 0.22m 0.00m" data-normal="1m 0m 0m" data-visibility-attribute="visible">1</button>
-            <button slot="hotspot-alerondel" class="mono-hot" data-part="alerondel" data-position="2.50m 0.20m 0.60m" data-normal="0m -1m 0m" data-visibility-attribute="visible">2</button>
-            <button slot="hotspot-halo" class="mono-hot" data-part="halo" data-position="0.20m 0.88m 0.00m" data-normal="0m 1m 0m" data-visibility-attribute="visible">3</button>
-            <button slot="hotspot-toma" class="mono-hot" data-part="toma" data-position="-0.50m 1.12m 0.00m" data-normal="0m 1m 0m" data-visibility-attribute="visible">4</button>
-            <button slot="hotspot-aleta" class="mono-hot" data-part="aleta" data-position="-1.00m 0.95m 0.00m" data-normal="0m 0m 1m" data-visibility-attribute="visible">5</button>
-            <button slot="hotspot-pontones" class="mono-hot" data-part="pontones" data-position="0.00m 0.40m 0.62m" data-normal="0m 0m 1m" data-visibility-attribute="visible">6</button>
-            <button slot="hotspot-alerontras" class="mono-hot" data-part="alerontras" data-position="-2.45m 0.80m 0.50m" data-normal="-1m 0m 0m" data-visibility-attribute="visible">7</button>
-            <button slot="hotspot-suelo" class="mono-hot" data-part="suelo" data-position="-2.10m 0.20m 0.30m" data-normal="0m -1m 0m" data-visibility-attribute="visible">8</button>
-            <button slot="hotspot-escape" class="mono-hot" data-part="escape" data-position="-1.90m 0.55m 0.10m" data-normal="-1m 0m 0m" data-visibility-attribute="visible">9</button>
-            <button slot="hotspot-neumatico" class="mono-hot" data-part="neumatico" data-position="1.77m 0.40m 0.95m" data-normal="0m 0m 1m" data-visibility-attribute="visible">10</button>
-            <button slot="hotspot-retrovisor" class="mono-hot" data-part="retrovisor" data-position="0.85m 0.85m 0.40m" data-normal="0m 0m 1m" data-visibility-attribute="visible">11</button>
-          </model-viewer>
-        </div>
-        <div class="mono-views">
-          <button class="chip on" data-mono-view="general">General</button>
-          <button class="chip" data-mono-view="frente">Frente</button>
-          <button class="chip" data-mono-view="lateral">Lateral</button>
-          <button class="chip" data-mono-view="trasera">Trasera</button>
-          <button class="chip" data-mono-view="arriba">Arriba</button>
-        </div>
-        <p class="mono-note">Modelo recreado a partir del diseño conceptual 2026. Las formas son aproximadas.</p>
+    <!-- Indicador visual -->
+    <div style="text-align:center; margin-bottom: 18px;">
+      <span class="chip on" style="pointer-events:none; background:rgba(225,6,0,.15); color:#fff; border-color:var(--red);">✨ Mueve el auto para ver la magia</span>
+    </div>
+
+    <div class="glass mono-viewer">
+      <model-viewer id="monoModel"
+        src="Modelos3D/Monoplaza2026.glb"
+        alt="Monoplaza en 3D"
+        camera-controls
+        auto-rotate
+        camera-orbit="35deg 72deg auto"
+        camera-target="auto auto auto"
+        shadow-intensity="0.9"
+        shadow-softness="0.8"
+        exposure="1.05"
+        environment-image="neutral"
+        touch-action="pan-y"
+        interaction-prompt="none">
+      </model-viewer>
+    </div>
+
+    <!-- Info Partes del Auto -->
+    <h3 class="display" style="font-size: 32px; margin-top: 40px; margin-bottom: 10px;">Partes del Auto</h3>
+    <div class="parts-grid">
+      <article class="part-card">
+        <h4>Alerón delantero y Nariz</h4>
+        <p>El alerón genera carga aerodinámica en el tren delantero y canaliza el flujo de aire inicial. La nariz conecta el aire con el fondo del auto.</p>
+      </article>
+      <article class="part-card">
+        <h4>Suelo y Difusor</h4>
+        <p>Aprovecha el "efecto suelo" pegando el coche al asfalto mediante canales inferiores que aceleran el aire hacia el difusor trasero.</p>
+      </article>
+      <article class="part-card">
+        <h4>Pontones y Toma de aire</h4>
+        <p>Refrigeran el motor. La toma superior alimenta el motor de combustión, mientras que los pontones laterales dirigen el aire y enfrían los radiadores.</p>
+      </article>
+      <article class="part-card">
+        <h4>Alerón trasero y DRS</h4>
+        <p>Da estabilidad al eje trasero. Cuenta con el sistema DRS, que abre una solapa para reducir la resistencia al aire y facilitar adelantamientos.</p>
+      </article>
+      <article class="part-card">
+        <h4>Halo y Seguridad</h4>
+        <p>Estructura de titanio que protege la cabeza del piloto de grandes impactos y escombros, capaz de soportar el peso de un autobús.</p>
+      </article>
+      <article class="part-card">
+        <h4>Neumáticos Pirelli</h4>
+        <p>El único contacto con la pista. Tienen desgaste controlado (blando, medio, duro o lluvia) dictando gran parte de la estrategia.</p>
+      </article>
+    </div>
+
+    <!-- Volante -->
+    <div class="volante-section">
+      <span class="eyebrow">El centro de mando</span>
+      <h3 class="display" style="font-size: clamp(34px, 5vw, 48px); margin-bottom: 10px;">Volante de F1</h3>
+      <p class="muted" style="max-width: 600px; margin: 0 auto;">Casi un ordenador en las manos del piloto, capaz de ajustar la potencia, los frenos y la estrategia a más de 300 km/h.</p>
+      
+      <img src="Fotos/Volante.webp" alt="Volante de F1" class="volante-img">
+      
+      <div class="volante-grid">
+        <article class="part-card">
+          <h4>Pantalla (Dash) y Leds</h4>
+          <p>Muestra información crítica en tiempo real: revoluciones por minuto, velocidad, marcha actual, tiempos delta, carga de batería y advertencias de bandera.</p>
+        </article>
+        <article class="part-card">
+          <h4>Botón de Sobregiro (Override)</h4>
+          <p>La nueva función de 2026. Permite al piloto desplegar energía eléctrica adicional (Manual Override) hasta los 337 km/h para atacar o defenderse.</p>
+        </article>
+        <article class="part-card">
+          <h4>Modos de Motor (Strat)</h4>
+          <p>Ruedas de selección que ajustan el despliegue de energía. Hay modos para atacar, cargar las baterías (Harvest) o ir tras el Safety Car.</p>
+        </article>
+        <article class="part-card">
+          <h4>Balance de Frenos (BBAL)</h4>
+          <p>Permite enviar más fuerza de frenado hacia las ruedas delanteras o traseras. Los pilotos lo ajustan curva a curva para evitar bloquear los neumáticos.</p>
+        </article>
+        <article class="part-card">
+          <h4>Botón Pit / Neutral</h4>
+          <p>El botón PIT activa el limitador de velocidad en el carril de boxes. El botón 'N' (Neutral) desengrana rápidamente el motor para evitar calarlo tras un trompo.</p>
+        </article>
+        <article class="part-card">
+          <h4>Botón de Radio (Talk)</h4>
+          <p>Permite al piloto hablar con su ingeniero de pista en el pit wall para discutir estrategias, informar de problemas o quejarse del tráfico.</p>
+        </article>
       </div>
-
-      <aside class="glass mono-panel">
-        <div id="monoInfo">
-          <span class="eyebrow">Toca una pieza</span>
-          <h3 class="display mono-name">Monoplaza 2026</h3>
-          <p class="info-text">Elige un número del modelo o de la lista para ver qué hace cada pieza del auto.</p>
-        </div>
-        <div class="mono-list" id="monoList"></div>
-      </aside>
     </div>
   </section>
 
-  <!-- INFO (la dibuja app.js) -->
-  <section class="view" id="v-info"></section>
+  <!-- INFO DE LA TEMPORADA 2026 -->
+  <section class="view" id="v-info">
+    <div class="sec-head">
+      <div><span class="eyebrow">Nueva Era Reglamentaria</span><h2 class="display">Normativa 2026</h2></div>
+      <p>La Fórmula 1 sufre su mayor transformación de la década. Conoce los cambios tecnológicos y deportivos confirmados por la FIA.</p>
+    </div>
+
+    <div class="parts-grid">
+      <article class="part-card">
+        <h4>Motores 50/50 y Combustible Sostenible</h4>
+        <p>Las unidades de potencia ahora generan su energía de forma equitativa: 50% térmica (combustión) y 50% eléctrica (350 kW), eliminando el complejo MGU-H. Además, el V6 usará combustible 100% renovable.</p>
+      </article>
+      <article class="part-card">
+        <h4>Aerodinámica Activa</h4>
+        <p>Nuevos alerones móviles delanteros y traseros. El <b>"Modo Z"</b> genera máxima carga aerodinámica para el paso por curva, mientras que el <b>"Modo X"</b> reduce la resistencia al aire en rectas, reemplazando el DRS tradicional.</p>
+      </article>
+      <article class="part-card">
+        <h4>Monoplazas más ligeros y ágiles</h4>
+        <p>El tamaño total del coche disminuye. La distancia entre ejes se reduce a 3400 mm y el ancho del monoplaza baja a 1900 mm. El objetivo principal es reducir el peso para fomentar batallas más cercanas.</p>
+      </article>
+      <article class="part-card">
+        <h4>Manual Override (Sobregiro)</h4>
+        <p>Los pilotos tendrán a su disposición un sistema de "push-to-pass" manual que les otorgará un impulso extra de energía eléctrica a altas velocidades para facilitar los adelantamientos.</p>
+      </article>
+      <article class="part-card">
+        <h4>Nuevos Fabricantes (Audi y Ford)</h4>
+        <p>El nuevo reglamento de motores ha atraído a gigantes automotrices: <b>Audi</b> entra como equipo de fábrica (adquiriendo Sauber), <b>Ford</b> se asocia con Red Bull Powertrains, y <b>Honda</b> pasa a ser motorista exclusivo de Aston Martin.</p>
+      </article>
+      <article class="part-card">
+        <h4>Seguridad Reforzada</h4>
+        <p>Se introducen estructuras de impacto lateral más robustas, y normativas mucho más estrictas para la barra antivuelco (roll hoop), implementadas tras los aprendizajes de accidentes recientes.</p>
+      </article>
+    </div>
+  </section>
 </main>
 
 <!-- MODAL -->
@@ -303,143 +408,38 @@
   </div>
 </div>
 
-<footer><p>fOnefan • Plataforma de información sobre Fórmula 1</p></footer>
+<footer><p>fOnefan • Plataforma de información sobre Fórmula 1 • Perone Tiziano</p></footer>
 
 <script src="data.js"></script>
 <script src="app.js"></script>
 
 <script>
 /* =====================================================
-   MONOPLAZA · lógica de piezas y vistas
-   Coordenadas en metros del modelo: +X = nariz, +Y = arriba, +Z = lateral
+   OVERRIDE DEL FOOTER 
+   (Previene que app.js borre tu nombre de autor)
    ===================================================== */
+setInterval(() => {
+  const f = document.querySelector('footer p');
+  if (f && !f.textContent.includes('Perone Tiziano')) {
+    f.textContent = 'fOnefan • Plataforma de información sobre Fórmula 1 • Perone Tiziano';
+  }
+}, 500);
+
+/* Manejo de errores básico del visor 3D */
 (function () {
-  const PARTS = [
-    { id: 'nariz', n: 1, name: 'Nariz', pos: [2.60, 0.22, 0.00], r: 2.2,
-      text: 'Canaliza el aire hacia el fondo del monoplaza y define la forma de la parte delantera. Su perfil conecta el flujo de aire con el alerón delantero.' },
-    { id: 'alerondel', n: 2, name: 'Alerón delantero', pos: [2.50, 0.20, 0.60], r: 2.2,
-      text: 'Varias capas superpuestas que generan carga aerodinámica en el tren delantero. Los extremos (endplates) guían el aire hacia las ruedas y hacia los pontones. Ajustar su ángulo cambia el equilibrio del auto entre adelante y atrás.' },
-    { id: 'halo', n: 3, name: 'Halo', pos: [0.20, 0.88, 0.00], r: 2.4,
-      text: 'Estructura de titanio sobre la cabeza del piloto, obligatoria desde 2018. Soporta cargas de varias toneladas y protege ante impactos de restos o de otros coches.' },
-    { id: 'toma', n: 4, name: 'Toma de aire', pos: [-0.50, 1.12, 0.00], r: 2.4,
-      text: 'Alimenta de aire al motor de combustión. Va detrás del halo, por encima del piloto, y su forma compacta busca generar poca resistencia.' },
-    { id: 'aleta', n: 5, name: 'Aleta de tiburón', pos: [-1.00, 0.95, 0.00], r: 2.2,
-      text: 'Aleta vertical que da estabilidad en las curvas rápidas y dirige el flujo de aire hacia el alerón trasero.' },
-    { id: 'pontones', n: 6, name: 'Pontones', pos: [0.00, 0.40, 0.62], r: 2.6,
-      text: 'Canalizan el aire de refrigeración hacia el motor y definen cómo fluye el aire hacia la parte trasera. En el diseño conceptual llevan los colores del auto y el "2026".' },
-    { id: 'alerontras', n: 7, name: 'Alerón trasero', pos: [-2.45, 0.80, 0.50], r: 2.6,
-      text: 'Genera carga aerodinámica para estabilizar el eje trasero. Sus elementos son los que más influyen en la estabilidad en curva y en la velocidad punta.' },
-    { id: 'suelo', n: 8, name: 'Suelo y difusor', pos: [-2.10, 0.20, 0.30], r: 2.6,
-      text: 'El suelo genera gran parte de la carga por efecto suelo: el aire que pasa por debajo pega el auto al asfalto. El difusor, en la parte trasera, acelera ese aire para aumentar la succión.' },
-    { id: 'escape', n: 9, name: 'Escape', pos: [-1.90, 0.55, 0.10], r: 1.6,
-      text: 'Salida de los gases del motor. Su posición alta y lateral ayuda a dirigir el aire hacia el alerón trasero y el difusor.' },
-    { id: 'neumatico', n: 10, name: 'Neumáticos', pos: [1.77, 0.40, 0.95], r: 1.8,
-      text: 'Pirelli P Zero. Cada fin de semana se nominan tres compuestos y cada piloto tiene un cupo limitado de juegos. Son el único contacto del auto con la pista.' },
-    { id: 'retrovisor', n: 11, name: 'Retrovisores', pos: [0.85, 0.85, 0.40], r: 1.4,
-      text: 'Permiten ver a los rivales sin girar la cabeza. Son pequeños, pero están diseñados para generar la menor turbulencia posible.' }
-  ];
-
-  // Vistas: órbita (theta, phi, radio) y objetivo de la cámara
-  const VIEWS = {
-    general: { orbit: '35deg 72deg auto', target: 'auto auto auto' },
-    frente:  { orbit: '90deg 80deg auto', target: 'auto auto auto' },
-    lateral: { orbit: '0deg 80deg auto',  target: 'auto auto auto' },
-    trasera: { orbit: '-90deg 80deg auto', target: 'auto auto auto' },
-    arriba:  { orbit: '0deg 2deg auto',   target: 'auto auto auto' }
-  };
-
-  const DEFAULT_INFO = `
-    <span class="eyebrow">Toca una pieza</span>
-    <h3 class="display mono-name">Monoplaza 2026</h3>
-    <p class="info-text">Elige un número del modelo o de la lista para ver qué hace cada pieza del auto.</p>`;
-
   const viewer = document.getElementById('monoModel');
-  const info = document.getElementById('monoInfo');
-  const list = document.getElementById('monoList');
-  let current = null;
-
-  // Lista de piezas al costado
-  list.innerHTML = PARTS.map(p =>
-    `<button class="mono-item" type="button" data-part="${p.id}"><span>${p.n}</span>${p.name}</button>`
-  ).join('');
-
-  // Si el archivo .glb no carga, avisar en el panel
-  viewer.addEventListener('error', () => {
-    info.innerHTML = `<span class="eyebrow">Modelo 3D</span>
-      <h3 class="display mono-name">No se pudo cargar</h3>
-      <p class="info-text">Revisa que exista la carpeta <b>Modelos3D</b> con el archivo <b>Monoplaza2026.glb</b> junto a index.html.</p>`;
-  });
-
-  // Dejar de girar solo cuando el usuario interactúa con el modelo
-  viewer.addEventListener('camera-change', e => {
-    if (e.detail && e.detail.source === 'user-interaction') viewer.removeAttribute('auto-rotate');
-  });
-
-  function setCamera(orbit, target) {
-    viewer.removeAttribute('auto-rotate');
-    viewer.setAttribute('camera-target', target);
-    viewer.setAttribute('camera-orbit', orbit);
+  if(viewer) {
+    viewer.addEventListener('error', () => {
+      console.warn('No se pudo cargar el modelo 3D del monoplaza.');
+    });
+    
+    // Detiene el giro automático cuando el usuario interactúa
+    viewer.addEventListener('camera-change', e => {
+      if (e.detail && e.detail.source === 'user-interaction') {
+        viewer.removeAttribute('auto-rotate');
+      }
+    });
   }
-
-  // Ángulo horizontal de la cámara para que la pieza quede de frente
-  function orbitFor(p) {
-    const dx = p.pos[0] - 0.1;
-    const dz = p.pos[2] + 0.5;
-    const theta = Math.atan2(dx, dz) * 180 / Math.PI;
-    return `${theta.toFixed(1)}deg 78deg ${p.r}m`;
-  }
-
-  function markActive(id) {
-    document.querySelectorAll('.mono-hot').forEach(h => h.classList.toggle('on', h.dataset.part === id));
-    document.querySelectorAll('.mono-item').forEach(b => b.classList.toggle('on', b.dataset.part === id));
-  }
-
-  function selectPart(id) {
-    const idx = PARTS.findIndex(p => p.id === id);
-    if (idx < 0) return;
-    current = idx;
-    const p = PARTS[idx];
-    markActive(id);
-    info.innerHTML = `
-      <span class="eyebrow">Pieza ${p.n} de ${PARTS.length}</span>
-      <h3 class="display mono-name">${p.name}</h3>
-      <p class="info-text">${p.text}</p>
-      <div class="mono-steps">
-        <button class="btn-sm" type="button" data-mono-step="-1">← Anterior</button>
-        <button class="btn-sm" type="button" data-mono-step="1">Siguiente →</button>
-      </div>`;
-    setCamera(orbitFor(p), `${p.pos[0]}m ${p.pos[1]}m ${p.pos[2]}m`);
-  }
-
-  function setView(name) {
-    const v = VIEWS[name];
-    if (!v) return;
-    current = null;
-    markActive(null);
-    info.innerHTML = DEFAULT_INFO;
-    setCamera(v.orbit, v.target);
-  }
-
-  function step(dir) {
-    const n = PARTS.length;
-    const idx = current === null ? (dir > 0 ? 0 : n - 1) : (current + dir + n) % n;
-    selectPart(PARTS[idx].id);
-  }
-
-  document.addEventListener('click', e => {
-    const part = e.target.closest('[data-part]');
-    if (part) { selectPart(part.dataset.part); return; }
-
-    const view = e.target.closest('[data-mono-view]');
-    if (view) {
-      document.querySelectorAll('[data-mono-view]').forEach(b => b.classList.toggle('on', b === view));
-      setView(view.dataset.monoView);
-      return;
-    }
-
-    const st = e.target.closest('[data-mono-step]');
-    if (st) step(+st.dataset.monoStep);
-  });
 })();
 </script>
 </body>
