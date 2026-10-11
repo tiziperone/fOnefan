@@ -14,6 +14,7 @@
 <!-- Ícono para iPhone (PNG cuadrado de 180x180, sin transparencia) -->
 <link rel="apple-touch-icon" sizes="180x180" href="Fotos/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="fOnefan">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
@@ -99,6 +100,8 @@ h1, h2, h3 {
 
 /* =====================================================
    VISOR DEL MONOPLAZA
+   El recuadro conserva su tamaño. El auto se acerca con
+   la cámara (camera-orbit), no con el contenedor.
    ===================================================== */
 .mono-viewer{
   position:relative;height:500px;border-radius:18px;overflow:hidden;
@@ -526,13 +529,17 @@ h1, h2, h3 {
     </div>
 
     <div class="glass mono-viewer">
+      <!-- camera-orbit: 35deg horizontal, 72deg vertical, 50% = distancia de cámara (menor = más cerca).
+           min-camera-orbit: límite para acercarse con el dedo o la rueda del mouse. -->
       <model-viewer id="monoModel"
         src="Modelos3D/Monoplaza2026.glb"
         alt="Monoplaza en 3D"
         camera-controls
         auto-rotate
-        camera-orbit="35deg 72deg auto"
+        camera-orbit="35deg 72deg 50%"
+        min-camera-orbit="auto auto 20%"
         camera-target="auto auto auto"
+        field-of-view="28deg"
         shadow-intensity="0.9"
         shadow-softness="0.8"
         exposure="1.05"
