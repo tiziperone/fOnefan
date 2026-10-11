@@ -5,56 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>fOnefan</title>
 
-<!-- Manifest -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#06060a">
 <link rel="icon" type="image/png" sizes="192x192" href="Fotos/icon-192.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23e10600'/%3E%3Cpath d='M7 15H39Q41 15 41 17V19H7Z' fill='white'/%3E%3Crect x='5' y='12' width='4' height='13' rx='2' fill='white'/%3E%3Cpath d='M9 21H37V23H9Z' fill='white' opacity='.6'/%3E%3Cpath d='M14 30Q18 25 30 26L46 27Q53 28 55 36V40H14Z' fill='white'/%3E%3Ccircle cx='42' cy='44' r='13' fill='%230d0d12'/%3E%3Ccircle cx='42' cy='44' r='10' fill='none' stroke='%23ffd60a' stroke-width='2.6'/%3E%3Ccircle cx='42' cy='44' r='2.8' fill='%23b6ff2e'/%3E%3C/svg%3E">
-
-<!-- Ícono para iPhone -->
 <link rel="apple-touch-icon" sizes="180x180" href="Fotos/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="fOnefan">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-<!-- Tipografías -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800;1,900&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Titillium+Web:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="styles.css">
 
-<!-- Visor 3D para el monoplaza (model-viewer) -->
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
 <style>
-/* =====================================================
-   TIPOGRAFÍA
-   ===================================================== */
+/* ===== TIPOGRAFÍA ===== */
 body{font-family:'Titillium Web',sans-serif !important;letter-spacing:.02em}
 h1,h2,h3{font-family:'Orbitron',sans-serif !important;letter-spacing:.05em;text-transform:uppercase}
 .display{font-family:'Barlow Condensed',sans-serif !important;font-style:italic;font-weight:800 !important;letter-spacing:.01em !important;text-transform:uppercase;line-height:.95}
 .sec-head h2.display{font-size:clamp(44px,6.2vw,72px);line-height:.95}
 .eyebrow,.tab,.mono-item,.part-card h4,.rec-table th{font-family:'Rajdhani',sans-serif !important;font-weight:700;letter-spacing:.08em}
 
-/* FRASE PRINCIPAL DE INICIO */
+/* FRASE PRINCIPAL */
 .hero .grad-word{display:inline;background:none;color:#fff;-webkit-text-fill-color:#fff;-webkit-background-clip:border-box;background-clip:border-box;animation:none;padding:0}
 .grad-word .gw{display:inline-block;color:transparent;-webkit-text-fill-color:transparent;background:linear-gradient(100deg,#fff 0%,#fff 42%,#ff3b2e 50%,#fff 58%,#fff 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;animation:gwSweep 4.8s ease-in-out infinite;animation-delay:calc(var(--i) * .28s);padding-right:.04em}
 @keyframes gwSweep{0%{background-position:100% 0}60%,100%{background-position:0% 0}}
 
-/* VISOR DEL MONOPLAZA */
+/* MONOPLAZA */
 .mono-viewer{position:relative;height:500px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(ellipse 60% 45% at 50% 38%,rgba(60,90,255,.22),transparent 70%),radial-gradient(ellipse 50% 30% at 50% 100%,rgba(225,6,0,.12),transparent 70%),#08080d;contain:layout paint}
 #monoModel{width:100%;height:100%;background:transparent;--poster-color:transparent;--progress-bar-color:var(--red)}
-
-/* PARTES DEL AUTO */
 .parts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:24px}
 .part-card{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:16px;padding:22px;transition:transform .3s ease,border-color .3s ease,background .3s ease;min-width:0}
 .part-card:hover{transform:translateY(-4px);border-color:rgba(225,6,0,.5);background:rgba(255,255,255,.04)}
 .part-card h4{font-size:17px;color:var(--red);margin-bottom:10px}
 .part-card p{font-size:14.5px;color:#c0c0cb;line-height:1.65}
 
-/* VOLANTE (sin animación ni mezcla: se ve bien al hacer zoom) */
+/* VOLANTE */
 .volante-section{margin-top:70px;padding:10px 0 0;text-align:center;position:relative;overflow:hidden}
 .volante-section::before{content:"";position:absolute;left:50%;top:38%;width:min(780px,100%);height:min(520px,90vw);transform:translate(-50%,-50%);background:radial-gradient(ellipse at center,rgba(255,255,255,.055),transparent 65%);pointer-events:none;z-index:0}
 .volante-section>*{position:relative;z-index:1}
@@ -70,15 +61,15 @@ h1,h2,h3{font-family:'Orbitron',sans-serif !important;letter-spacing:.05em;text-
 .rec-table tr:hover td{background:rgba(255,255,255,.02)}
 .rec-table td:first-child{font-weight:700;color:var(--red);width:38px;font-family:'Orbitron',sans-serif;font-size:13px}
 .rec-table td:last-child{font-weight:700;color:#fff;text-align:right;font-family:'Orbitron',sans-serif;font-size:14px}
+.rec-note{font-size:13px;color:#8b8b99;margin-top:12px;line-height:1.6}
 
-/* LOGOS Y CASCOS: fondo transparente (lo hace el script de abajo) */
+/* LOGOS, CASCOS: fondo transparente generado por canvas */
 .dcard .dc-hel.team-hel{background:transparent;border:0;box-shadow:none;padding:6px}
 .dcard .dc-hel.team-hel::after{display:none}
-.team-logo{mix-blend-mode:normal !important;filter:none !important;max-width:78%}
-.helmet-img{mix-blend-mode:normal !important;filter:none !important}
+.team-logo,.helmet-img{mix-blend-mode:normal !important;filter:none !important;-webkit-backface-visibility:hidden;backface-visibility:hidden}
 .svg-box.team-modal-visual{background:transparent;border:0;padding:0}
 
-/* NEUMÁTICOS (sección Info) */
+/* NEUMÁTICOS */
 .tyre-card{position:relative;text-align:center;padding:26px 20px 22px;--c:var(--red)}
 .tyre-card::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 28%,var(--c),transparent 62%);opacity:.12;transition:opacity .45s ease}
 .tyre-card::after{content:"";position:absolute;top:0;bottom:0;left:-70%;width:50%;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,255,255,.07),transparent);transform:skewX(-18deg);transition:left .9s ease}
@@ -96,7 +87,7 @@ h1,h2,h3{font-family:'Orbitron',sans-serif !important;letter-spacing:.05em;text-
 .tyre-sub{display:inline-block;margin-top:10px;font-family:var(--f-nav);font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--c);border:1px solid var(--c);padding:4px 10px;border-radius:999px}
 .tyre-card .info-text{text-align:left;margin-top:14px}
 
-/* TABLA COMPARATIVA (Info · Temporada 2026) */
+/* TABLA COMPARATIVA (Info) */
 .info-grid--compare{grid-template-columns:1fr}
 .cmp-card{padding:18px;min-width:0}
 .cmp-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -108,6 +99,43 @@ h1,h2,h3{font-family:'Orbitron',sans-serif !important;letter-spacing:.05em;text-
 .cmp td:last-child{color:#fff;background:rgba(225,6,0,.06)}
 .cmp tr:last-child td{border-bottom:0}
 
+/* EJEMPLOS VISUALES (Info · Cómo leer las gráficas) */
+.vis-card{padding:20px;min-width:0}
+.vis-card h4{font-family:var(--f-disp);font-style:italic;font-weight:900;font-size:22px;margin-bottom:12px}
+.vis-card .info-text{margin-top:14px}
+.vis{background:#0b0b11;border:1px solid var(--line);border-radius:14px;padding:14px;font-family:'Rajdhani',sans-serif;color:#e8e8f0;overflow-x:auto}
+.vis-label{font-family:var(--f-nav);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8b8b99;margin-bottom:10px}
+.vis-cap{font-size:12px;color:#8b8b99;margin-top:10px;line-height:1.5}
+.vis-note{font-size:11px;color:#6f6f7d;margin-top:8px;font-style:italic}
+.sec-row{display:flex;gap:8px;flex-wrap:wrap}
+.sec{flex:1;min-width:90px;border-radius:8px;padding:12px 10px;text-align:center;color:#0b0b11;font-weight:700}
+.sec small{display:block;font-size:11px;letter-spacing:.1em}
+.sec b{font-family:'Orbitron',sans-serif;font-size:15px}
+.sec-p{background:#b35cff}
+.sec-g{background:#22c55e}
+.sec-y{background:#facc15}
+.mini{display:flex;gap:3px;flex-wrap:wrap}
+.mini i{flex:1;min-width:14px;height:22px;border-radius:3px}
+.tower{display:grid;gap:4px}
+.tower-row{display:grid;grid-template-columns:28px 80px 1fr 90px 36px;align-items:center;gap:8px;background:rgba(255,255,255,.03);border-radius:6px;padding:6px 8px;font-size:14px}
+.tower-row .pos{font-family:'Orbitron',sans-serif;font-size:12px;color:#8b8b99}
+.tower-row .code{font-weight:700;white-space:nowrap}
+.tower-row .bar{height:6px;border-radius:4px}
+.tower-row .gap{text-align:right;font-family:'Orbitron',sans-serif;font-size:12px;color:#e8e8f0;white-space:nowrap}
+.tower-row .gap.lead{color:#b35cff}
+.tower-head{display:grid;grid-template-columns:28px 80px 1fr 90px 36px;gap:8px;font-family:var(--f-nav);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8b8b99;padding:0 8px 4px}
+.tyre-ico{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;color:#0b0b11}
+.tyres-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tyres-row div{display:grid;justify-items:center;gap:4px;font-size:12px;color:#c0c0cb}
+.pit-lane{position:relative;height:110px;background:#15151d;border-radius:10px;overflow:hidden}
+.pit-lane .road{position:absolute;left:0;right:0;top:20px;height:14px;background:#2a2a35}
+.pit-lane .box{position:absolute;left:38%;width:24%;top:58px;height:36px;background:rgba(225,6,0,.18);border:1px dashed rgba(225,6,0,.6);border-radius:6px;display:grid;place-items:center;font-size:11px;color:#fca5a5}
+.pit-lane .car{position:absolute;top:45px;width:44px;height:14px;background:#e10600;border-radius:4px}
+.spd-bar{display:grid;grid-template-columns:76px 1fr 70px;align-items:center;gap:8px;font-size:13px;margin-bottom:6px}
+.spd-bar div:nth-child(2){background:rgba(255,255,255,.05);height:12px;border-radius:6px;overflow:hidden}
+.spd-bar div:nth-child(2) i{display:block;height:100%;background:linear-gradient(90deg,#e10600,#ff5a4f)}
+.spd-bar b{font-family:'Orbitron',sans-serif;font-size:12px;text-align:right}
+
 /* EN VIVO */
 .live-box{margin-top:20px;display:grid;justify-items:start;gap:8px;padding:16px 18px;border-radius:16px;background:rgba(225,6,0,.12);border:1px solid rgba(225,6,0,.45)}
 .live-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-nav);font-weight:800;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:#fff}
@@ -118,20 +146,16 @@ h1,h2,h3{font-family:'Orbitron',sans-serif !important;letter-spacing:.05em;text-
 .lv-state.st-sc,.lv-state.st-vsc{background:rgba(250,204,21,.16);color:#fde047;border-color:rgba(250,204,21,.55)}
 .lv-state.st-red{background:rgba(225,6,0,.3);color:#fff;border-color:rgba(225,6,0,.8)}
 .lv-state:empty{display:none}
-.badge.b-live{background:#ff3b2e;color:#fff}
-.live-banner,.pending-note{padding:12px 16px;border-radius:14px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.4);color:#fde68a;font-size:14px;line-height:1.5}
-.live-banner{margin:0 0 18px}
-.pending-note{margin-top:14px}
 
-/* ===== Correcciones de zoom y celulares ===== */
+/* ===== ZOOM Y CELULARES ===== */
 [hidden]{display:none !important}
 html,body{max-width:100%;overflow-x:hidden}
 img{max-width:100%}
 .race,.circ,.dcard,.hcard,.dc,.info-card,.tyre-card,.flag-card,.term-card,.cmp-card{content-visibility:visible !important;contain-intrinsic-size:none !important}
 
-/* INFO: sección de reglamento. Tabla pasa a tarjetas en celulares */
 @media (max-width:980px){
   .hero{grid-template-columns:1fr;padding:30px}
+  .mono-viewer{height:440px}
 }
 @media (max-width:640px){
   .hero{padding:26px 20px;gap:24px;min-height:0}
@@ -158,9 +182,8 @@ img{max-width:100%}
   .parts-grid,.volante-grid{margin-top:18px}
   .records-grid{grid-template-columns:1fr}
   .record-card{padding:18px}
-}
-@media (max-width:980px){
-  .mono-viewer{height:440px}
+  .tower-row,.tower-head{grid-template-columns:24px 64px 1fr 70px 30px;font-size:13px}
+  .spd-bar{grid-template-columns:64px 1fr 60px}
 }
 </style>
 </head>
@@ -233,8 +256,6 @@ img{max-width:100%}
           <b class="lv-lap" id="lvLap">—</b>
           <span class="lv-state" id="lvState"></span>
         </div>
-
-        <p class="pending-note" id="pendingNote" hidden></p>
       </div>
     </div>
 
@@ -250,7 +271,7 @@ img{max-width:100%}
     </div>
   </section>
 
-  <!-- CALENDARIO (su contenido lo acomoda app.js dentro de Campeonato) -->
+  <!-- CALENDARIO (lo acomoda app.js dentro de Campeonato) -->
   <section class="view" id="v-calendar">
     <div class="sec-head">
       <div><span class="eyebrow">Temporada 2026</span><h2 class="display">Calendario</h2></div>
@@ -269,7 +290,6 @@ img{max-width:100%}
       <div><span class="eyebrow">Clasificación</span><h2 class="display">Campeonato</h2></div>
       <p>Puntos de pilotos y constructores según la última ronda disputada.</p>
     </div>
-    <div id="liveBanner" class="live-banner" hidden></div>
     <div class="two">
       <div class="glass panel"><h3>Pilotos</h3><div id="drvTable"></div></div>
       <div class="glass panel"><h3>Constructores</h3><div id="teamTable"></div></div>
@@ -327,7 +347,6 @@ img{max-width:100%}
       <p>Explora el diseño del monoplaza y conoce las piezas y herramientas que lo hacen volar en la pista.</p>
     </div>
 
-    <!-- Indicador visual -->
     <div style="text-align:center; margin-bottom: 18px;">
       <span class="chip on" style="pointer-events:none; background:rgba(225,6,0,.15); color:#fff; border-color:var(--red);">✨ Mueve el auto para ver la magia</span>
     </div>
@@ -383,7 +402,6 @@ img{max-width:100%}
       </article>
     </div>
 
-    <!-- Volante -->
     <div class="volante-section">
       <span class="eyebrow">El centro de mando</span>
       <h3 class="display" style="font-size: clamp(40px, 5vw, 56px); margin-bottom: 12px;">Volante de F1</h3>
@@ -420,38 +438,39 @@ img{max-width:100%}
     </div>
   </section>
 
-  <!-- RÉCORDS HISTÓRICOS -->
+  <!-- RÉCORDS (valores fijos, actualizados después del GP de Singapur 2026) -->
   <section class="view" id="v-records">
     <div class="sec-head">
       <div><span class="eyebrow">Historia & Leyendas</span><h2 class="display">Récords Históricos</h2></div>
-      <p>Las cifras, victorias y estadísticas más destacadas en la historia de la categoría reina.</p>
+      <p>Estadísticas de todos los tiempos, de todos los pilotos, actualizadas después del GP de Singapur 2026.</p>
     </div>
 
     <div class="records-grid">
-      <div class="part-card record-card">
-        <h4>🏆 Top 5 Pilotos con más Victorias</h4>
-        <table class="rec-table">
-          <thead><tr><th>Pos</th><th>Piloto</th><th>Victorias</th></tr></thead>
-          <tbody>
-            <tr><td>1</td><td>Lewis Hamilton</td><td>105</td></tr>
-            <tr><td>2</td><td>Michael Schumacher</td><td>91</td></tr>
-            <tr><td>3</td><td>Max Verstappen</td><td>63</td></tr>
-            <tr><td>4</td><td>Sebastian Vettel</td><td>53</td></tr>
-            <tr><td>5</td><td>Alain Prost</td><td>51</td></tr>
-          </tbody>
-        </table>
-      </div>
-
       <div class="part-card record-card">
         <h4>👑 Top 5 Campeonatos Mundiales</h4>
         <table class="rec-table">
           <thead><tr><th>Pos</th><th>Piloto</th><th>Títulos</th></tr></thead>
           <tbody>
             <tr><td>1</td><td>Michael Schumacher</td><td>7</td></tr>
-            <tr><td>1</td><td>Lewis Hamilton</td><td>7</td></tr>
+            <tr><td>2</td><td>Lewis Hamilton</td><td>7</td></tr>
             <tr><td>3</td><td>Juan Manuel Fangio</td><td>5</td></tr>
             <tr><td>4</td><td>Alain Prost</td><td>4</td></tr>
-            <tr><td>4</td><td>Sebastian Vettel / Max Verstappen</td><td>4</td></tr>
+            <tr><td>5</td><td>Sebastian Vettel</td><td>4</td></tr>
+          </tbody>
+        </table>
+        <p class="rec-note">Max Verstappen también tiene 4 títulos (2021 a 2024), por lo que comparte el puesto 4 y 5.</p>
+      </div>
+
+      <div class="part-card record-card">
+        <h4>🏆 Top 5 Pilotos con más Victorias</h4>
+        <table class="rec-table">
+          <thead><tr><th>Pos</th><th>Piloto</th><th>Victorias</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Lewis Hamilton</td><td>106</td></tr>
+            <tr><td>2</td><td>Michael Schumacher</td><td>91</td></tr>
+            <tr><td>3</td><td>Max Verstappen</td><td>73</td></tr>
+            <tr><td>4</td><td>Sebastian Vettel</td><td>53</td></tr>
+            <tr><td>5</td><td>Alain Prost</td><td>51</td></tr>
           </tbody>
         </table>
       </div>
@@ -471,13 +490,27 @@ img{max-width:100%}
       </div>
 
       <div class="part-card record-card">
+        <h4>🥇 Top 5 Pilotos con más Podios</h4>
+        <table class="rec-table">
+          <thead><tr><th>Pos</th><th>Piloto</th><th>Podios</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Lewis Hamilton</td><td>207</td></tr>
+            <tr><td>2</td><td>Michael Schumacher</td><td>155</td></tr>
+            <tr><td>3</td><td>Max Verstappen</td><td>137</td></tr>
+            <tr><td>4</td><td>Sebastian Vettel</td><td>122</td></tr>
+            <tr><td>5</td><td>Alain Prost</td><td>106</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="part-card record-card">
         <h4>🏎️ Victorias en una Misma Escudería</h4>
         <table class="rec-table">
           <thead><tr><th>Pos</th><th>Piloto / Escudería</th><th>Triunfos</th></tr></thead>
           <tbody>
             <tr><td>1</td><td>Lewis Hamilton (Mercedes)</td><td>84</td></tr>
-            <tr><td>2</td><td>Michael Schumacher (Ferrari)</td><td>72</td></tr>
-            <tr><td>3</td><td>Max Verstappen (Red Bull)</td><td>63</td></tr>
+            <tr><td>2</td><td>Max Verstappen (Red Bull)</td><td>73</td></tr>
+            <tr><td>3</td><td>Michael Schumacher (Ferrari)</td><td>72</td></tr>
             <tr><td>4</td><td>Sebastian Vettel (Red Bull)</td><td>38</td></tr>
             <tr><td>5</td><td>Ayrton Senna (McLaren)</td><td>35</td></tr>
           </tbody>
@@ -485,7 +518,7 @@ img{max-width:100%}
       </div>
 
       <div class="part-card record-card">
-        <h4>⚡ Paradas en Pits más Rápidas</h4>
+        <h4>🛞 Paradas en Pits más Rápidas</h4>
         <table class="rec-table">
           <thead><tr><th>Pos</th><th>Equipo / GP</th><th>Tiempo</th></tr></thead>
           <tbody>
@@ -497,29 +530,14 @@ img{max-width:100%}
           </tbody>
         </table>
       </div>
-
-      <div class="part-card record-card">
-        <h4>💥 Pilotos con más Abandonos (DNF)</h4>
-        <table class="rec-table">
-          <thead><tr><th>Pos</th><th>Piloto</th><th>Abandonos</th></tr></thead>
-          <tbody>
-            <tr><td>1</td><td>Andrea de Cesaris</td><td>148</td></tr>
-            <tr><td>2</td><td>Riccardo Patrese</td><td>147</td></tr>
-            <tr><td>3</td><td>Michele Alboreto</td><td>102</td></tr>
-            <tr><td>4</td><td>Jean Alesi</td><td>87</td></tr>
-            <tr><td>5</td><td>Gerhard Berger</td><td>85</td></tr>
-          </tbody>
-        </table>
-      </div>
     </div>
 
     <div class="part-card" style="margin-top: 24px;">
-      <h4 style="color: var(--red); font-size: 18px; margin-bottom: 12px;">🔥 Récords Rotos e Hitos Legendarios</h4>
+      <h4 style="color: var(--red); font-size: 18px; margin-bottom: 12px;">🔥 Otros récords históricos</h4>
       <ul style="color: #c0c0cb; line-height: 1.8; font-size: 14.5px; padding-left: 20px;">
         <li><b>Más victorias en una temporada:</b> Max Verstappen con 19 victorias en 2023 (86.3% de victorias).</li>
         <li><b>Más victorias consecutivas:</b> Max Verstappen con 10 triunfos seguidos (GP de Miami a GP de Italia 2023).</li>
         <li><b>Escudería con más Campeonatos de Constructores:</b> Scuderia Ferrari con 16 títulos mundiales.</li>
-        <li><b>Piloto con más podios en la historia:</b> Lewis Hamilton con más de 200 podios acumulados.</li>
         <li><b>Más puntos en una sola temporada:</b> Max Verstappen con 575 puntos en 2023.</li>
         <li><b>GP más rápido de la historia:</b> GP de Italia 2003 (Monza), ganado por Michael Schumacher a 247.58 km/h de media.</li>
       </ul>
@@ -530,7 +548,6 @@ img{max-width:100%}
   <section class="view" id="v-info"></section>
 </main>
 
-<!-- MODAL -->
 <div class="modal" id="modal" role="dialog" aria-modal="true">
   <div class="glass panel-m">
     <button class="x" id="mClose" aria-label="Cerrar">✕</button>
@@ -542,10 +559,9 @@ img{max-width:100%}
 
 <script src="data.js"></script>
 <script src="app.js"></script>
-<script src="live.js"></script>
 
 <script>
-/* Mantiene el pie de página */
+/* Pie de página y navegación por pestañas */
 setInterval(() => {
   const f = document.querySelector('footer p');
   if (f && !f.textContent.includes('Perone Tiziano')) {
@@ -553,7 +569,6 @@ setInterval(() => {
   }
 }, 500);
 
-/* Navegación por pestañas y visor 3D */
 (function () {
   const tabs = document.querySelectorAll('.tab[data-view]');
   const views = document.querySelectorAll('.view');
@@ -577,12 +592,11 @@ setInterval(() => {
 
 <script>
 /* =====================================================
-   FONDO TRANSPARENTE PARA LOGOS, CASCOS Y VOLANTE
-   Se hace con canvas (no con mix-blend-mode), así no se
-   rompe la página al hacer zoom.
+   FONDO TRANSPARENTE: logos, cascos y volante (canvas)
    ===================================================== */
 (function () {
   const TOL = 58;
+  const MAXD = 512;
   const cache = new Map();
   const DARK_DEFAULT = { lo: 100, hi: 165, gamma: 1.25, cut: 0 };
   const FILE_CFG = { 'LogoAstonMartin.webp': { mode: 'dark', lo: 145, hi: 200, gamma: 1.15, cut: 60 } };
@@ -602,18 +616,20 @@ setInterval(() => {
       const img = new Image();
       img.onload = () => {
         try {
-          const w = img.naturalWidth, h = img.naturalHeight;
+          const s = Math.min(1, MAXD / Math.max(img.naturalWidth, img.naturalHeight));
+          const w = Math.max(1, Math.round(img.naturalWidth * s));
+          const h = Math.max(1, Math.round(img.naturalHeight * s));
           const cv = document.createElement('canvas');
           cv.width = w; cv.height = h;
           const ctx = cv.getContext('2d', { willReadFrequently: true });
-          ctx.drawImage(img, 0, 0);
+          ctx.drawImage(img, 0, 0, w, h);
           const data = ctx.getImageData(0, 0, w, h), px = data.data, N = w * h;
 
           const corners = [0, (w - 1) * 4, (h - 1) * w * 4, ((h - 1) * w + (w - 1)) * 4];
           let aR = 0, aG = 0, aB = 0, aA = 0;
           corners.forEach(i => { aR += px[i]; aG += px[i + 1]; aB += px[i + 2]; aA += px[i + 3]; });
           aR /= 4; aG /= 4; aB /= 4; aA /= 4;
-          if (aA < 12) { resolve(src); return; }   // ya tiene fondo transparente
+          if (aA < 12) { resolve(src); return; }
 
           const lum = 0.299 * aR + 0.587 * aG + 0.114 * aB;
           const useDark = cfg.mode === 'dark' || (cfg.mode !== 'flood' && lum < 110);
@@ -661,7 +677,7 @@ setInterval(() => {
           }
 
           ctx.putImageData(data, 0, 0);
-          resolve(cv.toDataURL('image/png'));
+          cv.toBlob(b => resolve(b ? URL.createObjectURL(b) : src), 'image/png');
         } catch (e) { resolve(src); }
       };
       img.onerror = () => resolve(null);
@@ -671,11 +687,18 @@ setInterval(() => {
 
   function processImg(img) {
     const src = img.getAttribute('src');
-    if (!src || src.startsWith('data:') || img.dataset.cleanFor === src) return;
+    if (!src || /^(data|blob):/.test(src) || img.dataset.cleanFor === src) return;
     img.dataset.cleanFor = src;
+    if (!img.dataset.errHook) {
+      img.dataset.errHook = '1';
+      img.addEventListener('error', () => {
+        const orig = img.dataset.cleanFor;
+        if (orig && img.getAttribute('src') !== orig) img.setAttribute('src', orig);
+      });
+    }
     if (!cache.has(src)) cache.set(src, cleanImage(src, cfgFor(img, fileOf(src))));
     cache.get(src).then(url => {
-      if (url && img.isConnected && img.getAttribute('src') === src) img.src = url;
+      if (url && img.isConnected && img.getAttribute('src') === src) img.setAttribute('src', url);
     });
   }
 
@@ -697,7 +720,7 @@ setInterval(() => {
 
 <script>
 /* =====================================================
-   NEUMÁTICOS (sección Info)
+   NEUMÁTICOS (Info)
    ===================================================== */
 (function () {
   if (typeof INFO_RENDER === 'undefined') return;
@@ -752,8 +775,7 @@ setInterval(() => {
 
 <script>
 /* =====================================================
-   INFO · SECCIÓN "TEMPORADA 2026"
-   Tabla con columnas en celulares (data-label)
+   INFO · TEMPORADA 2026 (tabla que se vuelve tarjetas en celular)
    ===================================================== */
 (function () {
   if (typeof INFO_SECTIONS === 'undefined' || typeof INFO === 'undefined' || typeof INFO_RENDER === 'undefined') return;
@@ -807,6 +829,627 @@ setInterval(() => {
   });
 
   INFO.sec = 'temporada2026';
+})();
+</script>
+
+<script>
+/* =====================================================
+   INFO · CÓMO LEER LAS GRÁFICAS DE LA CARRERA
+   Con ejemplos visuales. Los nombres y números son ilustrativos.
+   ===================================================== */
+(function () {
+  if (typeof INFO_SECTIONS === 'undefined' || typeof INFO_RENDER === 'undefined') return;
+  if (INFO_SECTIONS.some(s => s.id === 'graficas')) return;
+
+  // Ejemplo: sectores de una vuelta
+  const sectoresHTML = `
+    <div class="vis">
+      <div class="vis-label">Sectores de una vuelta</div>
+      <div class="sec-row">
+        <div class="sec sec-p"><small>SECTOR 1</small><b>24.512</b></div>
+        <div class="sec sec-g"><small>SECTOR 2</small><b>31.087</b></div>
+        <div class="sec sec-y"><small>SECTOR 3</small><b>28.440</b></div>
+      </div>
+      <div class="vis-cap">Morado = el mejor de todos. Verde = el mejor del piloto. Amarillo = más lento que su mejor.</div>
+      <div class="vis-note">Ejemplo ilustrativo: los tiempos no son de una carrera real.</div>
+    </div>`;
+
+  // Ejemplo: mini-sectores
+  const miniHTML = `
+    <div class="vis">
+      <div class="vis-label">Mini-sectores de un sector</div>
+      <div class="mini">
+        <i style="background:#22c55e"></i><i style="background:#22c55e"></i><i style="background:#b35cff"></i>
+        <i style="background:#22c55e"></i><i style="background:#facc15"></i><i style="background:#facc15"></i>
+        <i style="background:#22c55e"></i><i style="background:#b35cff"></i><i style="background:#22c55e"></i>
+        <i style="background:#facc15"></i><i style="background:#22c55e"></i><i style="background:#22c55e"></i>
+      </div>
+      <div class="vis-cap">Cada cuadradito es un tramo corto. Morado: el más rápido de todos en ese tramo. Verde: el mejor del piloto. Amarillo: más lento que su mejor.</div>
+      <div class="vis-note">Ejemplo ilustrativo.</div>
+    </div>`;
+
+  // Ejemplo: torre de posiciones (LEADER, intervalo y gap)
+  const torreHTML = `
+    <div class="vis">
+      <div class="vis-label">Torre de posiciones</div>
+      <div class="tower">
+        <div class="tower-head"><span>Pos</span><span>Piloto</span><span>Barra</span><span>Intervalo</span><span>Neu.</span></div>
+        <div class="tower-row"><span class="pos">1</span><span class="code">Piloto 1</span><span class="bar" style="background:#e10600;width:60%"></span><span class="gap lead">LEADER</span><span class="tyre-ico" style="background:#ffd60a">S</span></div>
+        <div class="tower-row"><span class="pos">2</span><span class="code">Piloto 2</span><span class="bar" style="background:#0093cc;width:52%"></span><span class="gap">+3.214</span><span class="tyre-ico" style="background:#ffd60a">S</span></div>
+        <div class="tower-row"><span class="pos">3</span><span class="code">Piloto 3</span><span class="bar" style="background:#27f4d2;width:45%"></span><span class="gap">+7.901</span><span class="tyre-ico" style="background:#f1f5f9">H</span></div>
+        <div class="tower-row"><span class="pos">4</span><span class="code">Piloto 4</span><span class="bar" style="background:#ff8000;width:38%"></span><span class="gap">+12.456</span><span class="tyre-ico" style="background:#f1f5f9">M</span></div>
+        <div class="tower-row"><span class="pos">12</span><span class="code">Piloto 5</span><span class="bar" style="background:#64c4ff;width:20%"></span><span class="gap">+1 VUELTA</span><span class="tyre-ico" style="background:#ffd60a">M</span></div>
+      </div>
+      <div class="vis-cap"><b>LEADER</b>: marca al piloto que va primero en ese momento. <b>Intervalo</b> (+3.214): cuánto tiempo está atrás del auto que tiene delante. <b>Gap</b>: cuánto tiempo está atrás del líder. En el ejemplo, el piloto 2 está 3.214 s atrás del líder y el piloto 3 está 7.901 s atrás del líder. <b>+1 VUELTA</b>: el piloto está una vuelta atrás y ya no se compara por tiempo.</div>
+      <div class="vis-note">Ejemplo ilustrativo.</div>
+    </div>`;
+
+  // Ejemplo: neumáticos
+  const neumaticosHTML = `
+    <div class="vis">
+      <div class="vis-label">Iconos de neumáticos</div>
+      <div class="tyres-row">
+        <div><span class="tyre-ico" style="background:#e10600;color:#fff">S</span>Blando · 12 vueltas</div>
+        <div><span class="tyre-ico" style="background:#facc15">M</span>Medio · 18 vueltas</div>
+        <div><span class="tyre-ico" style="background:#f1f5f9">H</span>Duro · 25 vueltas</div>
+        <div><span class="tyre-ico" style="background:#22c55e">I</span>Intermedio</div>
+        <div><span class="tyre-ico" style="background:#3b82f6;color:#fff">W</span>Lluvia</div>
+      </div>
+      <div class="vis-cap">El número junto al compuesto indica las vueltas que lleva ese juego. Un stint es cada tramo entre dos paradas.</div>
+      <div class="vis-note">Ejemplo ilustrativo.</div>
+    </div>`;
+
+  // Ejemplo: parada en boxes
+  const pitHTML = `
+    <div class="vis">
+      <div class="vis-label">Parada en boxes</div>
+      <div class="pit-lane">
+        <div class="road"></div>
+        <div class="box">ZONA DE BOXES</div>
+        <div class="car" style="left:20%"></div>
+      </div>
+      <div class="vis-cap">El auto entra por la calle de boxes, se detiene en su plaza para el cambio de neumáticos y vuelve a la pista. Se muestra el tiempo total y el tiempo quieto.</div>
+      <div class="vis-note">Ejemplo ilustrativo.</div>
+    </div>`;
+
+  // Ejemplo: velocidad máxima
+  const speedHTML = `
+    <div class="vis">
+      <div class="vis-label">Velocidad máxima en la recta (speed trap)</div>
+      <div class="spd-bar"><span>Piloto 1</span><div><i style="width:100%"></i></div><b>342 km/h</b></div>
+      <div class="spd-bar"><span>Piloto 2</span><div><i style="width:98%"></i></div><b>338 km/h</b></div>
+      <div class="spd-bar"><span>Piloto 3</span><div><i style="width:95%"></i></div><b>331 km/h</b></div>
+      <div class="spd-bar"><span>Piloto 4</span><div><i style="width:93%"></i></div><b>327 km/h</b></div>
+      <div class="vis-cap">Cuanto más larga la barra, más velocidad. Sirve para comparar potencia y resistencia aerodinámica.</div>
+      <div class="vis-note">Ejemplo ilustrativo.</div>
+    </div>`;
+
+  const section = {
+    id: 'graficas',
+    icon: '📊',
+    title: 'Cómo leer las gráficas',
+    intro: 'Los tiempos y las gráficas de una carrera tienen colores y símbolos que cambian según lo que mida cada dato. Acá te mostramos cada uno con un ejemplo parecido a las pantallas que ves en carrera.',
+    items: [
+      { type: 'visual', title: 'Sector morado, verde y amarillo', t: 'Morado es el mejor sector de toda la sesión, verde es el mejor del piloto y amarillo es más lento que su mejor tiempo. Es normal en vueltas de enfriamiento, en tráfico o cuando se cometió un error.', html: sectoresHTML },
+      { type: 'visual', title: 'Mini-sectores', t: 'Dividen cada sector en tramos más chicos. Así se ve dónde se ganó o se perdió tiempo dentro de un mismo sector.', html: miniHTML },
+      { type: 'visual', title: 'Leader, intervalo y gap', t: 'LEADER es el piloto que va primero. El intervalo es la distancia con el auto de adelante, y el gap es la distancia con el líder. Si aparece "+1 VUELTA", el piloto está atrás por una vuelta completa.', html: torreHTML },
+      { type: 'visual', title: 'Iconos de neumáticos', t: 'S (blando, rojo), M (medio, amarillo), H (duro, blanco), I (intermedio, verde) y W (lluvia, azul). Un stint es cada tramo de vueltas entre dos paradas.', html: neumaticosHTML },
+      { type: 'visual', title: 'Pit (parada en boxes)', t: 'Cuando el piloto entra a boxes aparece como una parada. Muestra cuánto tardó en la calle de boxes y el tiempo que estuvo quieto para cambiar los neumáticos.', html: pitHTML },
+      { type: 'visual', title: 'Velocidad máxima (speed trap)', t: 'Es la velocidad más alta que alcanzó el auto en un punto fijo de la pista, generalmente la recta más larga.', html: speedHTML }
+    ]
+  };
+
+  INFO_SECTIONS.splice(1, 0, section);
+})();
+</script>
+
+<script>
+/* =====================================================
+   INFO · RENDERIZADO DE EJEMPLOS VISUALES
+   ===================================================== */
+(function () {
+  if (typeof INFO_RENDER === 'undefined') return;
+  INFO_RENDER.visual = it => `
+    <article class="info-card glass vis-card">
+      <h4>${escI(it.title)}</h4>
+      ${it.html}
+      <p class="info-text">${escI(it.t)}</p>
+    </article>`;
+})();
+</script>
+
+<script>
+/* =====================================================
+   INFO · GLOSARIO: aire limpio y aire sucio
+   Se agregan a la sección "Glosario" que ya existe en app.js.
+   ===================================================== */
+(function () {
+  if (typeof INFO_SECTIONS === 'undefined' || typeof INFO_RENDER === 'undefined') return;
+
+  const nuevos = [
+    { type: 'term', term: 'Aire limpio',
+      t: 'Es el aire que llega sin turbulencias, porque no hay otro auto delante. El monoplaza con aire limpio mantiene toda su carga aerodinámica y suele tener mejor ritmo.' },
+    { type: 'term', term: 'Aire sucio',
+      t: 'Es el aire turbulento que deja el auto de adelante. El auto que lo sigue pierde carga aerodinámica, le cuesta mantener las curvas y se calientan más los neumáticos. Por eso es difícil seguir de cerca a otro auto, y adelantar exige salir del aire sucio en el momento justo.' }
+  ];
+
+  let sec = INFO_SECTIONS.find(s => s.id === 'glosario' || /glosario/i.test(s.title || ''));
+  if (!sec) {
+    sec = { id: 'glosario', icon: '📖', title: 'Glosario',
+      intro: 'Palabras que aparecen en las carreras y en las pantallas de tiempos, explicadas en lenguaje simple.', items: [] };
+    INFO_SECTIONS.push(sec);
+  }
+  nuevos.forEach(n => {
+    if (!sec.items.some(i => i.term === n.term)) sec.items.push(n);
+  });
+})();
+</script>
+
+<script>
+/* =====================================================
+   EN VIVO, CLASIFICACIONES, CALENDARIO Y PUNTOS
+   ===================================================== */
+(function () {
+  'use strict';
+
+  const OF1 = 'https://api.openf1.org/v1/';
+  const JOL = 'https://api.jolpi.ca/ergast/f1/';
+  const SEASON = '2026';
+  const SEC = 1000, MIN = 60 * SEC, HR = 60 * MIN;
+  const PTS_RACE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+  const PTS_SPRINT = [8, 7, 6, 5, 4, 3, 2, 1];
+  const LABEL = { Race: 'Carrera', Sprint: 'Sprint', Quali: 'Clasificación', Practice: 'Práctica' };
+  const STATE = { normal: 'Normal', sc: 'Safety Car', vsc: 'VSC', red: 'Bandera roja' };
+
+  const $ = s => document.querySelector(s);
+  const cal = () => a0_0x484245.calendar || [];
+  const safe = fn => { try { return fn(); } catch (e) { console.warn('[fOnefan]', e); } };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  const L = {
+    sessions: null, sessionsAt: 0,
+    rcAt: {}, lapAt: {}, rc: {}, lap: {},
+    finished: {}, finishedAt: {},
+    results: {}, resAt: {}, sprintOff: {}, sprintChk: {},
+    raceRound: 0,
+    baseAt: 0, baseDrivers: null, baseTeams: null,
+    live: null, hot: false, finRounds: new Set(),
+    sig: ''
+  };
+
+  // Permite que la tarjeta de carrera lea los resultados provisionales (carreras y sprints)
+  window.foProvisional = () => L.results;
+
+  /* ---------- Colas de peticiones (evitan el 429) ---------- */
+
+  function makeLimiter(gap, perMin) {
+    const stamps = [];
+    let last = 0, pause = 0, chain = Promise.resolve();
+
+    async function wait() {
+      for (;;) {
+        const t = Date.now();
+        while (stamps.length && t - stamps[0] > MIN) stamps.shift();
+        let ms = Math.max(pause - t, last + gap - t);
+        if (stamps.length >= perMin) ms = Math.max(ms, stamps[0] + MIN - t);
+        if (ms <= 0) break;
+        await sleep(ms);
+      }
+      last = Date.now();
+      stamps.push(last);
+    }
+
+    return function (url) {
+      const job = async () => {
+        for (let i = 0; i < 4; i++) {
+          await wait();
+          const r = await fetch(url);
+          if (r.status === 429) { pause = Date.now() + (i + 1) * 30 * SEC; continue; }
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        }
+        throw new Error('límite de peticiones');
+      };
+      const p = chain.then(job, job);
+      chain = p.catch(() => {});
+      return p;
+    };
+  }
+
+  const of1Q = makeLimiter(2100, 22);   // OpenF1: máximo 30 por minuto
+  const jolQ = makeLimiter(280, 200);   // Jolpi: un solo canal
+
+  const of1 = path => of1Q(OF1 + path);
+  const jolS = path => jolQ(JOL + SEASON + '/' + path);
+
+  /* ---------- Utilidades ---------- */
+
+  const sKind = s => {
+    const n = String(s.session_name || '').toLowerCase().trim();
+    if (n === 'race') return 'Race';
+    if (n === 'sprint') return 'Sprint';
+    if (n.includes('qualif') || n.includes('shootout')) return 'Quali';
+    return 'Practice';
+  };
+
+  const deadline = (s, st) => Math.max(s.date_end ? Date.parse(s.date_end) : 0, st + 90 * MIN) + 4 * MIN;
+
+  function roundNear(iso) {
+    const t = Date.parse(iso);
+    let best = null, bd = Infinity;
+    for (const r of cal()) {
+      const w = Date.parse(r.when);
+      if (isNaN(w)) continue;
+      const d = Math.abs(w - t);
+      if (d < bd) { bd = d; best = r; }
+    }
+    return bd < 4 * 24 * HR ? best : null;
+  }
+
+  const counts = R => R.round > L.raceRound && !(R.kind === 'Sprint' && L.sprintOff[R.round]);
+
+  /* ---------- OpenF1 ---------- */
+
+  function markFinished(key, t) {
+    if (L.finished[key]) return;
+    L.finished[key] = true;
+    L.finishedAt[key] = t;
+  }
+
+  function applyRC(key, msgs, now) {
+    msgs.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+    let state = (L.rc[key] && L.rc[key].state) || 'normal';
+    let chequered = false;
+    for (const m of msgs) {
+      const t = String(m.message || '').toUpperCase();
+      const f = String(m.flag || '').toUpperCase();
+      if (f === 'CHEQUERED' || t.includes('CHEQUERED')) chequered = true;
+      if (t.includes('RED FLAG')) state = 'red';
+      else if (t.includes('VIRTUAL SAFETY CAR DEPLOYED')) state = 'vsc';
+      else if (t.includes('VIRTUAL SAFETY CAR ENDING')) state = 'normal';
+      else if (t.includes('SAFETY CAR DEPLOYED') || t.includes('SAFETY CAR IN THIS LAP')) state = 'sc';
+      else if (t.includes('GREEN LIGHT') || t.includes('RESUMED') || t.includes('TRACK CLEAR')) state = 'normal';
+    }
+    L.rc[key] = { state };
+    if (chequered) markFinished(key, now);
+  }
+
+  async function fetchResults(s, kind, round) {
+    const key = s.session_key;
+    const res = await of1('session_result?session_key=' + key);
+    if (!res || !res.length) throw new Error('todavía sin resultados');
+    const drv = await of1('drivers?session_key=' + key);
+    const info = {};
+    drv.forEach(d => {
+      info[d.driver_number] = {
+        code: d.name_acronym,
+        name: d.full_name || d.last_name || d.name_acronym,
+        team: d.team_name || ''
+      };
+    });
+    const table = kind === 'Race' ? PTS_RACE : PTS_SPRINT;
+    const rows = [];
+    res.forEach(x => {
+      const pos = +x.position, i = info[x.driver_number];
+      if (!i || !pos) return;
+      const ok = !x.dnf && !x.dns && !x.dsq && pos <= table.length;
+      rows.push({
+        code: i.code, name: i.name, team: i.team, pos,
+        pts: ok ? table[pos - 1] : 0,
+        status: x.dsq ? 'Descalificado' : x.dns ? 'No largó' : x.dnf ? 'Abandono' : ''
+      });
+    });
+    if (!rows.length) throw new Error('resultado vacío');
+    rows.sort((a, b) => a.pos - b.pos);
+    L.results[key] = { kind, round, rows, meeting: s.meeting_key };
+  }
+
+  async function sessionsTick(now) {
+    if (!L.sessions || now - L.sessionsAt > (L.hot ? MIN : 10 * MIN)) {
+      L.sessions = await of1('sessions?year=' + SEASON);
+      L.sessionsAt = now;
+    }
+
+    let live = null, hot = false;
+    const fin = new Set();
+
+    for (const s of L.sessions) {
+      const st = Date.parse(s.date_start);
+      if (isNaN(st)) continue;
+      const key = s.session_key, kind = sKind(s);
+      const isRace = kind === 'Race' || kind === 'Sprint';
+      const dl = deadline(s, st);
+      const round = roundNear(s.date_start);
+      const rnd = round ? round.round : null;
+
+      if (now > dl) markFinished(key, now);
+      const active = now >= st - 30 * MIN && now <= dl && !L.finished[key];
+      if (active) hot = true;
+
+      if (isRace && !L.finished[key] && now >= st - 15 * MIN && now - (L.rcAt[key] || 0) >= 15 * SEC) {
+        L.rcAt[key] = now;
+        try { applyRC(key, await of1('race_control?session_key=' + key), now); }
+        catch (e) { console.warn('[fOnefan] control de carrera:', e.message); }
+      }
+
+      if (isRace && !L.finished[key] && now >= st && now - (L.lapAt[key] || 0) >= 15 * SEC) {
+        L.lapAt[key] = now;
+        try {
+          const since = new Date(now - 8 * MIN).toISOString();
+          const laps = await of1('laps?session_key=' + key + '&date_start%3E%3D' + encodeURIComponent(since));
+          if (laps.length) L.lap[key] = Math.max(...laps.map(l => l.lap_number || 0));
+        } catch (e) {}
+      }
+
+      const needRes = isRace && L.finished[key] && !L.results[key] && rnd &&
+        L.raceRound > 0 && rnd > L.raceRound && now < L.finishedAt[key] + 36 * HR;
+      if (needRes) hot = true;
+      if (needRes && now - (L.resAt[key] || 0) >= 20 * SEC) {
+        L.resAt[key] = now;
+        try { await fetchResults(s, kind, rnd); }
+        catch (e) { console.warn('[fOnefan] resultados aún no publicados, se reintenta'); }
+      }
+
+      if (kind === 'Race' && L.finished[key] && rnd) fin.add(rnd);
+
+      if (active && (!live || (isRace && !live.isRace))) {
+        live = {
+          key, kind, isRace, round: rnd, started: now >= st,
+          lap: L.lap[key] || null,
+          state: (L.rc[key] && L.rc[key].state) || 'normal'
+        };
+      }
+    }
+
+    L.live = live;
+    L.hot = hot || !!live;
+    L.finRounds = fin;
+  }
+
+  async function checkSprints(now) {
+    for (const k of Object.keys(L.results)) {
+      const R = L.results[k];
+      if (R.kind !== 'Sprint' || L.sprintOff[R.round]) continue;
+      if (now - (L.sprintChk[R.round] || 0) < MIN) continue;
+      L.sprintChk[R.round] = now;
+      try {
+        const j = await jolS(R.round + '/sprint.json');
+        const rs = j.MRData.RaceTable.Races || [];
+        if (rs[0] && rs[0].SprintResults && rs[0].SprintResults.length) L.sprintOff[R.round] = true;
+      } catch (e) {}
+    }
+  }
+
+  /* ---------- Jolpi: clasificación oficial ---------- */
+
+  async function loadBase() {
+    const [dj, cj, lr] = await Promise.all([
+      jolS('driverStandings.json'),
+      jolS('constructorStandings.json'),
+      jolS('last/results.json?limit=1')
+    ]);
+    L.raceRound = +lr.MRData.RaceTable.round || 0;
+    L.baseDrivers = a0_0x5b1eea(dj);
+    L.baseTeams = a0_0x32e553(cj);
+  }
+
+  function buildStandings() {
+    const drivers = L.baseDrivers.map(d => ({ ...d }));
+    const teams = L.baseTeams.map(t => ({ ...t }));
+    const byCode = {};
+    drivers.forEach(d => { if (d.code) byCode[d.code] = d; });
+
+    Object.values(L.results).forEach(R => {
+      if (!counts(R)) return;
+      R.rows.forEach(r => {
+        const d = byCode[r.code];
+        if (!d) return;
+        d.basePts += r.pts;
+        const t = teams.find(x => x.id === d.team);
+        if (t) t.pts += r.pts;
+      });
+    });
+
+    drivers.sort((a, b) => b.basePts - a.basePts || a.name.localeCompare(b.name));
+    drivers.forEach((d, i) => { d.pos = i + 1; });
+    teams.sort((a, b) => b.pts - a.pts);
+
+    a0_0x484245.drivers = drivers;
+    a0_0x484245.teams = teams;
+  }
+
+  /* ---------- Calendario ---------- */
+
+  function applyDone(now) {
+    cal().forEach(r => {
+      const w = Date.parse(r.when);
+      r.done = r.round <= L.raceRound ||
+               L.finRounds.has(r.round) ||
+               (!isNaN(w) && now > w + 5 * HR);
+    });
+  }
+
+  /* ---------- Render ---------- */
+
+  const sigOf = () => JSON.stringify([
+    L.raceRound,
+    cal().map(r => r.done),
+    a0_0x484245.drivers.map(d => [d.id, d.basePts]),
+    a0_0x484245.teams.map(t => [t.id, t.pts])
+  ]);
+
+  function render() {
+    safe(a0_0x281a63);
+    safe(a0_0x721060);
+    safe(a0_0x3bef71);
+    const v = document.querySelector('.view.active');
+    const id = v ? v.id : '';
+    if (id === 'v-pilotos') safe(a0_0x5bdb86);
+    if (id === 'v-escuderias') safe(a0_0x34ca68);
+    if (id === 'v-circuits') safe(a0_0x50272c);
+  }
+
+  function heroTick() {
+    const pill = $('#heroPill'), cd = $('#cdWrap'), box = $('#liveBox');
+    if (!pill || !cd || !box) return;
+    const next = cal().find(r => !r.done);
+    if (!next) {
+      pill.textContent = 'Temporada finalizada';
+      cd.hidden = true; box.hidden = true;
+      return;
+    }
+    const live = L.live && L.live.round === next.round ? L.live : null;
+    pill.textContent = live ? 'En vivo' : 'Próximo Gran Premio';
+    cd.hidden = !!live;
+    box.hidden = !live;
+    if (!live) return;
+
+    const lab = LABEL[live.kind] || 'Sesión';
+    $('#lvTag').textContent = 'EN VIVO · ' + lab;
+    $('#lvLap').textContent = live.isRace
+      ? (live.lap ? 'Vuelta ' + live.lap : (live.started ? lab + ' en curso' : 'Previa a la largada'))
+      : lab + ' en curso';
+    const st = live.isRace ? live.state : 'normal';
+    const stEl = $('#lvState');
+    stEl.textContent = live.isRace ? (STATE[st] || 'Normal') : '';
+    stEl.className = 'lv-state st-' + st;
+  }
+
+  /* ---------- Bucle principal ---------- */
+
+  async function tick() {
+    const now = Date.now();
+
+    try {
+      if (now - L.baseAt >= (L.hot ? 40 * SEC : 5 * MIN)) {
+        L.baseAt = now;
+        await loadBase();
+      }
+    } catch (e) { console.warn('[fOnefan] clasificación:', e.message); }
+
+    try { await sessionsTick(now); }
+    catch (e) { console.warn('[fOnefan] en vivo:', e.message); }
+
+    try { await checkSprints(now); } catch (e) {}
+
+    applyDone(Date.now());
+    if (L.baseDrivers && L.baseTeams) buildStandings();
+
+    const sg = sigOf();
+    if (sg !== L.sig) { L.sig = sg; render(); }
+
+    setTimeout(tick, 5 * SEC);
+  }
+
+  function boot() {
+    if (typeof a0_0x484245 === 'undefined' || !a0_0x484245.calendar || !a0_0x484245.calendar.length) {
+      return setTimeout(boot, 400);
+    }
+    setInterval(heroTick, SEC);
+    heroTick();
+    tick();
+  }
+
+  boot();
+})();
+</script>
+
+<script>
+/* =====================================================
+   TARJETA DE CARRERA (sin tocar app.js)
+   Si Jolpi todavía no publicó la carrera o el sprint,
+   usa los resultados de OpenF1 que calcula la página.
+   ===================================================== */
+(function () {
+  const OF1 = 'https://api.openf1.org/v1/';
+  let sessions = null;
+
+  const get = async p => {
+    const r = await fetch(OF1 + p);
+    if (!r.ok) throw new Error('OpenF1 ' + r.status);
+    return r.json();
+  };
+
+  const fmt = v => {
+    if (v == null || isNaN(v)) return '—';
+    const m = Math.floor(v / 60);
+    return m + ':' + (v - m * 60).toFixed(3).padStart(6, '0');
+  };
+
+  async function qualiTop(meeting) {
+    if (!sessions) sessions = await get('sessions?year=2026');
+    const q = sessions.find(s => s.meeting_key === meeting && s.session_name === 'Qualifying');
+    if (!q) return [];
+    const res = await get('session_result?session_key=' + q.session_key);
+    const drv = await get('drivers?session_key=' + q.session_key);
+    const info = {};
+    drv.forEach(d => { info[d.driver_number] = d; });
+    return res
+      .filter(x => +x.position > 0)
+      .sort((a, b) => a.position - b.position)
+      .slice(0, 3)
+      .map(x => {
+        const d = info[x.driver_number] || {};
+        const dur = Array.isArray(x.duration) ? x.duration.filter(v => v != null).pop() : x.duration;
+        return { pos: +x.position, name: d.full_name || d.last_name || '—', time: fmt(dur) };
+      });
+  }
+
+  window.a0_0x50f42b = async function (id) {
+    const race = a0_0x484245.calendar.find(r => r.id === id);
+    if (!race) return;
+
+    if (!race.done) {
+      const pending = a0_0x5d35ca(race);
+      const next = a0_0x460271();
+      const status = pending ? 'Sesiones previas disputadas · carrera pendiente'
+        : (next && next.id === race.id) ? 'Próxima carrera' : 'Próximamente';
+      const note = race.sprint
+        ? 'Fin de semana con Sprint. La clasificación Sprint fija la parrilla de la Carrera Sprint, que reparte puntos del 1.º al 8.º (8-7-6-5-4-3-2-1). La clasificación principal fija la parrilla de la carrera.'
+        : 'Fin de semana estándar. La clasificación fija la parrilla de la carrera.';
+      a0_0x4491d0(a0_0x6161b8(race) + `
+        <div class="line"><span>Fechas</span><strong>${a0_0x4046d8(race.dateLabel || '—')}</strong></div>
+        <div class="line"><span>Circuito</span><strong>${a0_0x4046d8(race.circuit || '—')}</strong></div>
+        <div class="line"><span>Lugar</span><strong>${a0_0x4046d8(race.place || '—')}</strong></div>
+        <div class="line"><span>Formato</span><strong>${race.sprint ? 'Con Sprint' : 'Estándar'}</strong></div>
+        <div class="line"><span>Estado</span><strong>${status}</strong></div>
+        <div class="box"><h4>💡 Lo que hay que saber</h4><p class="muted" style="font-size:14px;line-height:1.7">${note}</p></div>`);
+      return;
+    }
+
+    a0_0x4491d0(a0_0x6161b8(race) + '<div class="box"><p class="muted">Cargando resultados…</p></div>');
+
+    let data = null;
+    try { data = await a0_0x5632f4(race.round); } catch (e) {}
+
+    const all = window.foProvisional ? window.foProvisional() : {};
+    const provRace = Object.values(all).find(x => x.kind === 'Race' && x.round === race.round);
+    const provSprint = Object.values(all).find(x => x.kind === 'Sprint' && x.round === race.round);
+
+    if (!data || !data.race || !data.race.length) {
+      if (provRace) {
+        let quali = [];
+        try { quali = await qualiTop(provRace.meeting); } catch (e) {}
+        data = {
+          race: provRace.rows.map(r => ({ pos: r.pos, name: r.name, team: r.team, pts: r.pts, time: r.status || '' })),
+          quali,
+          sprint: [],
+          drivers: (a0_0x484245.drivers || []).map(d => ({ pos: d.pos, name: d.name, pts: d.basePts })),
+          teams: (a0_0x484245.teams || []).map((t, i) => ({ pos: i + 1, name: t.name, pts: t.pts }))
+        };
+      }
+    }
+
+    if (data && race.sprint && (!data.sprint || !data.sprint.length) && provSprint) {
+      data.sprint = provSprint.rows.map(r => ({ pos: r.pos, name: r.name, pts: r.pts }));
+    }
+
+    const body = a0_0x3f0359('#mBody');
+    if (!body) return;
+    body.innerHTML = data && data.race && data.race.length
+      ? a0_0x5ec2f5(race, data)
+      : a0_0x6161b8(race) + '<div class="box"><p class="muted">Resultados en proceso de carga.</p></div>';
+  };
 })();
 </script>
 </body>
