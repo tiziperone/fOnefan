@@ -241,8 +241,8 @@ h1, h2, h3 {
 /* =====================================================
    LOGOS DE ESCUDERÍAS
    Sin fondo ni recuadro. El fondo se quita con el script
-   de abajo, y un degradado radial suaviza los bordes para
-   que no quede ningún resplandor alrededor del logo.
+   de abajo. No se usa máscara CSS: recortaba las puntas
+   de los logos anchos, como las alas de Aston Martin.
    ===================================================== */
 .dcard .dc-hel.team-hel{
   background:transparent;
@@ -255,8 +255,6 @@ h1, h2, h3 {
   mix-blend-mode:normal;
   filter:none;
   max-width:78%;
-  -webkit-mask-image:radial-gradient(ellipse closest-side, #000 90%, transparent 100%);
-  mask-image:radial-gradient(ellipse closest-side, #000 90%, transparent 100%);
 }
 .svg-box.team-modal-visual{
   background:transparent;
@@ -794,16 +792,32 @@ setInterval(() => {
 <script>
 /* =====================================================
    LOGOS DE ESCUDERÍAS: quita el fondo sin dejar halo.
-   - Fondo oscuro (Mercedes, Aston Martin, carbono, degradés):
-     la transparencia sube solo con el brillo alto. Lo oscuro y
-     el resplandor gris o blanco que rodea al logo quedan invisibles.
-     El plateado brillante del logo se mantiene.
-   - Fondo claro o de color: se borra el fondo que toca los bordes.
+   - Logos con fondo transparente: no se tocan.
+   - Modo "dark" (fondo oscuro, carbono, degradés): la opacidad
+     se calcula según el brillo de cada píxel. Lo oscuro y el
+     resplandor gris o blanco desaparecen. Después se recorta
+     lo casi transparente (cut), que elimina el halo tenue.
+   - Modo "flood" (fondo claro o de color): se borra el fondo
+     que toca los bordes.
+   Cada archivo puede tener su modo y sus niveles en LOGO_LEVELS.
    Funciona también con los logos que app.js crea después.
    ===================================================== */
 (function () {
   const TOL = 58;
   const cache = new Map();
+
+  // Niveles por defecto para logos con fondo oscuro.
+  // lo    = brillo desde el que empieza a verse (subirlo quita más resplandor)
+  // hi    = brillo desde el que se ve completo
+  // gamma = qué tan rápido sube la opacidad entre lo y hi
+  // cut   = opacidad mínima; por debajo se elimina (quita el halo tenue)
+  const DARK_DEFAULT = { lo: 100, hi: 165, gamma: 1.25, cut: 0 };
+
+  // Configuración por archivo. mode: 'dark', 'flood' o 'auto'
+  // ('auto' detecta el fondo según la esquina de la imagen).
+  const LOGO_LEVELS = {
+    'LogoAstonMartin.webp': { mode: 'dark', lo: 145, hi: 200, gamma: 1.15, cut: 60 }
+  };
 
   const smooth = (a, b, x) => {
     const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -829,25 +843,37 @@ setInterval(() => {
           let br = 0, bgc = 0, bb = 0, ba = 0;
           corners.forEach(i => { br += px[i]; bgc += px[i + 1]; bb += px[i + 2]; ba += px[i + 3]; });
           br /= 4; bgc /= 4; bb /= 4; ba /= 4;
+
+          // Si el logo ya viene con fondo transparente, no se modifica
+          if (ba < 12) { resolve(src); return; }
+
           const cornerLum = 0.299 * br + 0.587 * bgc + 0.114 * bb;
 
-          if (ba >= 12 && cornerLum < 110) {
-            // FONDO OSCURO: solo se conserva lo brillante (metal, letras, alas).
-            // Umbral más alto y curva suave para que el halo gris desaparezca.
+          // Configuración del archivo (o valores por defecto)
+          const file = decodeURIComponent(String(src).split('/').pop().split('?')[0]);
+          const cfg = LOGO_LEVELS[file] || { mode: 'auto' };
+          const useDark = cfg.mode === 'dark' || (cfg.mode !== 'flood' && cornerLum < 110);
+
+          if (useDark) {
+            // FONDO OSCURO: la opacidad sube solo con el brillo del píxel.
+            const d = { ...DARK_DEFAULT, ...cfg };
+            const span = Math.max(1, d.hi - d.lo);
             for (let p = 0; p < N; p++) {
               const i = p * 4;
               if (px[i + 3] === 0) continue;
               const m = Math.max(px[i], px[i + 1], px[i + 2]);
-              const a = smooth(100, 165, m);
-              px[i + 3] = Math.round(px[i + 3] * Math.pow(a, 1.25));
+              const a = smooth(d.lo, d.lo + span, m);
+              let alpha = Math.round(px[i + 3] * Math.pow(a, d.gamma));
+              if (alpha < d.cut) alpha = 0;
+              px[i + 3] = alpha;
             }
           } else {
             // FONDO CLARO O DE COLOR: se borra el fondo que toca los bordes
             const isBg = p => {
               const i = p * 4;
               if (px[i + 3] < 12) return true;
-              const d = Math.hypot(px[i] - br, px[i + 1] - bgc, px[i + 2] - bb);
-              return ba >= 12 && d < TOL;
+              const dist = Math.hypot(px[i] - br, px[i + 1] - bgc, px[i + 2] - bb);
+              return dist < TOL;
             };
             const seen = new Uint8Array(N);
             const stack = [];
@@ -876,8 +902,8 @@ setInterval(() => {
                 (x < w - 1 && px[(p + 1) * 4 + 3] === 0) ||
                 (y > 0 && px[(p - w) * 4 + 3] === 0) ||
                 (y < h - 1 && px[(p + w) * 4 + 3] === 0);
-              const d = Math.hypot(px[i] - br, px[i + 1] - bgc, px[i + 2] - bb);
-              if (nearClear && d < TOL * 1.8) halo.push(i);
+              const dist = Math.hypot(px[i] - br, px[i + 1] - bgc, px[i + 2] - bb);
+              if (nearClear && dist < TOL * 1.8) halo.push(i);
             }
             halo.forEach(i => { px[i + 3] = 0; });
           }
