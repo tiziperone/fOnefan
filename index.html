@@ -257,17 +257,17 @@
             touch-action="pan-y"
             interaction-prompt="none">
 
-            <button slot="hotspot-nariz" class="mono-hot" data-part="nariz" data-position="2.75m 0.36m 0m" data-normal="1m 0m 0m" data-visibility-attribute="visible">1</button>
-            <button slot="hotspot-alerondel" class="mono-hot" data-part="alerondel" data-position="2.5m 0.12m 0.9m" data-normal="0m -1m 0m" data-visibility-attribute="visible">2</button>
-            <button slot="hotspot-halo" class="mono-hot" data-part="halo" data-position="0.22m 0.98m 0m" data-normal="0m 1m 0m" data-visibility-attribute="visible">3</button>
-            <button slot="hotspot-toma" class="mono-hot" data-part="toma" data-position="-0.7m 1.2m 0m" data-normal="0m 1m 0m" data-visibility-attribute="visible">4</button>
-            <button slot="hotspot-aleta" class="mono-hot" data-part="aleta" data-position="-1.0m 1.05m 0m" data-normal="0m 0m 1m" data-visibility-attribute="visible">5</button>
-            <button slot="hotspot-pontones" class="mono-hot" data-part="pontones" data-position="0.3m 0.48m 0.72m" data-normal="0m 0m 1m" data-visibility-attribute="visible">6</button>
-            <button slot="hotspot-alerontras" class="mono-hot" data-part="alerontras" data-position="-2.3m 1.12m 0.6m" data-normal="-1m 0m 0m" data-visibility-attribute="visible">7</button>
-            <button slot="hotspot-suelo" class="mono-hot" data-part="suelo" data-position="-2.0m 0.2m 0.4m" data-normal="0m -1m 0m" data-visibility-attribute="visible">8</button>
-            <button slot="hotspot-escape" class="mono-hot" data-part="escape" data-position="-2.45m 0.63m 0.1m" data-normal="-1m 0m 0m" data-visibility-attribute="visible">9</button>
-            <button slot="hotspot-neumatico" class="mono-hot" data-part="neumatico" data-position="2.0m 0.36m 1.05m" data-normal="0m 0m 1m" data-visibility-attribute="visible">10</button>
-            <button slot="hotspot-retrovisor" class="mono-hot" data-part="retrovisor" data-position="1.25m 0.84m 0.7m" data-normal="0m 0m 1m" data-visibility-attribute="visible">11</button>
+            <button slot="hotspot-nariz" class="mono-hot" data-part="nariz" data-position="2.60m 0.22m 0.00m" data-normal="1m 0m 0m" data-visibility-attribute="visible">1</button>
+            <button slot="hotspot-alerondel" class="mono-hot" data-part="alerondel" data-position="2.50m 0.20m 0.60m" data-normal="0m -1m 0m" data-visibility-attribute="visible">2</button>
+            <button slot="hotspot-halo" class="mono-hot" data-part="halo" data-position="0.20m 0.88m 0.00m" data-normal="0m 1m 0m" data-visibility-attribute="visible">3</button>
+            <button slot="hotspot-toma" class="mono-hot" data-part="toma" data-position="-0.50m 1.12m 0.00m" data-normal="0m 1m 0m" data-visibility-attribute="visible">4</button>
+            <button slot="hotspot-aleta" class="mono-hot" data-part="aleta" data-position="-1.00m 0.95m 0.00m" data-normal="0m 0m 1m" data-visibility-attribute="visible">5</button>
+            <button slot="hotspot-pontones" class="mono-hot" data-part="pontones" data-position="0.00m 0.40m 0.62m" data-normal="0m 0m 1m" data-visibility-attribute="visible">6</button>
+            <button slot="hotspot-alerontras" class="mono-hot" data-part="alerontras" data-position="-2.45m 0.80m 0.50m" data-normal="-1m 0m 0m" data-visibility-attribute="visible">7</button>
+            <button slot="hotspot-suelo" class="mono-hot" data-part="suelo" data-position="-2.10m 0.20m 0.30m" data-normal="0m -1m 0m" data-visibility-attribute="visible">8</button>
+            <button slot="hotspot-escape" class="mono-hot" data-part="escape" data-position="-1.90m 0.55m 0.10m" data-normal="-1m 0m 0m" data-visibility-attribute="visible">9</button>
+            <button slot="hotspot-neumatico" class="mono-hot" data-part="neumatico" data-position="1.77m 0.40m 0.95m" data-normal="0m 0m 1m" data-visibility-attribute="visible">10</button>
+            <button slot="hotspot-retrovisor" class="mono-hot" data-part="retrovisor" data-position="0.85m 0.85m 0.40m" data-normal="0m 0m 1m" data-visibility-attribute="visible">11</button>
           </model-viewer>
         </div>
         <div class="mono-views">
@@ -315,27 +315,27 @@
    ===================================================== */
 (function () {
   const PARTS = [
-    { id: 'nariz', n: 1, name: 'Nariz', pos: [2.75, 0.36, 0], r: 2.2,
+    { id: 'nariz', n: 1, name: 'Nariz', pos: [2.60, 0.22, 0.00], r: 2.2,
       text: 'Canaliza el aire hacia el fondo del monoplaza y define la forma de la parte delantera. Su perfil conecta el flujo de aire con el alerón delantero.' },
-    { id: 'alerondel', n: 2, name: 'Alerón delantero', pos: [2.5, 0.12, 0.9], r: 2.2,
+    { id: 'alerondel', n: 2, name: 'Alerón delantero', pos: [2.50, 0.20, 0.60], r: 2.2,
       text: 'Varias capas superpuestas que generan carga aerodinámica en el tren delantero. Los extremos (endplates) guían el aire hacia las ruedas y hacia los pontones. Ajustar su ángulo cambia el equilibrio del auto entre adelante y atrás.' },
-    { id: 'halo', n: 3, name: 'Halo', pos: [0.22, 0.98, 0], r: 2.4,
+    { id: 'halo', n: 3, name: 'Halo', pos: [0.20, 0.88, 0.00], r: 2.4,
       text: 'Estructura de titanio sobre la cabeza del piloto, obligatoria desde 2018. Soporta cargas de varias toneladas y protege ante impactos de restos o de otros coches.' },
-    { id: 'toma', n: 4, name: 'Toma de aire', pos: [-0.7, 1.2, 0], r: 2.4,
+    { id: 'toma', n: 4, name: 'Toma de aire', pos: [-0.50, 1.12, 0.00], r: 2.4,
       text: 'Alimenta de aire al motor de combustión. Va detrás del halo, por encima del piloto, y su forma compacta busca generar poca resistencia.' },
-    { id: 'aleta', n: 5, name: 'Aleta de tiburón', pos: [-1.0, 1.05, 0], r: 2.2,
+    { id: 'aleta', n: 5, name: 'Aleta de tiburón', pos: [-1.00, 0.95, 0.00], r: 2.2,
       text: 'Aleta vertical que da estabilidad en las curvas rápidas y dirige el flujo de aire hacia el alerón trasero.' },
-    { id: 'pontones', n: 6, name: 'Pontones', pos: [0.3, 0.48, 0.72], r: 2.6,
+    { id: 'pontones', n: 6, name: 'Pontones', pos: [0.00, 0.40, 0.62], r: 2.6,
       text: 'Canalizan el aire de refrigeración hacia el motor y definen cómo fluye el aire hacia la parte trasera. En el diseño conceptual llevan los colores del auto y el "2026".' },
-    { id: 'alerontras', n: 7, name: 'Alerón trasero', pos: [-2.3, 1.12, 0.6], r: 2.6,
+    { id: 'alerontras', n: 7, name: 'Alerón trasero', pos: [-2.45, 0.80, 0.50], r: 2.6,
       text: 'Genera carga aerodinámica para estabilizar el eje trasero. Sus elementos son los que más influyen en la estabilidad en curva y en la velocidad punta.' },
-    { id: 'suelo', n: 8, name: 'Suelo y difusor', pos: [-2.0, 0.2, 0.4], r: 2.6,
+    { id: 'suelo', n: 8, name: 'Suelo y difusor', pos: [-2.10, 0.20, 0.30], r: 2.6,
       text: 'El suelo genera gran parte de la carga por efecto suelo: el aire que pasa por debajo pega el auto al asfalto. El difusor, en la parte trasera, acelera ese aire para aumentar la succión.' },
-    { id: 'escape', n: 9, name: 'Escape', pos: [-2.45, 0.63, 0.1], r: 1.6,
+    { id: 'escape', n: 9, name: 'Escape', pos: [-1.90, 0.55, 0.10], r: 1.6,
       text: 'Salida de los gases del motor. Su posición alta y lateral ayuda a dirigir el aire hacia el alerón trasero y el difusor.' },
-    { id: 'neumatico', n: 10, name: 'Neumáticos', pos: [2.0, 0.36, 1.05], r: 1.8,
+    { id: 'neumatico', n: 10, name: 'Neumáticos', pos: [1.77, 0.40, 0.95], r: 1.8,
       text: 'Pirelli P Zero. Cada fin de semana se nominan tres compuestos y cada piloto tiene un cupo limitado de juegos. Son el único contacto del auto con la pista.' },
-    { id: 'retrovisor', n: 11, name: 'Retrovisores', pos: [1.25, 0.84, 0.7], r: 1.4,
+    { id: 'retrovisor', n: 11, name: 'Retrovisores', pos: [0.85, 0.85, 0.40], r: 1.4,
       text: 'Permiten ver a los rivales sin girar la cabeza. Son pequeños, pero están diseñados para generar la menor turbulencia posible.' }
   ];
 
