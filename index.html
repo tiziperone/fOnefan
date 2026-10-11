@@ -21,6 +21,73 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=Titillium+Web:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+
+<!-- Visor 3D para el monoplaza (model-viewer) -->
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+<style>
+/* =====================================================
+   SECCIÓN MONOPLAZA (visor 3D + piezas numeradas)
+   ===================================================== */
+.mono-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+.mono-stage{position:relative;padding:14px}
+.mono-viewer{
+  position:relative;height:560px;border-radius:18px;overflow:hidden;
+  border:1px solid var(--line);
+  background:
+    radial-gradient(ellipse 60% 45% at 50% 38%, rgba(60,90,255,.22), transparent 70%),
+    radial-gradient(ellipse 50% 30% at 50% 100%, rgba(225,6,0,.12), transparent 70%),
+    #08080d;
+}
+#monoModel{width:100%;height:100%;background:transparent;--poster-color:transparent;--progress-bar-color:var(--red)}
+
+/* Números sobre cada pieza (se muestran solo si la pieza mira hacia la cámara) */
+.mono-hot{
+  position:absolute;transform:translate(-50%,-50%);z-index:2;
+  width:28px;height:28px;padding:0;border-radius:50%;
+  border:2px solid #fff;background:var(--red);color:#fff;
+  font:800 13px/1 var(--f-nav);cursor:pointer;
+  box-shadow:0 0 0 5px rgba(225,6,0,.22);
+  transition:transform .2s ease,background .2s ease;
+}
+.mono-hot:hover{transform:translate(-50%,-50%) scale(1.12)}
+.mono-hot.on{background:#fff;color:var(--red);box-shadow:0 0 0 6px rgba(255,255,255,.25)}
+.mono-hot:not([visible]){display:none}
+
+.mono-views{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.mono-note{font-size:12px;color:var(--muted);margin-top:10px;letter-spacing:.02em}
+
+/* Panel lateral */
+.mono-panel{padding:22px;display:grid;gap:18px;align-content:start;position:sticky;top:96px}
+.mono-name{font-size:clamp(30px,3.6vw,42px);margin:8px 0 12px}
+.mono-steps{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.mono-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mono-item{
+  appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.03);color:#d6d6e0;
+  border-radius:12px;padding:9px 10px;text-align:left;cursor:pointer;
+  font:700 13px/1.2 var(--f-nav);letter-spacing:.06em;text-transform:uppercase;
+  display:flex;gap:8px;align-items:center;
+  transition:background .2s ease,border-color .2s ease;
+}
+.mono-item span{
+  flex:0 0 22px;height:22px;border-radius:50%;background:var(--red);color:#fff;
+  display:grid;place-items:center;font-size:11px;
+}
+.mono-item:hover{border-color:rgba(225,6,0,.45)}
+.mono-item.on{background:rgba(225,6,0,.16);border-color:rgba(225,6,0,.5);color:#fff}
+
+@media (max-width:980px){
+  .mono-layout{grid-template-columns:1fr}
+  .mono-panel{position:static}
+  .mono-viewer{height:440px}
+}
+@media (max-width:640px){
+  .mono-stage{padding:10px}
+  .mono-list{grid-template-columns:1fr}
+  .mono-viewer{height:380px}
+  .mono-hot{width:24px;height:24px;font-size:11px}
+}
+</style>
 </head>
 <body>
 
@@ -52,6 +119,7 @@
       <button class="tab" data-view="circuits">Circuitos</button>
       <button class="tab" data-view="pilotos">Pilotos</button>
       <button class="tab" data-view="escuderias">Escuderías</button>
+      <button class="tab" data-view="monoplaza">Monoplaza</button>
       <button class="tab" data-view="info">Info</button>
     </div>
   </nav>
@@ -166,6 +234,63 @@
     <div class="drv-grid" id="teamGrid"></div>
   </section>
 
+  <!-- MONOPLAZA: modelo 3D (Modelos3D/Monoplaza2026.glb) con piezas numeradas -->
+  <section class="view" id="v-monoplaza">
+    <div class="sec-head">
+      <div><span class="eyebrow">Diseño 2026</span><h2 class="display">Monoplaza</h2></div>
+      <p>Modelo 3D del monoplaza conceptual 2026. Arrastra para girarlo, usa la rueda del mouse para acercarte y toca un número para conocer cada pieza.</p>
+    </div>
+    <div class="mono-layout">
+      <div class="glass mono-stage">
+        <div class="mono-viewer">
+          <model-viewer id="monoModel"
+            src="Modelos3D/Monoplaza2026.glb"
+            alt="Monoplaza 2026 en 3D"
+            camera-controls
+            auto-rotate
+            camera-orbit="35deg 72deg auto"
+            camera-target="auto auto auto"
+            shadow-intensity="0.9"
+            shadow-softness="0.8"
+            exposure="1.05"
+            environment-image="neutral"
+            touch-action="pan-y"
+            interaction-prompt="none">
+
+            <button slot="hotspot-nariz" class="mono-hot" data-part="nariz" data-position="2.75m 0.36m 0m" data-normal="1m 0m 0m" data-visibility-attribute="visible">1</button>
+            <button slot="hotspot-alerondel" class="mono-hot" data-part="alerondel" data-position="2.5m 0.12m 0.9m" data-normal="0m -1m 0m" data-visibility-attribute="visible">2</button>
+            <button slot="hotspot-halo" class="mono-hot" data-part="halo" data-position="0.22m 0.98m 0m" data-normal="0m 1m 0m" data-visibility-attribute="visible">3</button>
+            <button slot="hotspot-toma" class="mono-hot" data-part="toma" data-position="-0.7m 1.2m 0m" data-normal="0m 1m 0m" data-visibility-attribute="visible">4</button>
+            <button slot="hotspot-aleta" class="mono-hot" data-part="aleta" data-position="-1.0m 1.05m 0m" data-normal="0m 0m 1m" data-visibility-attribute="visible">5</button>
+            <button slot="hotspot-pontones" class="mono-hot" data-part="pontones" data-position="0.3m 0.48m 0.72m" data-normal="0m 0m 1m" data-visibility-attribute="visible">6</button>
+            <button slot="hotspot-alerontras" class="mono-hot" data-part="alerontras" data-position="-2.3m 1.12m 0.6m" data-normal="-1m 0m 0m" data-visibility-attribute="visible">7</button>
+            <button slot="hotspot-suelo" class="mono-hot" data-part="suelo" data-position="-2.0m 0.2m 0.4m" data-normal="0m -1m 0m" data-visibility-attribute="visible">8</button>
+            <button slot="hotspot-escape" class="mono-hot" data-part="escape" data-position="-2.45m 0.63m 0.1m" data-normal="-1m 0m 0m" data-visibility-attribute="visible">9</button>
+            <button slot="hotspot-neumatico" class="mono-hot" data-part="neumatico" data-position="2.0m 0.36m 1.05m" data-normal="0m 0m 1m" data-visibility-attribute="visible">10</button>
+            <button slot="hotspot-retrovisor" class="mono-hot" data-part="retrovisor" data-position="1.25m 0.84m 0.7m" data-normal="0m 0m 1m" data-visibility-attribute="visible">11</button>
+          </model-viewer>
+        </div>
+        <div class="mono-views">
+          <button class="chip on" data-mono-view="general">General</button>
+          <button class="chip" data-mono-view="frente">Frente</button>
+          <button class="chip" data-mono-view="lateral">Lateral</button>
+          <button class="chip" data-mono-view="trasera">Trasera</button>
+          <button class="chip" data-mono-view="arriba">Arriba</button>
+        </div>
+        <p class="mono-note">Modelo recreado a partir del diseño conceptual 2026. Las formas son aproximadas.</p>
+      </div>
+
+      <aside class="glass mono-panel">
+        <div id="monoInfo">
+          <span class="eyebrow">Toca una pieza</span>
+          <h3 class="display mono-name">Monoplaza 2026</h3>
+          <p class="info-text">Elige un número del modelo o de la lista para ver qué hace cada pieza del auto.</p>
+        </div>
+        <div class="mono-list" id="monoList"></div>
+      </aside>
+    </div>
+  </section>
+
   <!-- INFO (la dibuja app.js) -->
   <section class="view" id="v-info"></section>
 </main>
@@ -178,9 +303,144 @@
   </div>
 </div>
 
-<footer><p>fOnefan • Plataforma de información sobre Fórmula 1  • Perone Tiziano </p></footer>
+<footer><p>fOnefan • Plataforma de información sobre Fórmula 1</p></footer>
 
 <script src="data.js"></script>
 <script src="app.js"></script>
+
+<script>
+/* =====================================================
+   MONOPLAZA · lógica de piezas y vistas
+   Coordenadas en metros del modelo: +X = nariz, +Y = arriba, +Z = lateral
+   ===================================================== */
+(function () {
+  const PARTS = [
+    { id: 'nariz', n: 1, name: 'Nariz', pos: [2.75, 0.36, 0], r: 2.2,
+      text: 'Canaliza el aire hacia el fondo del monoplaza y define la forma de la parte delantera. Su perfil conecta el flujo de aire con el alerón delantero.' },
+    { id: 'alerondel', n: 2, name: 'Alerón delantero', pos: [2.5, 0.12, 0.9], r: 2.2,
+      text: 'Varias capas superpuestas que generan carga aerodinámica en el tren delantero. Los extremos (endplates) guían el aire hacia las ruedas y hacia los pontones. Ajustar su ángulo cambia el equilibrio del auto entre adelante y atrás.' },
+    { id: 'halo', n: 3, name: 'Halo', pos: [0.22, 0.98, 0], r: 2.4,
+      text: 'Estructura de titanio sobre la cabeza del piloto, obligatoria desde 2018. Soporta cargas de varias toneladas y protege ante impactos de restos o de otros coches.' },
+    { id: 'toma', n: 4, name: 'Toma de aire', pos: [-0.7, 1.2, 0], r: 2.4,
+      text: 'Alimenta de aire al motor de combustión. Va detrás del halo, por encima del piloto, y su forma compacta busca generar poca resistencia.' },
+    { id: 'aleta', n: 5, name: 'Aleta de tiburón', pos: [-1.0, 1.05, 0], r: 2.2,
+      text: 'Aleta vertical que da estabilidad en las curvas rápidas y dirige el flujo de aire hacia el alerón trasero.' },
+    { id: 'pontones', n: 6, name: 'Pontones', pos: [0.3, 0.48, 0.72], r: 2.6,
+      text: 'Canalizan el aire de refrigeración hacia el motor y definen cómo fluye el aire hacia la parte trasera. En el diseño conceptual llevan los colores del auto y el "2026".' },
+    { id: 'alerontras', n: 7, name: 'Alerón trasero', pos: [-2.3, 1.12, 0.6], r: 2.6,
+      text: 'Genera carga aerodinámica para estabilizar el eje trasero. Sus elementos son los que más influyen en la estabilidad en curva y en la velocidad punta.' },
+    { id: 'suelo', n: 8, name: 'Suelo y difusor', pos: [-2.0, 0.2, 0.4], r: 2.6,
+      text: 'El suelo genera gran parte de la carga por efecto suelo: el aire que pasa por debajo pega el auto al asfalto. El difusor, en la parte trasera, acelera ese aire para aumentar la succión.' },
+    { id: 'escape', n: 9, name: 'Escape', pos: [-2.45, 0.63, 0.1], r: 1.6,
+      text: 'Salida de los gases del motor. Su posición alta y lateral ayuda a dirigir el aire hacia el alerón trasero y el difusor.' },
+    { id: 'neumatico', n: 10, name: 'Neumáticos', pos: [2.0, 0.36, 1.05], r: 1.8,
+      text: 'Pirelli P Zero. Cada fin de semana se nominan tres compuestos y cada piloto tiene un cupo limitado de juegos. Son el único contacto del auto con la pista.' },
+    { id: 'retrovisor', n: 11, name: 'Retrovisores', pos: [1.25, 0.84, 0.7], r: 1.4,
+      text: 'Permiten ver a los rivales sin girar la cabeza. Son pequeños, pero están diseñados para generar la menor turbulencia posible.' }
+  ];
+
+  // Vistas: órbita (theta, phi, radio) y objetivo de la cámara
+  const VIEWS = {
+    general: { orbit: '35deg 72deg auto', target: 'auto auto auto' },
+    frente:  { orbit: '90deg 80deg auto', target: 'auto auto auto' },
+    lateral: { orbit: '0deg 80deg auto',  target: 'auto auto auto' },
+    trasera: { orbit: '-90deg 80deg auto', target: 'auto auto auto' },
+    arriba:  { orbit: '0deg 2deg auto',   target: 'auto auto auto' }
+  };
+
+  const DEFAULT_INFO = `
+    <span class="eyebrow">Toca una pieza</span>
+    <h3 class="display mono-name">Monoplaza 2026</h3>
+    <p class="info-text">Elige un número del modelo o de la lista para ver qué hace cada pieza del auto.</p>`;
+
+  const viewer = document.getElementById('monoModel');
+  const info = document.getElementById('monoInfo');
+  const list = document.getElementById('monoList');
+  let current = null;
+
+  // Lista de piezas al costado
+  list.innerHTML = PARTS.map(p =>
+    `<button class="mono-item" type="button" data-part="${p.id}"><span>${p.n}</span>${p.name}</button>`
+  ).join('');
+
+  // Si el archivo .glb no carga, avisar en el panel
+  viewer.addEventListener('error', () => {
+    info.innerHTML = `<span class="eyebrow">Modelo 3D</span>
+      <h3 class="display mono-name">No se pudo cargar</h3>
+      <p class="info-text">Revisa que exista la carpeta <b>Modelos3D</b> con el archivo <b>Monoplaza2026.glb</b> junto a index.html.</p>`;
+  });
+
+  // Dejar de girar solo cuando el usuario interactúa con el modelo
+  viewer.addEventListener('camera-change', e => {
+    if (e.detail && e.detail.source === 'user-interaction') viewer.removeAttribute('auto-rotate');
+  });
+
+  function setCamera(orbit, target) {
+    viewer.removeAttribute('auto-rotate');
+    viewer.setAttribute('camera-target', target);
+    viewer.setAttribute('camera-orbit', orbit);
+  }
+
+  // Ángulo horizontal de la cámara para que la pieza quede de frente
+  function orbitFor(p) {
+    const dx = p.pos[0] - 0.1;
+    const dz = p.pos[2] + 0.5;
+    const theta = Math.atan2(dx, dz) * 180 / Math.PI;
+    return `${theta.toFixed(1)}deg 78deg ${p.r}m`;
+  }
+
+  function markActive(id) {
+    document.querySelectorAll('.mono-hot').forEach(h => h.classList.toggle('on', h.dataset.part === id));
+    document.querySelectorAll('.mono-item').forEach(b => b.classList.toggle('on', b.dataset.part === id));
+  }
+
+  function selectPart(id) {
+    const idx = PARTS.findIndex(p => p.id === id);
+    if (idx < 0) return;
+    current = idx;
+    const p = PARTS[idx];
+    markActive(id);
+    info.innerHTML = `
+      <span class="eyebrow">Pieza ${p.n} de ${PARTS.length}</span>
+      <h3 class="display mono-name">${p.name}</h3>
+      <p class="info-text">${p.text}</p>
+      <div class="mono-steps">
+        <button class="btn-sm" type="button" data-mono-step="-1">← Anterior</button>
+        <button class="btn-sm" type="button" data-mono-step="1">Siguiente →</button>
+      </div>`;
+    setCamera(orbitFor(p), `${p.pos[0]}m ${p.pos[1]}m ${p.pos[2]}m`);
+  }
+
+  function setView(name) {
+    const v = VIEWS[name];
+    if (!v) return;
+    current = null;
+    markActive(null);
+    info.innerHTML = DEFAULT_INFO;
+    setCamera(v.orbit, v.target);
+  }
+
+  function step(dir) {
+    const n = PARTS.length;
+    const idx = current === null ? (dir > 0 ? 0 : n - 1) : (current + dir + n) % n;
+    selectPart(PARTS[idx].id);
+  }
+
+  document.addEventListener('click', e => {
+    const part = e.target.closest('[data-part]');
+    if (part) { selectPart(part.dataset.part); return; }
+
+    const view = e.target.closest('[data-mono-view]');
+    if (view) {
+      document.querySelectorAll('[data-mono-view]').forEach(b => b.classList.toggle('on', b === view));
+      setView(view.dataset.monoView);
+      return;
+    }
+
+    const st = e.target.closest('[data-mono-step]');
+    if (st) step(+st.dataset.monoStep);
+  });
+})();
+</script>
 </body>
 </html>
