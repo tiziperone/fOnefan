@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>fOnefan</title>
 
 <link rel="manifest" href="manifest.json">
@@ -62,6 +65,15 @@ h1,h2,h3{font-family:'Orbitron',sans-serif !important;letter-spacing:.05em;text-
 .rec-table td:first-child{font-weight:700;color:var(--red);width:38px;font-family:'Orbitron',sans-serif;font-size:13px}
 .rec-table td:last-child{font-weight:700;color:#fff;text-align:right;font-family:'Orbitron',sans-serif;font-size:14px}
 .rec-note{font-size:13px;color:#8b8b99;margin-top:12px;line-height:1.6}
+
+/* BUSCADORES Y CORRECCIÓN DE LAYOUT */
+.sec-head{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:18px}
+.drv-tools{display:flex;align-items:center;gap:12px;margin:16px 0 10px 0 !important;width:100%;max-width:380px;position:relative !important;clear:both}
+.drv-tools input[type="search"]{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:10px 16px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:15px;outline:none;transition:border-color .3s ease,background .3s ease}
+.drv-tools input[type="search"]:focus{border-color:var(--red);background:rgba(255,255,255,.08)}
+
+#drvStatus,#teamStatus{position:relative !important;display:block !important;margin:8px 0 16px 0 !important;min-height:0;font-size:14px;color:var(--muted);clear:both;line-height:1.4}
+#drvStatus:empty,#teamStatus:empty{display:none !important;margin:0 !important}
 
 /* LOGOS, CASCOS: fondo transparente generado por canvas */
 .dcard .dc-hel.team-hel{background:transparent;border:0;box-shadow:none;padding:6px}
@@ -184,6 +196,7 @@ img{max-width:100%}
   .record-card{padding:18px}
   .tower-row,.tower-head{grid-template-columns:24px 64px 1fr 70px 30px;font-size:13px}
   .spd-bar{grid-template-columns:64px 1fr 60px}
+  .drv-tools{max-width:100%}
 }
 </style>
 </head>
@@ -271,7 +284,7 @@ img{max-width:100%}
     </div>
   </section>
 
-  <!-- CALENDARIO (lo acomoda app.js dentro de Campeonato) -->
+  <!-- CALENDARIO -->
   <section class="view" id="v-calendar">
     <div class="sec-head">
       <div><span class="eyebrow">Temporada 2026</span><h2 class="display">Calendario</h2></div>
@@ -309,14 +322,15 @@ img{max-width:100%}
   <section class="view" id="v-pilotos">
     <div class="sec-head">
       <div><span class="eyebrow">Parrilla y leyendas</span><h2 class="display">Pilotos</h2></div>
-      <div class="drv-tools" id="drvTools">
-        <input id="drvSearch" type="search" placeholder="Buscar piloto…" autocomplete="off">
-      </div>
+      <p>Pilotos en activo, trayectoria histórica y leyendas de la Fórmula 1.</p>
     </div>
     <div class="chips" id="drvTabs">
       <button class="chip on" data-dt="act">Pilotos actuales</button>
       <button class="chip" data-dt="hist">A lo largo de la historia</button>
       <button class="chip" data-dt="hof">Salón de la Fama</button>
+    </div>
+    <div class="drv-tools" id="drvTools" style="display:none">
+      <input id="drvSearch" type="search" placeholder="Buscar piloto…" autocomplete="off">
     </div>
     <p id="drvStatus" class="muted"></p>
     <div class="drv-grid" id="drvGrid"></div>
@@ -438,7 +452,7 @@ img{max-width:100%}
     </div>
   </section>
 
-  <!-- RÉCORDS (valores fijos, actualizados después del GP de Singapur 2026) -->
+  <!-- RÉCORDS -->
   <section class="view" id="v-records">
     <div class="sec-head">
       <div><span class="eyebrow">Historia & Leyendas</span><h2 class="display">Récords Históricos</h2></div>
@@ -557,10 +571,163 @@ img{max-width:100%}
 
 <footer><p>fOnefan • Plataforma de información sobre Fórmula 1 • Perone Tiziano</p></footer>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script src="data.js?v=20261011_v5"></script>
+<script src="app.js?v=20261011_v5"></script>
 
 <script>
+/* Corrije las tarjetas del Salón de la Fama de Escuderías a Campeonatos de Constructores (Ferrari: 16, McLaren: 10) */
+(function() {
+  function fixConstructorsDOM() {
+    const teamGrid = document.getElementById('teamGrid');
+    if (!teamGrid) return;
+
+    // 1. Corregir datos globales si existen
+    if (typeof a0_0x484245 !== 'undefined') {
+      for (let key in a0_0x484245) {
+        if (Array.isArray(a0_0x484245[key])) {
+          a0_0x484245[key].forEach(item => {
+            if (item && item.name) {
+              if (/ferrari/i.test(item.name)) {
+                item.titles = 16;
+                item.years = [1961, 1964, 1975, 1976, 1977, 1979, 1982, 1983, 1999, 2000, 2001, 2002, 2003, 2004, 2007, 2008];
+              }
+              if (/mclaren/i.test(item.name)) {
+                item.titles = 10;
+                item.years = [1974, 1984, 1985, 1988, 1989, 1990, 1991, 1998, 2024, 2025];
+              }
+            }
+          });
+        }
+      }
+    }
+
+    // 2. Modificación directa en las tarjetas renderizadas
+    const cards = teamGrid.children;
+    for (let card of cards) {
+      const text = card.textContent || '';
+
+      // FERRARI
+      if (text.toUpperCase().includes('FERRARI')) {
+        const allEls = card.querySelectorAll('*');
+        allEls.forEach(el => {
+          if (el.children.length === 0 && (el.textContent.trim() === '15' || el.textContent.trim() === '15 TÍTULOS')) {
+            el.textContent = el.textContent.replace('15', '16');
+          }
+        });
+
+        const yearPills = Array.from(allEls).filter(e => /^(19|20)\d\d$/.test(e.textContent.trim()));
+        if (yearPills.length > 0) {
+          const parent = yearPills[0].parentElement;
+          if (parent && (!parent.dataset.fixed || parent.dataset.fixed !== 'ferrari_v2')) {
+            parent.dataset.fixed = 'ferrari_v2';
+            const ferrariYears = ['1961', '1964', '1975', '1976', '1977', '1979', '1982', '1983', '1999', '2000', '2001', '2002', '2003', '2004', '2007', '2008'];
+            const sampleTag = yearPills[0].tagName.toLowerCase();
+            const sampleClass = yearPills[0].className;
+            parent.innerHTML = ferrariYears.map(y => `<${sampleTag} class="${sampleClass}">${y}</${sampleTag}>`).join('');
+          }
+        }
+      }
+
+      // MCLAREN
+      if (text.toUpperCase().includes('MCLAREN')) {
+        const allEls = card.querySelectorAll('*');
+        allEls.forEach(el => {
+          if (el.children.length === 0 && (el.textContent.trim() === '13' || el.textContent.trim() === '12' || el.textContent.includes('13 TÍTULOS'))) {
+            el.textContent = el.textContent.replace('13', '10').replace('12', '10');
+          }
+        });
+
+        const yearPills = Array.from(allEls).filter(e => /^(19|20)\d\d$/.test(e.textContent.trim()));
+        if (yearPills.length > 0) {
+          const parent = yearPills[0].parentElement;
+          if (parent && (!parent.dataset.fixed || parent.dataset.fixed !== 'mclaren_v2')) {
+            parent.dataset.fixed = 'mclaren_v2';
+            const mclarenYears = ['1974', '1984', '1985', '1988', '1989', '1990', '1991', '1998', '2024', '2025'];
+            const sampleTag = yearPills[0].tagName.toLowerCase();
+            const sampleClass = yearPills[0].className;
+            parent.innerHTML = mclarenYears.map(y => `<${sampleTag} class="${sampleClass}">${y}</${sampleTag}>`).join('');
+          }
+        }
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    fixConstructorsDOM();
+    const teamGrid = document.getElementById('teamGrid');
+    if (teamGrid) {
+      const obs = new MutationObserver(fixConstructorsDOM);
+      obs.observe(teamGrid, { childList: true, subtree: true });
+    }
+  });
+
+  setInterval(fixConstructorsDOM, 200);
+})();
+
+/* Supresión del texto "cargando historial..." si aparece */
+(function() {
+  const purge = el => {
+    if (el && el.textContent && el.textContent.toLowerCase().includes('cargando historial')) {
+      el.textContent = '';
+      el.style.display = 'none';
+    }
+  };
+
+  const watch = id => {
+    const target = document.getElementById(id);
+    if (!target) return;
+    purge(target);
+    const observer = new MutationObserver(() => purge(target));
+    observer.observe(target, { childList: true, characterData: true, subtree: true });
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    watch('drvStatus');
+    watch('teamStatus');
+  });
+
+  setInterval(() => {
+    purge(document.getElementById('drvStatus'));
+    purge(document.getElementById('teamStatus'));
+  }, 100);
+})();
+
+/* Desinstalación de Service Workers previa para forzar actualización inmediata en celulares */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    for (let reg of regs) {
+      reg.unregister();
+    }
+  });
+}
+
+/* Visibilidad de los buscadores según la pestaña seleccionada */
+(function() {
+  document.addEventListener('DOMContentLoaded', () => {
+    const drvTabs = document.getElementById('drvTabs');
+    const drvTools = document.getElementById('drvTools');
+    if (drvTabs && drvTools) {
+      drvTabs.addEventListener('click', e => {
+        const btn = e.target.closest('button[data-dt]');
+        if (btn) {
+          drvTools.style.display = btn.dataset.dt === 'hist' ? 'flex' : 'none';
+        }
+      });
+    }
+
+    const teamTabs = document.getElementById('teamTabs');
+    const teamTools = document.getElementById('teamTools');
+    if (teamTabs && teamTools) {
+      teamTabs.addEventListener('click', e => {
+        const btn = e.target.closest('button[data-tt]');
+        if (btn) {
+          teamTools.style.display = btn.dataset.tt === 'hist' ? 'flex' : 'none';
+        }
+      });
+    }
+  });
+})();
+
 /* Pie de página y navegación por pestañas */
 setInterval(() => {
   const f = document.querySelector('footer p');
@@ -841,7 +1008,6 @@ setInterval(() => {
   if (typeof INFO_SECTIONS === 'undefined' || typeof INFO_RENDER === 'undefined') return;
   if (INFO_SECTIONS.some(s => s.id === 'graficas')) return;
 
-  // Ejemplo: sectores de una vuelta
   const sectoresHTML = `
     <div class="vis">
       <div class="vis-label">Sectores de una vuelta</div>
@@ -854,7 +1020,6 @@ setInterval(() => {
       <div class="vis-note">Ejemplo ilustrativo: los tiempos no son de una carrera real.</div>
     </div>`;
 
-  // Ejemplo: mini-sectores
   const miniHTML = `
     <div class="vis">
       <div class="vis-label">Mini-sectores de un sector</div>
@@ -868,7 +1033,6 @@ setInterval(() => {
       <div class="vis-note">Ejemplo ilustrativo.</div>
     </div>`;
 
-  // Ejemplo: torre de posiciones (LEADER, intervalo y gap)
   const torreHTML = `
     <div class="vis">
       <div class="vis-label">Torre de posiciones</div>
@@ -884,7 +1048,6 @@ setInterval(() => {
       <div class="vis-note">Ejemplo ilustrativo.</div>
     </div>`;
 
-  // Ejemplo: neumáticos
   const neumaticosHTML = `
     <div class="vis">
       <div class="vis-label">Iconos de neumáticos</div>
@@ -899,7 +1062,6 @@ setInterval(() => {
       <div class="vis-note">Ejemplo ilustrativo.</div>
     </div>`;
 
-  // Ejemplo: parada en boxes
   const pitHTML = `
     <div class="vis">
       <div class="vis-label">Parada en boxes</div>
@@ -912,7 +1074,6 @@ setInterval(() => {
       <div class="vis-note">Ejemplo ilustrativo.</div>
     </div>`;
 
-  // Ejemplo: velocidad máxima
   const speedHTML = `
     <div class="vis">
       <div class="vis-label">Velocidad máxima en la recta (speed trap)</div>
@@ -987,7 +1148,7 @@ setInterval(() => {
 
 <script>
 /* =====================================================
-   EN VIVO, CLASIFICACIONES, CALENDARIO Y PUNTOS
+   EN VIVO, CLASIFICACIONES, CALENDARIO Y PUNTOS DE LA TEMPORADA
    ===================================================== */
 (function () {
   'use strict';
@@ -1017,7 +1178,6 @@ setInterval(() => {
     sig: ''
   };
 
-  // Permite que la tarjeta de carrera lea los resultados provisionales (carreras y sprints)
   window.foProvisional = () => L.results;
 
   /* ---------- Colas de peticiones (evitan el 429) ---------- */
@@ -1056,8 +1216,8 @@ setInterval(() => {
     };
   }
 
-  const of1Q = makeLimiter(2100, 22);   // OpenF1: máximo 30 por minuto
-  const jolQ = makeLimiter(280, 200);   // Jolpi: un solo canal
+  const of1Q = makeLimiter(2100, 22);
+  const jolQ = makeLimiter(280, 200);
 
   const of1 = path => of1Q(OF1 + path);
   const jolS = path => jolQ(JOL + SEASON + '/' + path);
