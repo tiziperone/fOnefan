@@ -11,7 +11,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="Fotos/icon-192.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23e10600'/%3E%3Cpath d='M7 15H39Q41 15 41 17V19H7Z' fill='white'/%3E%3Crect x='5' y='12' width='4' height='13' rx='2' fill='white'/%3E%3Cpath d='M9 21H37V23H9Z' fill='white' opacity='.6'/%3E%3Cpath d='M14 30Q18 25 30 26L46 27Q53 28 55 36V40H14Z' fill='white'/%3E%3Ccircle cx='42' cy='44' r='13' fill='%230d0d12'/%3E%3Ccircle cx='42' cy='44' r='10' fill='none' stroke='%23ffd60a' stroke-width='2.6'/%3E%3Ccircle cx='42' cy='44' r='2.8' fill='%23b6ff2e'/%3E%3C/svg%3E">
 
-<!-- Ícono para iPhone (PNG cuadrado de 180x180, sin transparencia) -->
+<!-- Ícono para iPhone -->
 <link rel="apple-touch-icon" sizes="180x180" href="Fotos/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -31,342 +31,136 @@
 <style>
 /* =====================================================
    TIPOGRAFÍA
-   Títulos de sección: Barlow Condensed (cursiva, negrita)
-   Nombres en tarjetas: Orbitron
-   Cuerpo: Titillium Web
    ===================================================== */
-body {
-  font-family: 'Titillium Web', sans-serif !important;
-  letter-spacing: 0.02em;
-}
+body{font-family:'Titillium Web',sans-serif !important;letter-spacing:.02em}
+h1,h2,h3{font-family:'Orbitron',sans-serif !important;letter-spacing:.05em;text-transform:uppercase}
+.display{font-family:'Barlow Condensed',sans-serif !important;font-style:italic;font-weight:800 !important;letter-spacing:.01em !important;text-transform:uppercase;line-height:.95}
+.sec-head h2.display{font-size:clamp(44px,6.2vw,72px);line-height:.95}
+.eyebrow,.tab,.mono-item,.part-card h4,.rec-table th{font-family:'Rajdhani',sans-serif !important;font-weight:700;letter-spacing:.08em}
 
-h1, h2, h3 {
-  font-family: 'Orbitron', sans-serif !important;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
+/* FRASE PRINCIPAL DE INICIO */
+.hero .grad-word{display:inline;background:none;color:#fff;-webkit-text-fill-color:#fff;-webkit-background-clip:border-box;background-clip:border-box;animation:none;padding:0}
+.grad-word .gw{display:inline-block;color:transparent;-webkit-text-fill-color:transparent;background:linear-gradient(100deg,#fff 0%,#fff 42%,#ff3b2e 50%,#fff 58%,#fff 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;animation:gwSweep 4.8s ease-in-out infinite;animation-delay:calc(var(--i) * .28s);padding-right:.04em}
+@keyframes gwSweep{0%{background-position:100% 0}60%,100%{background-position:0% 0}}
 
-/* Títulos principales de cada sección */
-.display {
-  font-family: 'Barlow Condensed', sans-serif !important;
-  font-style: italic;
-  font-weight: 800 !important;
-  letter-spacing: 0.01em !important;
-  text-transform: uppercase;
-  line-height: 0.95;
-}
-.sec-head h2.display {
-  font-size: clamp(44px, 6.2vw, 72px);
-  line-height: 0.95;
-}
-
-.eyebrow, .tab, .mono-item, .part-card h4, .rec-table th {
-  font-family: 'Rajdhani', sans-serif !important;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-/* =====================================================
-   FRASE PRINCIPAL DE INICIO
-   Cada palabra tiene su propio barrido rojo, con un retraso
-   escalonado, así el destello recorre todas las letras.
-   ===================================================== */
-.hero .grad-word{
-  display:inline;
-  background:none;
-  color:#fff;
-  -webkit-text-fill-color:#fff;
-  -webkit-background-clip:border-box;
-  background-clip:border-box;
-  animation:none;
-  padding:0;
-}
-.grad-word .gw{
-  display:inline-block;
-  color:transparent;
-  -webkit-text-fill-color:transparent;
-  background:linear-gradient(100deg,#fff 0%,#fff 42%,#ff3b2e 50%,#fff 58%,#fff 100%);
-  background-size:300% 100%;
-  -webkit-background-clip:text;
-  background-clip:text;
-  animation:gwSweep 4.8s ease-in-out infinite;
-  animation-delay:calc(var(--i) * .28s);
-  padding-right:.04em;
-}
-@keyframes gwSweep{
-  0%{background-position:100% 0}
-  60%,100%{background-position:0% 0}
-}
-
-/* =====================================================
-   VISOR DEL MONOPLAZA
-   El recuadro conserva su tamaño. El auto se acerca con
-   la cámara (camera-orbit), no con el contenedor.
-   ===================================================== */
-.mono-viewer{
-  position:relative;height:500px;border-radius:18px;overflow:hidden;
-  border:1px solid var(--line);
-  background:
-    radial-gradient(ellipse 60% 45% at 50% 38%, rgba(60,90,255,.22), transparent 70%),
-    radial-gradient(ellipse 50% 30% at 50% 100%, rgba(225,6,0,.12), transparent 70%),
-    #08080d;
-}
+/* VISOR DEL MONOPLAZA */
+.mono-viewer{position:relative;height:500px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(ellipse 60% 45% at 50% 38%,rgba(60,90,255,.22),transparent 70%),radial-gradient(ellipse 50% 30% at 50% 100%,rgba(225,6,0,.12),transparent 70%),#08080d;contain:layout paint}
 #monoModel{width:100%;height:100%;background:transparent;--poster-color:transparent;--progress-bar-color:var(--red)}
 
-.parts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 18px;
-  margin-top: 24px;
-}
-.part-card {
-  background: rgba(255,255,255,.025);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 22px;
-  transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
-}
-.part-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(225,6,0,.5);
-  background: rgba(255,255,255,.04);
-}
-.part-card h4 {
-  font-size: 17px;
-  color: var(--red);
-  margin-bottom: 10px;
-}
-.part-card p {
-  font-size: 14.5px;
-  color: #c0c0cb;
-  line-height: 1.65;
-}
+/* PARTES DEL AUTO */
+.parts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:24px}
+.part-card{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:16px;padding:22px;transition:transform .3s ease,border-color .3s ease,background .3s ease;min-width:0}
+.part-card:hover{transform:translateY(-4px);border-color:rgba(225,6,0,.5);background:rgba(255,255,255,.04)}
+.part-card h4{font-size:17px;color:var(--red);margin-bottom:10px}
+.part-card p{font-size:14.5px;color:#c0c0cb;line-height:1.65}
 
-/* =====================================================
-   SECCIÓN VOLANTE
-   Sin recuadro ni fondo: la foto se disuelve en la página.
-   ===================================================== */
-.volante-section {
-  margin-top: 70px;
-  padding: 10px 0 0;
-  background: none;
-  border: 0;
-  text-align: center;
-  position: relative;
-  overflow: visible;
-}
-.volante-section::before{
-  content:"";position:absolute;left:50%;top:38%;
-  width:min(780px,110%);height:min(520px,90vw);transform:translate(-50%,-50%);
-  background:radial-gradient(ellipse at center, rgba(255,255,255,.055), transparent 65%);
-  pointer-events:none;z-index:0;
-}
-.volante-section > *{position:relative;z-index:1}
+/* VOLANTE (sin animación ni mezcla: se ve bien al hacer zoom) */
+.volante-section{margin-top:70px;padding:10px 0 0;text-align:center;position:relative;overflow:hidden}
+.volante-section::before{content:"";position:absolute;left:50%;top:38%;width:min(780px,100%);height:min(520px,90vw);transform:translate(-50%,-50%);background:radial-gradient(ellipse at center,rgba(255,255,255,.055),transparent 65%);pointer-events:none;z-index:0}
+.volante-section>*{position:relative;z-index:1}
+.volante-img{width:100%;max-width:560px;height:auto;margin:18px auto 0;display:block;filter:grayscale(.85) contrast(1.1) brightness(.95);-webkit-mask-image:radial-gradient(ellipse at center,#000 38%,transparent 70%);mask-image:radial-gradient(ellipse at center,#000 38%,transparent 70%)}
+.volante-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:40px;text-align:left}
 
-@keyframes floating {
-  0%   { transform: translateY(0px); }
-  50%  { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
+/* RÉCORDS */
+.records-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-top:24px}
+.record-card{padding:24px;min-width:0}
+.rec-table{width:100%;border-collapse:collapse;margin-top:14px}
+.rec-table th{text-align:left;padding:10px 8px;border-bottom:2px solid var(--line);color:#a0a0b0;font-size:13px;letter-spacing:.1em}
+.rec-table td{padding:12px 8px;border-bottom:1px solid rgba(255,255,255,.05);color:#f0f0f5;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600}
+.rec-table tr:hover td{background:rgba(255,255,255,.02)}
+.rec-table td:first-child{font-weight:700;color:var(--red);width:38px;font-family:'Orbitron',sans-serif;font-size:13px}
+.rec-table td:last-child{font-weight:700;color:#fff;text-align:right;font-family:'Orbitron',sans-serif;font-size:14px}
 
-.volante-img {
-  width: 100%;
-  max-width: 560px;
-  height: auto;
-  margin: 18px auto 0;
-  display: block;
-  mix-blend-mode: screen;
-  filter: grayscale(.85) contrast(1.1) brightness(.95);
-  -webkit-mask-image: radial-gradient(ellipse at center, #000 38%, transparent 70%);
-  mask-image: radial-gradient(ellipse at center, #000 38%, transparent 70%);
-  animation: floating 6s ease-in-out infinite;
-}
-
-.volante-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 18px;
-  margin-top: 40px;
-  text-align: left;
-}
-
-/* =====================================================
-   RÉCORDS
-   ===================================================== */
-.records-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
-  margin-top: 24px;
-}
-.record-card {
-  padding: 24px;
-}
-.rec-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 14px;
-}
-.rec-table th {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 2px solid var(--line);
-  color: #a0a0b0;
-  font-size: 13px;
-  letter-spacing: 0.1em;
-}
-.rec-table td {
-  padding: 12px 8px;
-  border-bottom: 1px solid rgba(255,255,255,.05);
-  color: #f0f0f5;
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-}
-.rec-table tr:hover td {
-  background: rgba(255,255,255,.02);
-}
-.rec-table td:first-child {
-  font-weight: 700;
-  color: var(--red);
-  width: 38px;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 13px;
-}
-.rec-table td:last-child {
-  font-weight: 700;
-  color: #fff;
-  text-align: right;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 14px;
-}
-
-/* =====================================================
-   LOGOS DE ESCUDERÍAS
-   Sin fondo ni recuadro. El fondo se quita con el script
-   de abajo. No se usa máscara CSS: recortaba las puntas
-   de los logos anchos, como las alas de Aston Martin.
-   ===================================================== */
-.dcard .dc-hel.team-hel{
-  background:transparent;
-  border:0;
-  box-shadow:none;
-  padding:6px;
-}
+/* LOGOS Y CASCOS: fondo transparente (lo hace el script de abajo) */
+.dcard .dc-hel.team-hel{background:transparent;border:0;box-shadow:none;padding:6px}
 .dcard .dc-hel.team-hel::after{display:none}
-.team-logo{
-  mix-blend-mode:normal;
-  filter:none;
-  max-width:78%;
-}
-.svg-box.team-modal-visual{
-  background:transparent;
-  border:0;
-  padding:0;
-}
+.team-logo{mix-blend-mode:normal !important;filter:none !important;max-width:78%}
+.helmet-img{mix-blend-mode:normal !important;filter:none !important}
+.svg-box.team-modal-visual{background:transparent;border:0;padding:0}
 
-/* =====================================================
-   NEUMÁTICOS (sección Info)
-   ===================================================== */
-.tyre-card{
-  position:relative;
-  text-align:center;
-  padding:26px 20px 22px;
-  --c:var(--red);
-}
-.tyre-card::before{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 50% 28%, var(--c), transparent 62%);
-  opacity:.12;transition:opacity .45s ease;
-}
-.tyre-card::after{
-  content:"";position:absolute;top:0;bottom:0;left:-70%;width:50%;pointer-events:none;
-  background:linear-gradient(100deg, transparent, rgba(255,255,255,.07), transparent);
-  transform:skewX(-18deg);transition:left .9s ease;
-}
+/* NEUMÁTICOS (sección Info) */
+.tyre-card{position:relative;text-align:center;padding:26px 20px 22px;--c:var(--red)}
+.tyre-card::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 28%,var(--c),transparent 62%);opacity:.12;transition:opacity .45s ease}
+.tyre-card::after{content:"";position:absolute;top:0;bottom:0;left:-70%;width:50%;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,255,255,.07),transparent);transform:skewX(-18deg);transition:left .9s ease}
 .tyre-card:hover{border-color:rgba(255,255,255,.18)}
 .tyre-card:hover::before{opacity:.28}
 .tyre-card:hover::after{left:130%}
-.tyre-card > *{position:relative;z-index:1}
-
-.tyre-stage{
-  width:150px;height:150px;margin:4px auto 0;
-  transition:transform .45s cubic-bezier(.2,.8,.2,1);
-}
+.tyre-card>*{position:relative;z-index:1}
+.tyre-stage{width:150px;height:150px;margin:4px auto 0;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
 .tyre-card:hover .tyre-stage{transform:translateY(-4px) scale(1.04)}
-.tyre-svg{
-  width:150px;height:150px;display:block;margin:0 auto;overflow:visible;
-  filter:drop-shadow(0 12px 16px rgba(0,0,0,.55));
-}
+.tyre-svg{width:150px;height:150px;display:block;margin:0 auto;overflow:visible;filter:drop-shadow(0 12px 16px rgba(0,0,0,.55))}
 .tyre-spin{transform-origin:60px 60px}
-.tyre-card:hover .tyre-spin,
-.tyre-card:focus-within .tyre-spin{animation:tyreSpin 1.6s linear infinite}
+.tyre-card:hover .tyre-spin,.tyre-card:focus-within .tyre-spin{animation:tyreSpin 1.6s linear infinite}
 @keyframes tyreSpin{to{transform:rotate(360deg)}}
-
-.tyre-name{
-  font-family:'Barlow Condensed',sans-serif;
-  font-style:italic;font-weight:900;
-  font-size:26px;line-height:1;text-transform:uppercase;letter-spacing:.01em;
-  margin-top:14px;
-}
-.tyre-sub{
-  display:inline-block;margin-top:10px;
-  font-family:var(--f-nav);font-size:12px;font-weight:700;
-  letter-spacing:.16em;text-transform:uppercase;
-  color:var(--c);border:1px solid var(--c);
-  padding:4px 10px;border-radius:999px;
-}
+.tyre-name{font-family:'Barlow Condensed',sans-serif;font-style:italic;font-weight:900;font-size:26px;line-height:1;text-transform:uppercase;letter-spacing:.01em;margin-top:14px}
+.tyre-sub{display:inline-block;margin-top:10px;font-family:var(--f-nav);font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--c);border:1px solid var(--c);padding:4px 10px;border-radius:999px}
 .tyre-card .info-text{text-align:left;margin-top:14px}
 
-/* =====================================================
-   TABLA COMPARATIVA (Info · Temporada 2026)
-   ===================================================== */
+/* TABLA COMPARATIVA (Info · Temporada 2026) */
 .info-grid--compare{grid-template-columns:1fr}
-.cmp-card{padding:18px}
+.cmp-card{padding:18px;min-width:0}
 .cmp-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .cmp{width:100%;border-collapse:collapse;min-width:560px;font-size:15px}
-.cmp th{
-  font-family:var(--f-nav);font-size:13px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
-  text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);
-}
-.cmp td{
-  padding:12px;border-bottom:1px solid rgba(255,255,255,.06);
-  vertical-align:top;line-height:1.5;color:#d6d6e0;
-}
-.cmp td:first-child{font-weight:700;color:#fff;white-space:nowrap}
+.cmp th{font-family:var(--f-nav);font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:2px solid var(--line)}
+.cmp td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;line-height:1.5;color:#d6d6e0}
+.cmp td:first-child{font-weight:700;color:#fff}
 .cmp th:last-child{color:var(--red)}
 .cmp td:last-child{color:#fff;background:rgba(225,6,0,.06)}
 .cmp tr:last-child td{border-bottom:0}
 
-/* =====================================================
-   AJUSTES PARA CELULARES (INICIO)
-   ===================================================== */
+/* EN VIVO */
+.live-box{margin-top:20px;display:grid;justify-items:start;gap:8px;padding:16px 18px;border-radius:16px;background:rgba(225,6,0,.12);border:1px solid rgba(225,6,0,.45)}
+.live-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-nav);font-weight:800;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:#fff}
+.live-tag i{width:9px;height:9px;border-radius:50%;background:#ff3b2e;animation:livePulse 1.6s infinite}
+@keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(255,59,46,.7)}70%{box-shadow:0 0 0 10px rgba(255,59,46,0)}100%{box-shadow:0 0 0 0 rgba(255,59,46,0)}}
+.lv-lap{font-family:'Barlow Condensed',sans-serif;font-style:italic;font-weight:900;font-size:clamp(30px,4vw,42px);line-height:1.02;text-transform:uppercase}
+.lv-state{font-family:var(--f-nav);font-weight:800;font-size:14px;letter-spacing:.12em;text-transform:uppercase;padding:5px 12px;border-radius:999px;background:rgba(34,197,94,.18);color:#86efac;border:1px solid rgba(34,197,94,.5)}
+.lv-state.st-sc,.lv-state.st-vsc{background:rgba(250,204,21,.16);color:#fde047;border-color:rgba(250,204,21,.55)}
+.lv-state.st-red{background:rgba(225,6,0,.3);color:#fff;border-color:rgba(225,6,0,.8)}
+.lv-state:empty{display:none}
+.badge.b-live{background:#ff3b2e;color:#fff}
+.live-banner,.pending-note{padding:12px 16px;border-radius:14px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.4);color:#fde68a;font-size:14px;line-height:1.5}
+.live-banner{margin:0 0 18px}
+.pending-note{margin-top:14px}
+
+/* ===== Correcciones de zoom y celulares ===== */
+[hidden]{display:none !important}
+html,body{max-width:100%;overflow-x:hidden}
+img{max-width:100%}
+.race,.circ,.dcard,.hcard,.dc,.info-card,.tyre-card,.flag-card,.term-card,.cmp-card{content-visibility:visible !important;contain-intrinsic-size:none !important}
+
+/* INFO: sección de reglamento. Tabla pasa a tarjetas en celulares */
+@media (max-width:980px){
+  .hero{grid-template-columns:1fr;padding:30px}
+}
 @media (max-width:640px){
   .hero{padding:26px 20px;gap:24px;min-height:0}
   .hero .hero-l .eyebrow{font-size:11px}
-  .hero .hero-l h1{
-    font-size:clamp(44px,13vw,60px);
-    line-height:1;
-    margin:12px 0 14px;
-  }
+  .hero .hero-l h1{font-size:clamp(44px,13vw,60px);line-height:1;margin:12px 0 14px}
   .hero .lead{font-size:15px;line-height:1.6}
   .hero .cta .btn{flex:1 1 140px;text-align:center}
-  .hero-r .nextName{
-    font-size:clamp(34px,10vw,44px);
-    line-height:1.02;
-    margin:10px 0 6px;
-    overflow-wrap:anywhere;
-  }
+  .hero-r .nextName{font-size:clamp(34px,10vw,44px);line-height:1.02;margin:10px 0 6px;overflow-wrap:anywhere}
   .hero .countdown{gap:6px}
+  .hero-ghost{display:none}
+  .mono-viewer{height:360px}
+  .volante-section{padding:0}
+  .cmp-card{padding:12px}
+  .cmp{min-width:0}
+  .cmp thead{display:none}
+  .cmp,.cmp tbody,.cmp tr,.cmp td{display:block;width:100%}
+  .cmp tr{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;background:rgba(0,0,0,.25)}
+  .cmp td{border:0;padding:6px 0;background:none !important}
+  .cmp td::before{content:attr(data-label);display:block;font-family:var(--f-nav);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .cmp td:first-child{font-size:17px;color:#fff;margin-bottom:6px;white-space:normal}
+  .cmp td:first-child::before{display:none}
+  .cmp td:last-child{color:#fff}
+  .cmp td:last-child::before{color:var(--red)}
+  .parts-grid,.volante-grid{margin-top:18px}
+  .records-grid{grid-template-columns:1fr}
+  .record-card{padding:18px}
 }
-
 @media (max-width:980px){
   .mono-viewer{height:440px}
-}
-@media (max-width:640px){
-  .mono-viewer{height:360px}
-  .volante-section { padding: 0; }
 }
 </style>
 </head>
@@ -409,7 +203,7 @@ h1, h2, h3 {
 
 <main>
 
-  <!-- INICIO (visible al cargar la página) -->
+  <!-- INICIO -->
   <section class="view active" id="v-home">
     <div class="glass hero">
       <div class="hero-ghost">2026</div>
@@ -423,15 +217,24 @@ h1, h2, h3 {
         </div>
       </div>
       <div class="hero-r">
-        <span class="pill">Próximo Gran Premio</span>
+        <span class="pill" id="heroPill">Próximo Gran Premio</span>
         <h3 class="display nextName" id="nextName">—</h3>
         <p class="lead" id="nextDate"></p>
-        <div class="countdown">
+
+        <div class="countdown" id="cdWrap">
           <div class="cd"><b id="cdD">00</b><span>Días</span></div>
           <div class="cd"><b id="cdH">00</b><span>Horas</span></div>
           <div class="cd"><b id="cdM">00</b><span>Min</span></div>
           <div class="cd"><b id="cdS">00</b><span>Seg</span></div>
         </div>
+
+        <div class="live-box" id="liveBox" hidden>
+          <span class="live-tag"><i></i><span id="lvTag">EN VIVO</span></span>
+          <b class="lv-lap" id="lvLap">—</b>
+          <span class="lv-state" id="lvState"></span>
+        </div>
+
+        <p class="pending-note" id="pendingNote" hidden></p>
       </div>
     </div>
 
@@ -447,7 +250,7 @@ h1, h2, h3 {
     </div>
   </section>
 
-  <!-- CALENDARIO -->
+  <!-- CALENDARIO (su contenido lo acomoda app.js dentro de Campeonato) -->
   <section class="view" id="v-calendar">
     <div class="sec-head">
       <div><span class="eyebrow">Temporada 2026</span><h2 class="display">Calendario</h2></div>
@@ -466,6 +269,7 @@ h1, h2, h3 {
       <div><span class="eyebrow">Clasificación</span><h2 class="display">Campeonato</h2></div>
       <p>Puntos de pilotos y constructores según la última ronda disputada.</p>
     </div>
+    <div id="liveBanner" class="live-banner" hidden></div>
     <div class="two">
       <div class="glass panel"><h3>Pilotos</h3><div id="drvTable"></div></div>
       <div class="glass panel"><h3>Constructores</h3><div id="teamTable"></div></div>
@@ -529,8 +333,6 @@ h1, h2, h3 {
     </div>
 
     <div class="glass mono-viewer">
-      <!-- camera-orbit: 35deg horizontal, 72deg vertical, 50% = distancia de cámara (menor = más cerca).
-           min-camera-orbit: límite para acercarse con el dedo o la rueda del mouse. -->
       <model-viewer id="monoModel"
         src="Modelos3D/Monoplaza2026.glb"
         alt="Monoplaza en 3D"
@@ -549,7 +351,6 @@ h1, h2, h3 {
       </model-viewer>
     </div>
 
-    <!-- Info Partes del Auto -->
     <h3 class="display" style="font-size: 30px; margin-top: 45px; margin-bottom: 15px;">Partes del Auto</h3>
     <div class="parts-grid">
       <article class="part-card">
@@ -619,7 +420,7 @@ h1, h2, h3 {
     </div>
   </section>
 
-  <!-- SECCIÓN RÉCORDS HISTÓRICOS -->
+  <!-- RÉCORDS HISTÓRICOS -->
   <section class="view" id="v-records">
     <div class="sec-head">
       <div><span class="eyebrow">Historia & Leyendas</span><h2 class="display">Récords Históricos</h2></div>
@@ -627,7 +428,6 @@ h1, h2, h3 {
     </div>
 
     <div class="records-grid">
-      <!-- Top 5 Victorias -->
       <div class="part-card record-card">
         <h4>🏆 Top 5 Pilotos con más Victorias</h4>
         <table class="rec-table">
@@ -642,7 +442,6 @@ h1, h2, h3 {
         </table>
       </div>
 
-      <!-- Top 5 Campeonatos -->
       <div class="part-card record-card">
         <h4>👑 Top 5 Campeonatos Mundiales</h4>
         <table class="rec-table">
@@ -657,7 +456,6 @@ h1, h2, h3 {
         </table>
       </div>
 
-      <!-- Top 5 Poles -->
       <div class="part-card record-card">
         <h4>⏱️ Top 5 Pole Positions</h4>
         <table class="rec-table">
@@ -672,7 +470,6 @@ h1, h2, h3 {
         </table>
       </div>
 
-      <!-- Top 5 Victorias misma escudería -->
       <div class="part-card record-card">
         <h4>🏎️ Victorias en una Misma Escudería</h4>
         <table class="rec-table">
@@ -687,7 +484,6 @@ h1, h2, h3 {
         </table>
       </div>
 
-      <!-- Top 5 Paradas Pit -->
       <div class="part-card record-card">
         <h4>⚡ Paradas en Pits más Rápidas</h4>
         <table class="rec-table">
@@ -702,7 +498,6 @@ h1, h2, h3 {
         </table>
       </div>
 
-      <!-- Top 5 Abandonos -->
       <div class="part-card record-card">
         <h4>💥 Pilotos con más Abandonos (DNF)</h4>
         <table class="rec-table">
@@ -718,7 +513,6 @@ h1, h2, h3 {
       </div>
     </div>
 
-    <!-- Hitos y Récords Rotos -->
     <div class="part-card" style="margin-top: 24px;">
       <h4 style="color: var(--red); font-size: 18px; margin-bottom: 12px;">🔥 Récords Rotos e Hitos Legendarios</h4>
       <ul style="color: #c0c0cb; line-height: 1.8; font-size: 14.5px; padding-left: 20px;">
@@ -748,11 +542,10 @@ h1, h2, h3 {
 
 <script src="data.js"></script>
 <script src="app.js"></script>
+<script src="live.js"></script>
 
 <script>
-/* =====================================================
-   OVERRIDE DEL FOOTER Y EXTENSIÓN DE VISTA RÉCORDS
-   ===================================================== */
+/* Mantiene el pie de página */
 setInterval(() => {
   const f = document.querySelector('footer p');
   if (f && !f.textContent.includes('Perone Tiziano')) {
@@ -760,37 +553,23 @@ setInterval(() => {
   }
 }, 500);
 
-/* Integración de la pestaña "Récords" con el sistema de navegación de app.js */
+/* Navegación por pestañas y visor 3D */
 (function () {
   const tabs = document.querySelectorAll('.tab[data-view]');
   const views = document.querySelectorAll('.view');
-
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const target = tab.dataset.view;
-
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-
-      views.forEach(v => {
-        if (v.id === 'v-' + target) {
-          v.classList.add('active');
-        } else {
-          v.classList.remove('active');
-        }
-      });
+      views.forEach(v => v.classList.toggle('active', v.id === 'v-' + target));
     });
   });
-
   const viewer = document.getElementById('monoModel');
   if (viewer) {
-    viewer.addEventListener('error', () => {
-      console.warn('No se pudo cargar el modelo 3D del monoplaza.');
-    });
+    viewer.addEventListener('error', () => console.warn('No se pudo cargar el modelo 3D del monoplaza.'));
     viewer.addEventListener('camera-change', e => {
-      if (e.detail && e.detail.source === 'user-interaction') {
-        viewer.removeAttribute('auto-rotate');
-      }
+      if (e.detail && e.detail.source === 'user-interaction') viewer.removeAttribute('auto-rotate');
     });
   }
 })();
@@ -798,40 +577,27 @@ setInterval(() => {
 
 <script>
 /* =====================================================
-   LOGOS DE ESCUDERÍAS: quita el fondo sin dejar halo.
-   - Logos con fondo transparente: no se tocan.
-   - Modo "dark" (fondo oscuro, carbono, degradés): la opacidad
-     se calcula según el brillo de cada píxel. Lo oscuro y el
-     resplandor gris o blanco desaparecen. Después se recorta
-     lo casi transparente (cut), que elimina el halo tenue.
-   - Modo "flood" (fondo claro o de color): se borra el fondo
-     que toca los bordes.
-   Cada archivo puede tener su modo y sus niveles en LOGO_LEVELS.
-   Funciona también con los logos que app.js crea después.
+   FONDO TRANSPARENTE PARA LOGOS, CASCOS Y VOLANTE
+   Se hace con canvas (no con mix-blend-mode), así no se
+   rompe la página al hacer zoom.
    ===================================================== */
 (function () {
   const TOL = 58;
   const cache = new Map();
-
-  // Niveles por defecto para logos con fondo oscuro.
-  // lo    = brillo desde el que empieza a verse (subirlo quita más resplandor)
-  // hi    = brillo desde el que se ve completo
-  // gamma = qué tan rápido sube la opacidad entre lo y hi
-  // cut   = opacidad mínima; por debajo se elimina (quita el halo tenue)
   const DARK_DEFAULT = { lo: 100, hi: 165, gamma: 1.25, cut: 0 };
+  const FILE_CFG = { 'LogoAstonMartin.webp': { mode: 'dark', lo: 145, hi: 200, gamma: 1.15, cut: 60 } };
+  const SEL = 'img.team-logo, img.helmet-img, img[src*="Casco"], img.volante-img';
+  const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const fileOf = src => decodeURIComponent(String(src).split('/').pop().split('?')[0]);
 
-  // Configuración por archivo. mode: 'dark', 'flood' o 'auto'
-  // ('auto' detecta el fondo según la esquina de la imagen).
-  const LOGO_LEVELS = {
-    'LogoAstonMartin.webp': { mode: 'dark', lo: 145, hi: 200, gamma: 1.15, cut: 60 }
-  };
+  function cfgFor(img, file) {
+    if (FILE_CFG[file]) return FILE_CFG[file];
+    if (img.classList.contains('volante-img')) return { mode: 'dark', lo: 45, hi: 120, gamma: 1, cut: 10 };
+    if (img.classList.contains('helmet-img') || /Casco/i.test(file)) return { mode: 'dark', lo: 70, hi: 150, gamma: 1, cut: 14 };
+    return { mode: 'auto' };
+  }
 
-  const smooth = (a, b, x) => {
-    const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
-    return t * t * (3 - 2 * t);
-  };
-
-  function cleanLogo(src) {
+  function cleanImage(src, cfg) {
     return new Promise(resolve => {
       const img = new Image();
       img.onload = () => {
@@ -841,52 +607,36 @@ setInterval(() => {
           cv.width = w; cv.height = h;
           const ctx = cv.getContext('2d', { willReadFrequently: true });
           ctx.drawImage(img, 0, 0);
-          const data = ctx.getImageData(0, 0, w, h);
-          const px = data.data;
-          const N = w * h;
+          const data = ctx.getImageData(0, 0, w, h), px = data.data, N = w * h;
 
-          // Color del fondo tomado de las cuatro esquinas (promedio)
           const corners = [0, (w - 1) * 4, (h - 1) * w * 4, ((h - 1) * w + (w - 1)) * 4];
-          let br = 0, bgc = 0, bb = 0, ba = 0;
-          corners.forEach(i => { br += px[i]; bgc += px[i + 1]; bb += px[i + 2]; ba += px[i + 3]; });
-          br /= 4; bgc /= 4; bb /= 4; ba /= 4;
+          let aR = 0, aG = 0, aB = 0, aA = 0;
+          corners.forEach(i => { aR += px[i]; aG += px[i + 1]; aB += px[i + 2]; aA += px[i + 3]; });
+          aR /= 4; aG /= 4; aB /= 4; aA /= 4;
+          if (aA < 12) { resolve(src); return; }   // ya tiene fondo transparente
 
-          // Si el logo ya viene con fondo transparente, no se modifica
-          if (ba < 12) { resolve(src); return; }
-
-          const cornerLum = 0.299 * br + 0.587 * bgc + 0.114 * bb;
-
-          // Configuración del archivo (o valores por defecto)
-          const file = decodeURIComponent(String(src).split('/').pop().split('?')[0]);
-          const cfg = LOGO_LEVELS[file] || { mode: 'auto' };
-          const useDark = cfg.mode === 'dark' || (cfg.mode !== 'flood' && cornerLum < 110);
+          const lum = 0.299 * aR + 0.587 * aG + 0.114 * aB;
+          const useDark = cfg.mode === 'dark' || (cfg.mode !== 'flood' && lum < 110);
 
           if (useDark) {
-            // FONDO OSCURO: la opacidad sube solo con el brillo del píxel.
             const d = { ...DARK_DEFAULT, ...cfg };
             const span = Math.max(1, d.hi - d.lo);
             for (let p = 0; p < N; p++) {
               const i = p * 4;
               if (px[i + 3] === 0) continue;
               const m = Math.max(px[i], px[i + 1], px[i + 2]);
-              const a = smooth(d.lo, d.lo + span, m);
-              let alpha = Math.round(px[i + 3] * Math.pow(a, d.gamma));
+              let alpha = Math.round(px[i + 3] * Math.pow(smooth(d.lo, d.lo + span, m), d.gamma));
               if (alpha < d.cut) alpha = 0;
               px[i + 3] = alpha;
             }
           } else {
-            // FONDO CLARO O DE COLOR: se borra el fondo que toca los bordes
             const isBg = p => {
               const i = p * 4;
               if (px[i + 3] < 12) return true;
-              const dist = Math.hypot(px[i] - br, px[i + 1] - bgc, px[i + 2] - bb);
-              return dist < TOL;
+              return Math.hypot(px[i] - aR, px[i + 1] - aG, px[i + 2] - aB) < TOL;
             };
-            const seen = new Uint8Array(N);
-            const stack = [];
-            const tryPush = p => {
-              if (!seen[p] && isBg(p)) { seen[p] = 1; stack.push(p); }
-            };
+            const seen = new Uint8Array(N), stack = [];
+            const tryPush = p => { if (!seen[p] && isBg(p)) { seen[p] = 1; stack.push(p); } };
             for (let x = 0; x < w; x++) { tryPush(x); tryPush((h - 1) * w + x); }
             for (let y = 0; y < h; y++) { tryPush(y * w); tryPush(y * w + w - 1); }
             while (stack.length) {
@@ -898,29 +648,21 @@ setInterval(() => {
               if (y > 0) tryPush(p - w);
               if (y < h - 1) tryPush(p + w);
             }
-            // Quita el halo de color de fondo que queda pegado al recorte
             const halo = [];
             for (let p = 0; p < N; p++) {
               const i = p * 4;
               if (px[i + 3] === 0) continue;
               const x = p % w, y = (p - x) / w;
-              const nearClear =
-                (x > 0 && px[(p - 1) * 4 + 3] === 0) ||
-                (x < w - 1 && px[(p + 1) * 4 + 3] === 0) ||
-                (y > 0 && px[(p - w) * 4 + 3] === 0) ||
-                (y < h - 1 && px[(p + w) * 4 + 3] === 0);
-              const dist = Math.hypot(px[i] - br, px[i + 1] - bgc, px[i + 2] - bb);
-              if (nearClear && dist < TOL * 1.8) halo.push(i);
+              const nearClear = (x > 0 && px[(p - 1) * 4 + 3] === 0) || (x < w - 1 && px[(p + 1) * 4 + 3] === 0) ||
+                                (y > 0 && px[(p - w) * 4 + 3] === 0) || (y < h - 1 && px[(p + w) * 4 + 3] === 0);
+              if (nearClear && Math.hypot(px[i] - aR, px[i + 1] - aG, px[i + 2] - aB) < TOL * 1.8) halo.push(i);
             }
             halo.forEach(i => { px[i + 3] = 0; });
           }
 
           ctx.putImageData(data, 0, 0);
           resolve(cv.toDataURL('image/png'));
-        } catch (e) {
-          // Canvas bloqueado por el navegador: se usa la imagen original
-          resolve(src);
-        }
+        } catch (e) { resolve(src); }
       };
       img.onerror = () => resolve(null);
       img.src = src;
@@ -929,48 +671,33 @@ setInterval(() => {
 
   function processImg(img) {
     const src = img.getAttribute('src');
-    if (!src || src.startsWith('data:')) return;
-    if (img.dataset.cleanFor === src) return;
+    if (!src || src.startsWith('data:') || img.dataset.cleanFor === src) return;
     img.dataset.cleanFor = src;
-
-    if (!cache.has(src)) cache.set(src, cleanLogo(src));
+    if (!cache.has(src)) cache.set(src, cleanImage(src, cfgFor(img, fileOf(src))));
     cache.get(src).then(url => {
-      if (!url || !img.isConnected) return;
-      if (img.getAttribute('src') !== src) return;
-      img.src = url;
+      if (url && img.isConnected && img.getAttribute('src') === src) img.src = url;
     });
   }
 
   function scan(node) {
-    const list = [];
-    if (node.nodeType === 1 && node.matches && node.matches('img.team-logo')) list.push(node);
-    if (node.querySelectorAll) node.querySelectorAll('img.team-logo').forEach(i => list.push(i));
-    list.forEach(processImg);
+    if (node.nodeType !== 1 && node.nodeType !== 9) return;
+    if (node.matches && node.matches(SEL)) processImg(node);
+    if (node.querySelectorAll) node.querySelectorAll(SEL).forEach(processImg);
   }
 
   scan(document);
   new MutationObserver(muts => {
     muts.forEach(m => {
-      if (m.type === 'attributes') {
-        if (m.target.matches && m.target.matches('img.team-logo')) processImg(m.target);
-      } else {
-        m.addedNodes.forEach(n => { if (n.nodeType === 1) scan(n); });
-      }
+      if (m.type === 'attributes') scan(m.target);
+      else m.addedNodes.forEach(scan);
     });
-  }).observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['src']
-  });
+  }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
 })();
 </script>
 
 <script>
 /* =====================================================
    NEUMÁTICOS (sección Info)
-   Lluvia intermedia (I): banda punteada.
-   Lluvia full wet (W): banda sólida con dibujo profundo.
    ===================================================== */
 (function () {
   if (typeof INFO_RENDER === 'undefined') return;
@@ -1026,9 +753,7 @@ setInterval(() => {
 <script>
 /* =====================================================
    INFO · SECCIÓN "TEMPORADA 2026"
-   Comparación con el reglamento anterior (2022-2025),
-   en lenguaje simple para fans y principiantes.
-   Se agrega al inicio del menú de Info y queda seleccionada.
+   Tabla con columnas en celulares (data-label)
    ===================================================== */
 (function () {
   if (typeof INFO_SECTIONS === 'undefined' || typeof INFO === 'undefined' || typeof INFO_RENDER === 'undefined') return;
@@ -1040,7 +765,7 @@ setInterval(() => {
         <table class="cmp">
           <thead><tr>${it.cols.map(c => `<th>${escI(c)}</th>`).join('')}</tr></thead>
           <tbody>
-            ${it.rows.map(r => `<tr>${r.map(c => `<td>${escI(c)}</td>`).join('')}</tr>`).join('')}
+            ${it.rows.map(r => `<tr>${r.map((c, i) => `<td data-label="${escI(it.cols[i])}">${escI(c)}</td>`).join('')}</tr>`).join('')}
           </tbody>
         </table>
       </div>
