@@ -17,9 +17,11 @@
 <meta name="apple-mobile-web-app-title" content="fOnefan">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+<!-- Tipografías de alta gama orientadas a automovilismo -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=Titillium+Web:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Titillium+Web:wght@300;400;600;700&display=swap" rel="stylesheet">
+
 <link rel="stylesheet" href="styles.css">
 
 <!-- Visor 3D para el monoplaza (model-viewer) -->
@@ -27,8 +29,25 @@
 
 <style>
 /* =====================================================
-   SECCIÓN MONOPLAZA, VOLANTE E INFO
+   MEJORAS TIPOGRÁFICAS Y DE DISEÑO UI/UX
    ===================================================== */
+body {
+  font-family: 'Titillium Web', sans-serif !important;
+  letter-spacing: 0.02em;
+}
+
+h1, h2, h3, .display, .sec-head .display {
+  font-family: 'Orbitron', sans-serif !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.eyebrow, .tab, .mono-item, .part-card h4, .rec-table th {
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
 .mono-viewer{
   position:relative;height:500px;border-radius:18px;overflow:hidden;
   border:1px solid var(--line);
@@ -42,45 +61,42 @@
 .parts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
+  gap: 18px;
   margin-top: 24px;
 }
 .part-card {
-  background: rgba(255,255,255,.03);
+  background: rgba(255,255,255,.025);
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 18px;
-  transition: transform 0.3s, border-color 0.3s;
+  border-radius: 16px;
+  padding: 22px;
+  transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
 }
 .part-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(225,6,0,.4);
+  transform: translateY(-4px);
+  border-color: rgba(225,6,0,.5);
+  background: rgba(255,255,255,.04);
 }
 .part-card h4 {
-  font-family: var(--f-nav);
-  font-size: 16px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 17px;
   color: var(--red);
-  margin-bottom: 8px;
-  font-weight: 800;
+  margin-bottom: 10px;
 }
 .part-card p {
-  font-size: 14px;
-  color: #d6d6e0;
-  line-height: 1.6;
+  font-size: 14.5px;
+  color: #c0c0cb;
+  line-height: 1.65;
 }
 
 /* Sección Volante */
 .volante-section {
-  margin-top: 50px;
-  padding: 50px 20px;
+  margin-top: 60px;
+  padding: 50px 24px;
   border-radius: 24px;
   border: 1px solid var(--line);
   background: 
-    radial-gradient(circle at 50% 40%, rgba(225,6,0,.08), transparent 60%),
-    radial-gradient(circle at 50% 80%, rgba(60,90,255,.08), transparent 60%),
-    rgba(10,10,15, 0.6);
+    radial-gradient(circle at 50% 30%, rgba(225,6,0,.1), transparent 60%),
+    radial-gradient(circle at 50% 90%, rgba(60,90,255,.08), transparent 60%),
+    rgba(10,10,15, 0.7);
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -88,31 +104,78 @@
 
 @keyframes floating {
   0% { transform: translateY(0px); }
-  50% { transform: translateY(-18px); }
+  50% { transform: translateY(-16px); }
   100% { transform: translateY(0px); }
 }
 
 .volante-img {
   width: 100%;
-  max-width: 600px;
+  max-width: 620px;
   height: auto;
   margin: 30px auto;
   display: block;
-  /* El modo screen borra el negro, pero forzamos el contraste para apagar grises oscuros */
   mix-blend-mode: screen; 
-  filter: contrast(1.6) brightness(0.9);
-  /* Máscara radial agresiva: opaca en el centro y se vuelve 100% transparente mucho antes del borde */
-  -webkit-mask-image: radial-gradient(ellipse at center, black 35%, transparent 70%);
-  mask-image: radial-gradient(ellipse at center, black 35%, transparent 70%);
+  filter: contrast(1.65) brightness(0.92);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 38%, transparent 72%);
+  mask-image: radial-gradient(ellipse at center, black 38%, transparent 72%);
   animation: floating 5s ease-in-out infinite;
 }
 
 .volante-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
   margin-top: 40px;
   text-align: left;
+}
+
+/* Tablas de Récords con tipografía elegante y deportiva */
+.records-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+.record-card {
+  padding: 24px;
+}
+.rec-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+}
+.rec-table th {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 2px solid var(--line);
+  color: #a0a0b0;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+.rec-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  color: #f0f0f5;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+.rec-table tr:hover td {
+  background: rgba(255,255,255,.02);
+}
+.rec-table td:first-child {
+  font-weight: 700;
+  color: var(--red);
+  width: 38px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+}
+.rec-table td:last-child {
+  font-weight: 700;
+  color: #fff;
+  text-align: right;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
 }
 
 @media (max-width:980px){
@@ -149,12 +212,13 @@
       fOnefan
     </div>
     <div class="tabs">
-      <button class="tab active" data-view="home">Inicio</button>
+      <button class="tab" data-view="home">Inicio</button>
       <button class="tab" data-view="standings">Campeonato</button>
       <button class="tab" data-view="circuits">Circuitos</button>
       <button class="tab" data-view="pilotos">Pilotos</button>
       <button class="tab" data-view="escuderias">Escuderías</button>
       <button class="tab" data-view="monoplaza">Monoplaza</button>
+      <button class="tab" data-view="records">Récords</button>
       <button class="tab" data-view="info">Info</button>
     </div>
   </nav>
@@ -163,7 +227,7 @@
 <main>
 
   <!-- INICIO -->
-  <section class="view active" id="v-home">
+  <section class="view" id="v-home">
     <div class="glass hero">
       <div class="hero-ghost">2026</div>
       <div class="hero-l">
@@ -299,7 +363,7 @@
     </div>
 
     <!-- Info Partes del Auto -->
-    <h3 class="display" style="font-size: 32px; margin-top: 40px; margin-bottom: 10px;">Partes del Auto</h3>
+    <h3 class="display" style="font-size: 30px; margin-top: 45px; margin-bottom: 15px;">Partes del Auto</h3>
     <div class="parts-grid">
       <article class="part-card">
         <h4>Alerón delantero y Nariz</h4>
@@ -330,8 +394,8 @@
     <!-- Volante -->
     <div class="volante-section">
       <span class="eyebrow">El centro de mando</span>
-      <h3 class="display" style="font-size: clamp(34px, 5vw, 48px); margin-bottom: 10px;">Volante de F1</h3>
-      <p class="muted" style="max-width: 600px; margin: 0 auto;">Casi un ordenador en las manos del piloto, capaz de ajustar la potencia, los frenos y la estrategia a más de 300 km/h.</p>
+      <h3 class="display" style="font-size: clamp(32px, 4.5vw, 44px); margin-bottom: 12px;">Volante de F1</h3>
+      <p class="muted" style="max-width: 600px; margin: 0 auto; font-size: 16px;">Casi un ordenador en las manos del piloto, capaz de ajustar la potencia, los frenos y la estrategia a más de 300 km/h.</p>
       
       <img src="Fotos/Volante.webp" alt="Volante de F1" class="volante-img">
       
@@ -364,40 +428,121 @@
     </div>
   </section>
 
-  <!-- INFO DE LA TEMPORADA 2026 -->
-  <section class="view" id="v-info">
+  <!-- SECCIÓN RÉCORDS HISTÓRICOS (Actualizada y limpia) -->
+  <section class="view" id="v-records">
     <div class="sec-head">
-      <div><span class="eyebrow">Nueva Era Reglamentaria</span><h2 class="display">Normativa 2026</h2></div>
-      <p>La Fórmula 1 sufre su mayor transformación de la década. Conoce los cambios tecnológicos y deportivos confirmados por la FIA.</p>
+      <div><span class="eyebrow">Historia & Leyendas</span><h2 class="display">Récords Históricos</h2></div>
+      <p>Las cifras, victorias y estadísticas más destacadas en la historia de la categoría reina.</p>
     </div>
 
-    <div class="parts-grid">
-      <article class="part-card">
-        <h4>Motores 50/50 y Combustible Sostenible</h4>
-        <p>Las unidades de potencia ahora generan su energía de forma equitativa: 50% térmica (combustión) y 50% eléctrica (350 kW), eliminando el complejo MGU-H. Además, el V6 usará combustible 100% renovable.</p>
-      </article>
-      <article class="part-card">
-        <h4>Aerodinámica Activa</h4>
-        <p>Nuevos alerones móviles delanteros y traseros. El <b>"Modo Z"</b> genera máxima carga aerodinámica para el paso por curva, mientras que el <b>"Modo X"</b> reduce la resistencia al aire en rectas, reemplazando el DRS tradicional.</p>
-      </article>
-      <article class="part-card">
-        <h4>Monoplazas más ligeros y ágiles</h4>
-        <p>El tamaño total del coche disminuye. La distancia entre ejes se reduce a 3400 mm y el ancho del monoplaza baja a 1900 mm. El objetivo principal es reducir el peso para fomentar batallas más cercanas.</p>
-      </article>
-      <article class="part-card">
-        <h4>Manual Override (Sobregiro)</h4>
-        <p>Los pilotos tendrán a su disposición un sistema de "push-to-pass" manual que les otorgará un impulso extra de energía eléctrica a altas velocidades para facilitar los adelantamientos.</p>
-      </article>
-      <article class="part-card">
-        <h4>Nuevos Fabricantes (Audi y Ford)</h4>
-        <p>El nuevo reglamento de motores ha atraído a gigantes automotrices: <b>Audi</b> entra como equipo de fábrica (adquiriendo Sauber), <b>Ford</b> se asocia con Red Bull Powertrains, y <b>Honda</b> pasa a ser motorista exclusivo de Aston Martin.</p>
-      </article>
-      <article class="part-card">
-        <h4>Seguridad Reforzada</h4>
-        <p>Se introducen estructuras de impacto lateral más robustas, y normativas mucho más estrictas para la barra antivuelco (roll hoop), implementadas tras los aprendizajes de accidentes recientes.</p>
-      </article>
+    <div class="records-grid">
+      <!-- Top 5 Victorias -->
+      <div class="part-card record-card">
+        <h4>🏆 Top 5 Pilotos con más Victorias</h4>
+        <table class="rec-table">
+          <thead><tr><th>Pos</th><th>Piloto</th><th>Victorias</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Lewis Hamilton</td><td>105</td></tr>
+            <tr><td>2</td><td>Michael Schumacher</td><td>91</td></tr>
+            <tr><td>3</td><td>Max Verstappen</td><td>63</td></tr>
+            <tr><td>4</td><td>Sebastian Vettel</td><td>53</td></tr>
+            <tr><td>5</td><td>Alain Prost</td><td>51</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Top 5 Campeonatos -->
+      <div class="part-card record-card">
+        <h4>👑 Top 5 Campeonatos Mundiales</h4>
+        <table class="rec-table">
+          <thead><tr><th>Pos</th><th>Piloto</th><th>Títulos</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Michael Schumacher</td><td>7</td></tr>
+            <tr><td>1</td><td>Lewis Hamilton</td><td>7</td></tr>
+            <tr><td>3</td><td>Juan Manuel Fangio</td><td>5</td></tr>
+            <tr><td>4</td><td>Alain Prost</td><td>4</td></tr>
+            <tr><td>4</td><td>Sebastian Vettel / Max Verstappen</td><td>4</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Top 5 Poles -->
+      <div class="part-card record-card">
+        <h4>⏱️ Top 5 Pole Positions</h4>
+        <table class="rec-table">
+          <thead><tr><th>Pos</th><th>Piloto</th><th>Poles</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Lewis Hamilton</td><td>104</td></tr>
+            <tr><td>2</td><td>Michael Schumacher</td><td>68</td></tr>
+            <tr><td>3</td><td>Ayrton Senna</td><td>65</td></tr>
+            <tr><td>4</td><td>Sebastian Vettel</td><td>57</td></tr>
+            <tr><td>5</td><td>Max Verstappen</td><td>50</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Top 5 Victorias misma escudería -->
+      <div class="part-card record-card">
+        <h4>🏎️ Victorias en una Misma Escudería</h4>
+        <table class="rec-table">
+          <thead><tr><th>Pos</th><th>Piloto / Escudería</th><th>Triunfos</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Lewis Hamilton (Mercedes)</td><td>84</td></tr>
+            <tr><td>2</td><td>Michael Schumacher (Ferrari)</td><td>72</td></tr>
+            <tr><td>3</td><td>Max Verstappen (Red Bull)</td><td>63</td></tr>
+            <tr><td>4</td><td>Sebastian Vettel (Red Bull)</td><td>38</td></tr>
+            <tr><td>5</td><td>Ayrton Senna (McLaren)</td><td>35</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Top 5 Paradas Pit -->
+      <div class="part-card record-card">
+        <h4>⚡ Paradas en Pits más Rápidas</h4>
+        <table class="rec-table">
+          <thead><tr><th>Pos</th><th>Equipo / GP</th><th>Tiempo</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>McLaren (Qatar 2023)</td><td>1.80s</td></tr>
+            <tr><td>2</td><td>Red Bull (Brasil 2019)</td><td>1.82s</td></tr>
+            <tr><td>3</td><td>Red Bull (Alemania 2019)</td><td>1.88s</td></tr>
+            <tr><td>4</td><td>Red Bull (Rusia 2020)</td><td>1.89s</td></tr>
+            <tr><td>5</td><td>Ferrari (Japón 2023)</td><td>1.93s</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Top 5 Abandonos -->
+      <div class="part-card record-card">
+        <h4>💥 Pilotos con más Abandonos (DNF)</h4>
+        <table class="rec-table">
+          <thead><tr><th>Pos</th><th>Piloto</th><th>Abandonos</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Andrea de Cesaris</td><td>148</td></tr>
+            <tr><td>2</td><td>Riccardo Patrese</td><td>147</td></tr>
+            <tr><td>3</td><td>Michele Alboreto</td><td>102</td></tr>
+            <tr><td>4</td><td>Jean Alesi</td><td>87</td></tr>
+            <tr><td>5</td><td>Gerhard Berger</td><td>85</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Hitos y Récords Rotos -->
+    <div class="part-card" style="margin-top: 24px;">
+      <h4 style="color: var(--red); font-size: 18px; margin-bottom: 12px;">🔥 Récords Rotos e Hitos Legendarios</h4>
+      <ul style="color: #c0c0cb; line-height: 1.8; font-size: 14.5px; padding-left: 20px;">
+        <li><b>Más victorias en una temporada:</b> Max Verstappen con 19 victorias en 2023 (86.3% de victorias).</li>
+        <li><b>Más victorias consecutivas:</b> Max Verstappen con 10 triunfos seguidos (GP de Miami a GP de Italia 2023).</li>
+        <li><b>Escudería con más Campeonatos de Constructores:</b> Scuderia Ferrari con 16 títulos mundiales.</li>
+        <li><b>Piloto con más podios en la historia:</b> Lewis Hamilton con más de 200 podios acumulados.</li>
+        <li><b>Más puntos en una sola temporada:</b> Max Verstappen con 575 puntos en 2023.</li>
+        <li><b>GP más rápido de la historia:</b> GP de Italia 2003 (Monza), ganado por Michael Schumacher a 247.58 km/h de media.</li>
+      </ul>
     </div>
   </section>
+
+  <!-- INFO -->
+  <section class="view" id="v-info"></section>
 </main>
 
 <!-- MODAL -->
@@ -415,8 +560,7 @@
 
 <script>
 /* =====================================================
-   OVERRIDE DEL FOOTER 
-   (Previene que app.js borre tu nombre de autor)
+   OVERRIDE DEL FOOTER Y EXTENSIÓN DE VISTA RÉCORDS
    ===================================================== */
 setInterval(() => {
   const f = document.querySelector('footer p');
@@ -425,15 +569,33 @@ setInterval(() => {
   }
 }, 500);
 
-/* Manejo de errores básico del visor 3D */
+/* Integración de la pestaña "Récords" con el sistema de navegación de app.js */
 (function () {
+  const tabs = document.querySelectorAll('.tab[data-view]');
+  const views = document.querySelectorAll('.view');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.view;
+      
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      views.forEach(v => {
+        if (v.id === 'v-' + target) {
+          v.classList.add('active');
+        } else {
+          v.classList.remove('active');
+        }
+      });
+    });
+  });
+
   const viewer = document.getElementById('monoModel');
   if(viewer) {
     viewer.addEventListener('error', () => {
       console.warn('No se pudo cargar el modelo 3D del monoplaza.');
     });
-    
-    // Detiene el giro automático cuando el usuario interactúa
     viewer.addEventListener('camera-change', e => {
       if (e.detail && e.detail.source === 'user-interaction') {
         viewer.removeAttribute('auto-rotate');
