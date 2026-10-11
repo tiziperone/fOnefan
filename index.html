@@ -11,16 +11,16 @@
 <link rel="icon" type="image/png" sizes="192x192" href="Fotos/icon-192.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23e10600'/%3E%3Cpath d='M7 15H39Q41 15 41 17V19H7Z' fill='white'/%3E%3Crect x='5' y='12' width='4' height='13' rx='2' fill='white'/%3E%3Cpath d='M9 21H37V23H9Z' fill='white' opacity='.6'/%3E%3Cpath d='M14 30Q18 25 30 26L46 27Q53 28 55 36V40H14Z' fill='white'/%3E%3Ccircle cx='42' cy='44' r='13' fill='%230d0d12'/%3E%3Ccircle cx='42' cy='44' r='10' fill='none' stroke='%23ffd60a' stroke-width='2.6'/%3E%3Ccircle cx='42' cy='44' r='2.8' fill='%23b6ff2e'/%3E%3C/svg%3E">
 
-<!-- Ícono para iPhone -->
+<!-- Ícono para iPhone (PNG cuadrado de 180x180, sin transparencia) -->
 <link rel="apple-touch-icon" sizes="180x180" href="Fotos/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="fOnefan">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-<!-- Tipografías de alta gama orientadas a automovilismo -->
+<!-- Tipografías -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Titillium+Web:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800;1,900&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Titillium+Web:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="styles.css">
 
@@ -29,17 +29,34 @@
 
 <style>
 /* =====================================================
-   MEJORAS TIPOGRÁFICAS Y DE DISEÑO UI/UX
+   TIPOGRAFÍA
+   Títulos de sección: Barlow Condensed (cursiva, negrita)
+   Nombres en tarjetas: Orbitron
+   Cuerpo: Titillium Web
    ===================================================== */
 body {
   font-family: 'Titillium Web', sans-serif !important;
   letter-spacing: 0.02em;
 }
 
-h1, h2, h3, .display, .sec-head .display {
+h1, h2, h3 {
   font-family: 'Orbitron', sans-serif !important;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+/* Títulos principales de cada sección */
+.display {
+  font-family: 'Barlow Condensed', sans-serif !important;
+  font-style: italic;
+  font-weight: 800 !important;
+  letter-spacing: 0.01em !important;
+  text-transform: uppercase;
+  line-height: 0.95;
+}
+.sec-head h2.display {
+  font-size: clamp(44px, 6.2vw, 72px);
+  line-height: 0.95;
 }
 
 .eyebrow, .tab, .mono-item, .part-card h4, .rec-table th {
@@ -48,6 +65,41 @@ h1, h2, h3, .display, .sec-head .display {
   letter-spacing: 0.08em;
 }
 
+/* =====================================================
+   FRASE PRINCIPAL DE INICIO
+   Cada palabra tiene su propio barrido rojo, con un retraso
+   escalonado, así el destello recorre todas las letras.
+   ===================================================== */
+.hero .grad-word{
+  display:inline;
+  background:none;
+  color:#fff;
+  -webkit-text-fill-color:#fff;
+  -webkit-background-clip:border-box;
+  background-clip:border-box;
+  animation:none;
+  padding:0;
+}
+.grad-word .gw{
+  display:inline-block;
+  color:transparent;
+  -webkit-text-fill-color:transparent;
+  background:linear-gradient(100deg,#fff 0%,#fff 42%,#ff3b2e 50%,#fff 58%,#fff 100%);
+  background-size:300% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  animation:gwSweep 4.8s ease-in-out infinite;
+  animation-delay:calc(var(--i) * .28s);
+  padding-right:.04em;
+}
+@keyframes gwSweep{
+  0%{background-position:100% 0}
+  60%,100%{background-position:0% 0}
+}
+
+/* =====================================================
+   VISOR DEL MONOPLAZA
+   ===================================================== */
 .mono-viewer{
   position:relative;height:500px;border-radius:18px;overflow:hidden;
   border:1px solid var(--line);
@@ -87,38 +139,44 @@ h1, h2, h3, .display, .sec-head .display {
   line-height: 1.65;
 }
 
-/* Sección Volante */
+/* =====================================================
+   SECCIÓN VOLANTE
+   Sin recuadro ni fondo: la foto se disuelve en la página.
+   ===================================================== */
 .volante-section {
-  margin-top: 60px;
-  padding: 50px 24px;
-  border-radius: 24px;
-  border: 1px solid var(--line);
-  background: 
-    radial-gradient(circle at 50% 30%, rgba(225,6,0,.1), transparent 60%),
-    radial-gradient(circle at 50% 90%, rgba(60,90,255,.08), transparent 60%),
-    rgba(10,10,15, 0.7);
+  margin-top: 70px;
+  padding: 10px 0 0;
+  background: none;
+  border: 0;
   text-align: center;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
+.volante-section::before{
+  content:"";position:absolute;left:50%;top:38%;
+  width:min(780px,110%);height:min(520px,90vw);transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse at center, rgba(255,255,255,.055), transparent 65%);
+  pointer-events:none;z-index:0;
+}
+.volante-section > *{position:relative;z-index:1}
 
 @keyframes floating {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-16px); }
+  0%   { transform: translateY(0px); }
+  50%  { transform: translateY(-10px); }
   100% { transform: translateY(0px); }
 }
 
 .volante-img {
   width: 100%;
-  max-width: 620px;
+  max-width: 560px;
   height: auto;
-  margin: 30px auto;
+  margin: 18px auto 0;
   display: block;
-  mix-blend-mode: screen; 
-  filter: contrast(1.65) brightness(0.92);
-  -webkit-mask-image: radial-gradient(ellipse at center, black 38%, transparent 72%);
-  mask-image: radial-gradient(ellipse at center, black 38%, transparent 72%);
-  animation: floating 5s ease-in-out infinite;
+  mix-blend-mode: screen;
+  filter: grayscale(.85) contrast(1.1) brightness(.95);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 38%, transparent 70%);
+  mask-image: radial-gradient(ellipse at center, #000 38%, transparent 70%);
+  animation: floating 6s ease-in-out infinite;
 }
 
 .volante-grid {
@@ -129,7 +187,9 @@ h1, h2, h3, .display, .sec-head .display {
   text-align: left;
 }
 
-/* Tablas de Récords con tipografía elegante y deportiva */
+/* =====================================================
+   RÉCORDS
+   ===================================================== */
 .records-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -178,12 +238,134 @@ h1, h2, h3, .display, .sec-head .display {
   font-size: 14px;
 }
 
+/* =====================================================
+   LOGOS DE ESCUDERÍAS
+   Sin fondo ni recuadro. El fondo se quita con el script
+   de abajo, y un degradado radial suaviza los bordes para
+   que no quede ningún resplandor alrededor del logo.
+   ===================================================== */
+.dcard .dc-hel.team-hel{
+  background:transparent;
+  border:0;
+  box-shadow:none;
+  padding:6px;
+}
+.dcard .dc-hel.team-hel::after{display:none}
+.team-logo{
+  mix-blend-mode:normal;
+  filter:none;
+  max-width:78%;
+  -webkit-mask-image:radial-gradient(ellipse closest-side, #000 90%, transparent 100%);
+  mask-image:radial-gradient(ellipse closest-side, #000 90%, transparent 100%);
+}
+.svg-box.team-modal-visual{
+  background:transparent;
+  border:0;
+  padding:0;
+}
+
+/* =====================================================
+   NEUMÁTICOS (sección Info)
+   ===================================================== */
+.tyre-card{
+  position:relative;
+  text-align:center;
+  padding:26px 20px 22px;
+  --c:var(--red);
+}
+.tyre-card::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 50% 28%, var(--c), transparent 62%);
+  opacity:.12;transition:opacity .45s ease;
+}
+.tyre-card::after{
+  content:"";position:absolute;top:0;bottom:0;left:-70%;width:50%;pointer-events:none;
+  background:linear-gradient(100deg, transparent, rgba(255,255,255,.07), transparent);
+  transform:skewX(-18deg);transition:left .9s ease;
+}
+.tyre-card:hover{border-color:rgba(255,255,255,.18)}
+.tyre-card:hover::before{opacity:.28}
+.tyre-card:hover::after{left:130%}
+.tyre-card > *{position:relative;z-index:1}
+
+.tyre-stage{
+  width:150px;height:150px;margin:4px auto 0;
+  transition:transform .45s cubic-bezier(.2,.8,.2,1);
+}
+.tyre-card:hover .tyre-stage{transform:translateY(-4px) scale(1.04)}
+.tyre-svg{
+  width:150px;height:150px;display:block;margin:0 auto;overflow:visible;
+  filter:drop-shadow(0 12px 16px rgba(0,0,0,.55));
+}
+.tyre-spin{transform-origin:60px 60px}
+.tyre-card:hover .tyre-spin,
+.tyre-card:focus-within .tyre-spin{animation:tyreSpin 1.6s linear infinite}
+@keyframes tyreSpin{to{transform:rotate(360deg)}}
+
+.tyre-name{
+  font-family:'Barlow Condensed',sans-serif;
+  font-style:italic;font-weight:900;
+  font-size:26px;line-height:1;text-transform:uppercase;letter-spacing:.01em;
+  margin-top:14px;
+}
+.tyre-sub{
+  display:inline-block;margin-top:10px;
+  font-family:var(--f-nav);font-size:12px;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;
+  color:var(--c);border:1px solid var(--c);
+  padding:4px 10px;border-radius:999px;
+}
+.tyre-card .info-text{text-align:left;margin-top:14px}
+
+/* =====================================================
+   TABLA COMPARATIVA (Info · Temporada 2026)
+   ===================================================== */
+.info-grid--compare{grid-template-columns:1fr}
+.cmp-card{padding:18px}
+.cmp-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.cmp{width:100%;border-collapse:collapse;min-width:560px;font-size:15px}
+.cmp th{
+  font-family:var(--f-nav);font-size:13px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);
+}
+.cmp td{
+  padding:12px;border-bottom:1px solid rgba(255,255,255,.06);
+  vertical-align:top;line-height:1.5;color:#d6d6e0;
+}
+.cmp td:first-child{font-weight:700;color:#fff;white-space:nowrap}
+.cmp th:last-child{color:var(--red)}
+.cmp td:last-child{color:#fff;background:rgba(225,6,0,.06)}
+.cmp tr:last-child td{border-bottom:0}
+
+/* =====================================================
+   AJUSTES PARA CELULARES (INICIO)
+   ===================================================== */
+@media (max-width:640px){
+  .hero{padding:26px 20px;gap:24px;min-height:0}
+  .hero .hero-l .eyebrow{font-size:11px}
+  .hero .hero-l h1{
+    font-size:clamp(44px,13vw,60px);
+    line-height:1;
+    margin:12px 0 14px;
+  }
+  .hero .lead{font-size:15px;line-height:1.6}
+  .hero .cta .btn{flex:1 1 140px;text-align:center}
+  .hero-r .nextName{
+    font-size:clamp(34px,10vw,44px);
+    line-height:1.02;
+    margin:10px 0 6px;
+    overflow-wrap:anywhere;
+  }
+  .hero .countdown{gap:6px}
+}
+
 @media (max-width:980px){
   .mono-viewer{height:440px}
 }
 @media (max-width:640px){
   .mono-viewer{height:360px}
-  .volante-section { padding: 30px 14px; }
+  .volante-section { padding: 0; }
 }
 </style>
 </head>
@@ -212,7 +394,7 @@ h1, h2, h3, .display, .sec-head .display {
       fOnefan
     </div>
     <div class="tabs">
-      <button class="tab" data-view="home">Inicio</button>
+      <button class="tab active" data-view="home">Inicio</button>
       <button class="tab" data-view="standings">Campeonato</button>
       <button class="tab" data-view="circuits">Circuitos</button>
       <button class="tab" data-view="pilotos">Pilotos</button>
@@ -226,13 +408,13 @@ h1, h2, h3, .display, .sec-head .display {
 
 <main>
 
-  <!-- INICIO -->
-  <section class="view" id="v-home">
+  <!-- INICIO (visible al cargar la página) -->
+  <section class="view active" id="v-home">
     <div class="glass hero">
       <div class="hero-ghost">2026</div>
       <div class="hero-l">
         <span class="eyebrow">Temporada 2026 · Fórmula 1</span>
-        <h1 class="display"><span class="grad-word">Bienvenido<br>al gran show</span></h1>
+        <h1 class="display"><span class="grad-word"><span class="gw" style="--i:0">Bienvenido</span><br><span class="gw" style="--i:1">al</span> <span class="gw" style="--i:2">gran</span> <span class="gw" style="--i:3">show</span></span></h1>
         <p class="lead">Calendario, campeonato, circuitos y escuderías en un solo lugar. Todo lo que necesitas para seguir cada vuelta.</p>
         <div class="cta">
           <button class="btn" data-view="standings" data-jump="cal">Ver calendario</button>
@@ -366,69 +548,73 @@ h1, h2, h3, .display, .sec-head .display {
     <h3 class="display" style="font-size: 30px; margin-top: 45px; margin-bottom: 15px;">Partes del Auto</h3>
     <div class="parts-grid">
       <article class="part-card">
-        <h4>Alerón delantero y Nariz</h4>
-        <p>El alerón genera carga aerodinámica en el tren delantero y canaliza el flujo de aire inicial. La nariz conecta el aire con el fondo del auto.</p>
+        <h4>Alerón delantero activo y nariz</h4>
+        <p>El alerón delantero tiene un flap móvil que cambia de posición junto con el alerón trasero. Así regula la carga aerodinámica en cada zona del circuito. La nariz canaliza el aire hacia el fondo del auto.</p>
       </article>
       <article class="part-card">
-        <h4>Suelo y Difusor</h4>
-        <p>Aprovecha el "efecto suelo" pegando el coche al asfalto mediante canales inferiores que aceleran el aire hacia el difusor trasero.</p>
+        <h4>Suelo y difusor</h4>
+        <p>Aprovecha el "efecto suelo": los túneles bajo el monoplaza aceleran el aire y pegan el coche al asfalto. El difusor trasero ayuda a extraer ese aire de la parte inferior.</p>
       </article>
       <article class="part-card">
-        <h4>Pontones y Toma de aire</h4>
-        <p>Refrigeran el motor. La toma superior alimenta el motor de combustión, mientras que los pontones laterales dirigen el aire y enfrían los radiadores.</p>
+        <h4>Pontones y toma de aire</h4>
+        <p>La toma de aire superior alimenta el motor de combustión. Los pontones laterales dirigen el aire hacia los radiadores y la unidad de potencia, para mantenerlos a temperatura de trabajo.</p>
       </article>
       <article class="part-card">
-        <h4>Alerón trasero y DRS</h4>
-        <p>Da estabilidad al eje trasero. Cuenta con el sistema DRS, que abre una solapa para reducir la resistencia al aire y facilitar adelantamientos.</p>
+        <h4>Alerón trasero activo</h4>
+        <p>En 2026 no hay DRS. El alerón trasero cambia entre el modo recta, con perfil más plano y menos resistencia para ganar velocidad punta, y el modo curva, con más carga para dar agarre en las esquinas.</p>
       </article>
       <article class="part-card">
-        <h4>Halo y Seguridad</h4>
-        <p>Estructura de titanio que protege la cabeza del piloto de grandes impactos y escombros, capaz de soportar el peso de un autobús.</p>
+        <h4>Unidad de potencia 50 / 50</h4>
+        <p>Combina un motor V6 turbo de 1,6 litros con un MGU-K que aporta hasta unos 350 kW. Desde 2026 la parte eléctrica pesa casi la mitad de la potencia total, y el MGU-H fue eliminado. El combustible es 100 % sostenible.</p>
+      </article>
+      <article class="part-card">
+        <h4>Halo y seguridad</h4>
+        <p>Estructura de titanio que protege la cabeza del piloto de grandes impactos y escombros. Está diseñada para soportar cargas de varias toneladas, equivalentes al peso de un autobús.</p>
       </article>
       <article class="part-card">
         <h4>Neumáticos Pirelli</h4>
-        <p>El único contacto con la pista. Tienen desgaste controlado (blando, medio, duro o lluvia) dictando gran parte de la estrategia.</p>
+        <p>Son el único contacto con la pista. Tienen desgaste controlado (blando, medio, duro, intermedio o lluvia) y dictan gran parte de la estrategia de cada carrera.</p>
       </article>
     </div>
 
     <!-- Volante -->
     <div class="volante-section">
       <span class="eyebrow">El centro de mando</span>
-      <h3 class="display" style="font-size: clamp(32px, 4.5vw, 44px); margin-bottom: 12px;">Volante de F1</h3>
+      <h3 class="display" style="font-size: clamp(40px, 5vw, 56px); margin-bottom: 12px;">Volante de F1</h3>
       <p class="muted" style="max-width: 600px; margin: 0 auto; font-size: 16px;">Casi un ordenador en las manos del piloto, capaz de ajustar la potencia, los frenos y la estrategia a más de 300 km/h.</p>
-      
+
       <img src="Fotos/Volante.webp" alt="Volante de F1" class="volante-img">
-      
+
       <div class="volante-grid">
         <article class="part-card">
-          <h4>Pantalla (Dash) y Leds</h4>
-          <p>Muestra información crítica en tiempo real: revoluciones por minuto, velocidad, marcha actual, tiempos delta, carga de batería y advertencias de bandera.</p>
+          <h4>Pantalla (Dash) y leds</h4>
+          <p>Muestra en tiempo real las revoluciones, la marcha, el tiempo delta contra la referencia, el estado de carga de la batería y el modo de energía activo. Los leds superiores indican el régimen del motor y las banderas.</p>
         </article>
         <article class="part-card">
-          <h4>Botón de Sobregiro (Override)</h4>
-          <p>La nueva función de 2026. Permite al piloto desplegar energía eléctrica adicional (Manual Override) hasta los 337 km/h para atacar o defenderse.</p>
+          <h4>Manual Override (sobregiro)</h4>
+          <p>Reemplaza al DRS en 2026. Al apretarlo, el piloto libera energía eléctrica extra para atacar o defender. Su uso tiene límites de velocidad, hasta unos 337 km/h, y reglas de disponibilidad que define el reglamento.</p>
         </article>
         <article class="part-card">
-          <h4>Modos de Motor (Strat)</h4>
-          <p>Ruedas de selección que ajustan el despliegue de energía. Hay modos para atacar, cargar las baterías (Harvest) o ir tras el Safety Car.</p>
+          <h4>Modos de motor y recarga</h4>
+          <p>Una perilla selecciona cómo se reparte la energía: modo ataque para dar máxima potencia, modo clasificación para la vuelta rápida y modo recarga (Harvest), que recupera batería mientras se frena o se levanta el pie.</p>
         </article>
         <article class="part-card">
-          <h4>Balance de Frenos (BBAL)</h4>
-          <p>Permite enviar más fuerza de frenado hacia las ruedas delanteras o traseras. Los pilotos lo ajustan curva a curva para evitar bloquear los neumáticos.</p>
+          <h4>Balance de frenos (BBAL)</h4>
+          <p>Define qué porcentaje de la fuerza de frenado va a las ruedas delanteras y cuál a las traseras. Los pilotos lo ajustan curva a curva para frenar fuerte sin bloquear los neumáticos.</p>
         </article>
         <article class="part-card">
-          <h4>Botón Pit / Neutral</h4>
-          <p>El botón PIT activa el limitador de velocidad en el carril de boxes. El botón 'N' (Neutral) desengrana rápidamente el motor para evitar calarlo tras un trompo.</p>
+          <h4>Diferencial</h4>
+          <p>Controla cuánto se permite que giren por separado las dos ruedas traseras. Con más bloqueo el auto es más estable al acelerar a la salida de una curva, y con menos bloqueo entra más fácil a la curva.</p>
         </article>
         <article class="part-card">
-          <h4>Botón de Radio (Talk)</h4>
-          <p>Permite al piloto hablar con su ingeniero de pista en el pit wall para discutir estrategias, informar de problemas o quejarse del tráfico.</p>
+          <h4>Botones de pit, neutral y radio</h4>
+          <p>PIT activa el limitador de velocidad en el carril de boxes. N (neutral) desengrana el motor cuando el coche queda detenido o en un trompo. El botón Talk permite hablar por radio con el ingeniero en el pit wall.</p>
         </article>
       </div>
     </div>
   </section>
 
-  <!-- SECCIÓN RÉCORDS HISTÓRICOS (Actualizada y limpia) -->
+  <!-- SECCIÓN RÉCORDS HISTÓRICOS -->
   <section class="view" id="v-records">
     <div class="sec-head">
       <div><span class="eyebrow">Historia & Leyendas</span><h2 class="display">Récords Históricos</h2></div>
@@ -577,7 +763,7 @@ setInterval(() => {
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const target = tab.dataset.view;
-      
+
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
 
@@ -592,7 +778,7 @@ setInterval(() => {
   });
 
   const viewer = document.getElementById('monoModel');
-  if(viewer) {
+  if (viewer) {
     viewer.addEventListener('error', () => {
       console.warn('No se pudo cargar el modelo 3D del monoplaza.');
     });
@@ -602,6 +788,267 @@ setInterval(() => {
       }
     });
   }
+})();
+</script>
+
+<script>
+/* =====================================================
+   LOGOS DE ESCUDERÍAS: quita el fondo sin dejar halo.
+   - Fondo oscuro (Mercedes, Aston Martin, carbono, degradés):
+     la transparencia sube solo con el brillo alto. Lo oscuro y
+     el resplandor gris o blanco que rodea al logo quedan invisibles.
+     El plateado brillante del logo se mantiene.
+   - Fondo claro o de color: se borra el fondo que toca los bordes.
+   Funciona también con los logos que app.js crea después.
+   ===================================================== */
+(function () {
+  const TOL = 58;
+  const cache = new Map();
+
+  const smooth = (a, b, x) => {
+    const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+  };
+
+  function cleanLogo(src) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const w = img.naturalWidth, h = img.naturalHeight;
+          const cv = document.createElement('canvas');
+          cv.width = w; cv.height = h;
+          const ctx = cv.getContext('2d', { willReadFrequently: true });
+          ctx.drawImage(img, 0, 0);
+          const data = ctx.getImageData(0, 0, w, h);
+          const px = data.data;
+          const N = w * h;
+
+          // Color del fondo tomado de las cuatro esquinas (promedio)
+          const corners = [0, (w - 1) * 4, (h - 1) * w * 4, ((h - 1) * w + (w - 1)) * 4];
+          let br = 0, bgc = 0, bb = 0, ba = 0;
+          corners.forEach(i => { br += px[i]; bgc += px[i + 1]; bb += px[i + 2]; ba += px[i + 3]; });
+          br /= 4; bgc /= 4; bb /= 4; ba /= 4;
+          const cornerLum = 0.299 * br + 0.587 * bgc + 0.114 * bb;
+
+          if (ba >= 12 && cornerLum < 110) {
+            // FONDO OSCURO: solo se conserva lo brillante (metal, letras, alas).
+            // Umbral más alto y curva suave para que el halo gris desaparezca.
+            for (let p = 0; p < N; p++) {
+              const i = p * 4;
+              if (px[i + 3] === 0) continue;
+              const m = Math.max(px[i], px[i + 1], px[i + 2]);
+              const a = smooth(100, 165, m);
+              px[i + 3] = Math.round(px[i + 3] * Math.pow(a, 1.25));
+            }
+          } else {
+            // FONDO CLARO O DE COLOR: se borra el fondo que toca los bordes
+            const isBg = p => {
+              const i = p * 4;
+              if (px[i + 3] < 12) return true;
+              const d = Math.hypot(px[i] - br, px[i + 1] - bgc, px[i + 2] - bb);
+              return ba >= 12 && d < TOL;
+            };
+            const seen = new Uint8Array(N);
+            const stack = [];
+            const tryPush = p => {
+              if (!seen[p] && isBg(p)) { seen[p] = 1; stack.push(p); }
+            };
+            for (let x = 0; x < w; x++) { tryPush(x); tryPush((h - 1) * w + x); }
+            for (let y = 0; y < h; y++) { tryPush(y * w); tryPush(y * w + w - 1); }
+            while (stack.length) {
+              const p = stack.pop();
+              px[p * 4 + 3] = 0;
+              const x = p % w, y = (p - x) / w;
+              if (x > 0) tryPush(p - 1);
+              if (x < w - 1) tryPush(p + 1);
+              if (y > 0) tryPush(p - w);
+              if (y < h - 1) tryPush(p + w);
+            }
+            // Quita el halo de color de fondo que queda pegado al recorte
+            const halo = [];
+            for (let p = 0; p < N; p++) {
+              const i = p * 4;
+              if (px[i + 3] === 0) continue;
+              const x = p % w, y = (p - x) / w;
+              const nearClear =
+                (x > 0 && px[(p - 1) * 4 + 3] === 0) ||
+                (x < w - 1 && px[(p + 1) * 4 + 3] === 0) ||
+                (y > 0 && px[(p - w) * 4 + 3] === 0) ||
+                (y < h - 1 && px[(p + w) * 4 + 3] === 0);
+              const d = Math.hypot(px[i] - br, px[i + 1] - bgc, px[i + 2] - bb);
+              if (nearClear && d < TOL * 1.8) halo.push(i);
+            }
+            halo.forEach(i => { px[i + 3] = 0; });
+          }
+
+          ctx.putImageData(data, 0, 0);
+          resolve(cv.toDataURL('image/png'));
+        } catch (e) {
+          // Canvas bloqueado por el navegador: se usa la imagen original
+          resolve(src);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+
+  function processImg(img) {
+    const src = img.getAttribute('src');
+    if (!src || src.startsWith('data:')) return;
+    if (img.dataset.cleanFor === src) return;
+    img.dataset.cleanFor = src;
+
+    if (!cache.has(src)) cache.set(src, cleanLogo(src));
+    cache.get(src).then(url => {
+      if (!url || !img.isConnected) return;
+      if (img.getAttribute('src') !== src) return;
+      img.src = url;
+    });
+  }
+
+  function scan(node) {
+    const list = [];
+    if (node.nodeType === 1 && node.matches && node.matches('img.team-logo')) list.push(node);
+    if (node.querySelectorAll) node.querySelectorAll('img.team-logo').forEach(i => list.push(i));
+    list.forEach(processImg);
+  }
+
+  scan(document);
+  new MutationObserver(muts => {
+    muts.forEach(m => {
+      if (m.type === 'attributes') {
+        if (m.target.matches && m.target.matches('img.team-logo')) processImg(m.target);
+      } else {
+        m.addedNodes.forEach(n => { if (n.nodeType === 1) scan(n); });
+      }
+    });
+  }).observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['src']
+  });
+})();
+</script>
+
+<script>
+/* =====================================================
+   NEUMÁTICOS (sección Info)
+   Lluvia intermedia (I): banda punteada.
+   Lluvia full wet (W): banda sólida con dibujo profundo.
+   ===================================================== */
+(function () {
+  if (typeof INFO_RENDER === 'undefined') return;
+  let uid = 0;
+
+  const tyreFancy = (color, letter) => {
+    const id = 'tyre' + (++uid);
+    const inter = letter === 'I';
+    const full = letter === 'W';
+    const spokes = [0, 72, 144, 216, 288].map(a =>
+      `<rect x="-5.5" y="-31" width="11" height="26" rx="5.5" transform="translate(60 60) rotate(${a})" fill="url(#${id}s)"/>`
+    ).join('');
+    const treadW = full ? 9 : 7;
+    return `<svg class="tyre-svg" viewBox="0 0 120 120" aria-hidden="true">
+      <defs>
+        <radialGradient id="${id}b" cx="50%" cy="42%" r="62%">
+          <stop offset="0" stop-color="#2c2c36"/>
+          <stop offset="1" stop-color="#040406"/>
+        </radialGradient>
+        <linearGradient id="${id}s" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f5f7fb"/>
+          <stop offset=".55" stop-color="#8e95a6"/>
+          <stop offset="1" stop-color="#3a3f4d"/>
+        </linearGradient>
+        <radialGradient id="${id}h" cx="38%" cy="32%" r="75%">
+          <stop offset="0" stop-color="#3a3c48"/>
+          <stop offset="1" stop-color="#0a0a0f"/>
+        </radialGradient>
+      </defs>
+      <circle cx="60" cy="60" r="58" fill="url(#${id}b)"/>
+      <g class="tyre-spin">
+        <circle cx="60" cy="60" r="54" fill="none" stroke="#08080b" stroke-width="${treadW}" stroke-dasharray="4.5 3"/>
+        <circle cx="60" cy="60" r="46.5" fill="none" stroke="${color}" stroke-width="${full ? 6 : 5}" ${inter ? 'stroke-dasharray="8 4"' : ''}/>
+        <circle cx="60" cy="60" r="36" fill="#0b0b10"/>
+        <circle cx="60" cy="60" r="36" fill="none" stroke="url(#${id}s)" stroke-width="3"/>
+        ${spokes}
+      </g>
+      <circle cx="60" cy="60" r="20" fill="url(#${id}h)" stroke="${color}" stroke-width="2.5"/>
+      <text x="60" y="67" text-anchor="middle" font-family="Barlow Condensed, sans-serif" font-weight="900" font-size="24" fill="${color}">${letter}</text>
+    </svg>`;
+  };
+
+  INFO_RENDER.tyre = it => `
+    <article class="tyre-card glass" style="--c:${it.color}">
+      <div class="tyre-stage">${tyreFancy(it.color, it.letter)}</div>
+      <div class="tyre-name">${escI(it.name)}</div>
+      <div class="tyre-sub">${escI(it.sub)}</div>
+      <p class="info-text">${escI(it.t)}</p>
+    </article>`;
+})();
+</script>
+
+<script>
+/* =====================================================
+   INFO · SECCIÓN "TEMPORADA 2026"
+   Comparación con el reglamento anterior (2022-2025),
+   en lenguaje simple para fans y principiantes.
+   Se agrega al inicio del menú de Info y queda seleccionada.
+   ===================================================== */
+(function () {
+  if (typeof INFO_SECTIONS === 'undefined' || typeof INFO === 'undefined' || typeof INFO_RENDER === 'undefined') return;
+  if (INFO_SECTIONS.some(s => s.id === 'temporada2026')) return;
+
+  INFO_RENDER.compare = it => `
+    <article class="cmp-card glass">
+      <div class="cmp-wrap">
+        <table class="cmp">
+          <thead><tr>${it.cols.map(c => `<th>${escI(c)}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${it.rows.map(r => `<tr>${r.map(c => `<td>${escI(c)}</td>`).join('')}</tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </article>`;
+
+  INFO_SECTIONS.unshift({
+    id: 'temporada2026', icon: '🆕', title: 'Temporada 2026',
+    intro: 'Qué cambió en la Fórmula 1 frente al reglamento de 2022 a 2025. Te contamos las diferencias más visibles, sin entrar en detalles técnicos.',
+    items: [
+      { type: 'compare',
+        cols: ['Qué cambió', 'Antes (2022 a 2025)', 'Ahora (2026)'],
+        rows: [
+          ['El motor', 'El motor de combustión hacía casi todo el trabajo. La electricidad era un apoyo.', 'La electricidad y la combustión tienen casi el mismo peso: un reparto cercano a 50 y 50.'],
+          ['Una pieza eliminada', 'Existía el MGU-H, que recuperaba energía de los gases del escape.', 'Desaparece el MGU-H. La energía eléctrica sale casi toda del MGU-K, que se carga al frenar.'],
+          ['El combustible', 'Mezcla de nafta con 10 % de etanol.', '100 % combustible sostenible, sin componentes de origen fósil.'],
+          ['La aerodinámica', 'Los autos se pegaban al asfalto por el efecto suelo, con alerones casi fijos.', 'Los alerones cambian de posición: modo recta para ganar velocidad y modo curva para agarrar más en las esquinas.'],
+          ['Los adelantamientos', 'El DRS abría una solapa en zonas marcadas si el auto de atrás estaba cerca.', 'Chau DRS. Ahora el piloto usa energía eléctrica extra (Manual Override y Boost) para atacar o defender.'],
+          ['El tamaño y el peso', 'Autos más grandes, con peso mínimo de 800 kg.', 'Autos más chicos y livianos, con peso mínimo de 768 kg (unos 32 kg menos).'],
+          ['Los equipos', '10 escuderías en la parrilla.', '11 escuderías: Audi reemplaza a Sauber y Cadillac debuta.']
+        ]
+      },
+      { type: 'card', icon: '💡', title: 'Por qué cambió',
+        t: 'La idea es que la F1 sea más sostenible, con más peso para la electricidad y combustibles más limpios. Además, se buscan autos más fáciles de manejar y carreras con más adelantamientos.' },
+      { type: 'card', icon: '🔋', title: 'Motor 50 / 50',
+        t: 'Antes, el motor de combustión era la estrella. Ahora la parte eléctrica tiene casi tanto protagonismo, y el piloto puede sentirlo en el acelerador y en la estrategia.' },
+      { type: 'card', icon: '🌿', title: 'Combustible sostenible',
+        t: 'Los autos corren con un combustible que no sale de petróleo. Es una de las medidas principales para reducir las emisiones del deporte.' },
+      { type: 'card', icon: '🌬️', title: 'Alerones que se mueven',
+        t: 'Antes el auto dependía mucho del efecto suelo para pegarse a la pista. Ahora los alerones se acomodan solos según la zona del circuito, y el piloto puede elegir cuándo usar cada modo.' },
+      { type: 'card', icon: '⚡', title: 'Adelantamientos sin DRS',
+        t: 'El DRS era una solapa que se abría en zonas fijas. Ahora el adelantamiento depende de cuánta energía eléctrica le queda al piloto y de cuándo decide usarla. Es más estratégico y menos automático.' },
+      { type: 'card', icon: '📏', title: 'Autos más chicos y livianos',
+        t: 'Los autos son más compactos y pesan unos 32 kg menos que antes. Esto busca que sean más ágiles, sobre todo en las curvas lentas.' },
+      { type: 'card', icon: '🏁', title: 'Nuevos protagonistas',
+        t: 'Audi toma el lugar de Sauber como equipo de fábrica, y Cadillac debuta como nueva escudería. Honda provee motores a Aston Martin y Ford se asocia con Red Bull.' },
+      { type: 'card', icon: '🔁', title: 'Lo que sigue igual',
+        t: 'Los neumáticos siguen siendo Pirelli, la tabla de puntos (25, 18, 15…) no cambió y la clasificación sigue en tres tandas: Q1, Q2 y Q3.' }
+    ]
+  });
+
+  INFO.sec = 'temporada2026';
 })();
 </script>
 </body>
