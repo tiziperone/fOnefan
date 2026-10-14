@@ -4,6 +4,10 @@
    - Pilotos, escuderías y circuitos (si la sección quedó vacía)
    - Columna derecha: Constructores arriba y, debajo, Pilotos con chances
    - Horarios en Argentina para carreras próximas
+   - Fichas de circuitos (vigentes e históricos) coherentes con el calendario
+   - Reemplaza los mensajes "requieren conexión a la API"
+   - Botón "subir" en la página (no dentro de las fichas)
+   - Aviso si la lista histórica tarda o no carga
    - Aviso si no carga la foto de motoristas
    ===================================================== */
 (function () {
@@ -17,8 +21,11 @@
   const pad = n => String(n).padStart(2, '0');
   const TZ_AR = 'America/Argentina/Buenos_Aires';
   const TITULO_CHANCES = /pilotos con chances/i;
+  const MSG_API = /requieren conexi[oó]n a la API/i;
 
   const CARDS = { drv: [], team: [], race: [] };
+  const WAIT_TICKS = 3; // ~7,5 s con el intervalo de 2,5 s
+  const waitCount = { drv: 0, team: 0, circ: 0 };
 
   /* ---------- Datos ---------- */
 
@@ -59,6 +66,8 @@
       name: r.name,
       date: r.dateLabel || r.date || '',
       place: r.place || r.circuit || '',
+      circuit: r.circuit || '',
+      circuitId: r.circuitId || null,
       flag: r.flag || '',
       sprint: !!r.sprint,
       done: !!r.done,
@@ -133,6 +142,60 @@
     }).join('');
   }
 
+  /* ---------- Mensajes "requieren conexión a la API": se quitan ---------- */
+
+  function quitarMensajesAPI() {
+    document.querySelectorAll('#drvStatus, #teamStatus, #drvTable, #teamTable, #drvGrid, #teamGrid, #circGrid').forEach(el => {
+      if (MSG_API.test(el.textContent || '')) {
+        el.querySelectorAll('*').forEach(n => { if (MSG_API.test(n.textContent || '') && n.children.length === 0) n.remove(); });
+        if (MSG_API.test(el.textContent || '')) el.textContent = '';
+      }
+    });
+    document.querySelectorAll('p.muted, .muted, .box p').forEach(p => {
+      if (MSG_API.test(p.textContent || '')) p.remove();
+    });
+  }
+
+  /* ---------- Aviso si la lista histórica tarda o no carga ---------- */
+
+  function avisoHTML(id) {
+    return `
+      <div class="glass panel parche-aviso" style="grid-column:1/-1">
+        <h3>La historia todavía no cargó</h3>
+        <p class="muted" style="font-size:14px;margin:8px 0 14px">
+          Esta lista reúne datos desde 1950, así que tarda más en el celular o con conexión lenta.
+          Si no aparece en un rato, tocá Recargar.
+        </p>
+        <button class="btn" type="button" data-parche-recargar="${id}">Recargar</button>
+      </div>`;
+  }
+
+  function checkHistoryLoad() {
+    const checks = [
+      { grid: '#drvGrid', tabSel: '#drvTabs .chip.on', tabAttr: 'dt', key: 'drv' },
+      { grid: '#teamGrid', tabSel: '#teamTabs .chip.on', tabAttr: 'tt', key: 'team' },
+      { grid: '#circGrid', tabSel: '#circTabs .chip.on', tabAttr: 'circTab', key: 'circ' }
+    ];
+    checks.forEach(c => {
+      const grid = $(c.grid);
+      const tab = $(c.tabSel);
+      if (!grid || !tab || tab.dataset[c.tabAttr] !== 'hist') { waitCount[c.key] = 0; return; }
+      if (grid.querySelector('.parche-aviso')) return;
+      if (grid.children.length > 0) { waitCount[c.key] = 0; return; }
+
+      waitCount[c.key]++;
+      if (waitCount[c.key] < WAIT_TICKS) return;
+      grid.innerHTML = avisoHTML(c.key);
+    });
+  }
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-parche-recargar]');
+    if (b) location.reload();
+  });
+
+  /* ---------- Circuitos ---------- */
+
   function renderCircuits() {
     const grid = $('#circGrid');
     if (!grid || grid.querySelector('.circ')) return;
@@ -150,6 +213,44 @@
       </div>`).join('');
   }
 
+  // Ficha de circuito unificada: si el circuito está en el calendario 2026, muestra sus datos
+  function openCircuitVigente(circId) {
+    const races = getRaces().filter(r => r.circuitId === circId).sort((a, b) => a.round - b.round);
+    if (!races.length) return;
+    const first = races[0];
+    const next = races.find(r => !r.done);
+    const estado = next ? `Vigente · próxima ronda ${pad(next.round)}` : 'Vigente · temporada 2026 disputada';
+
+    openModal(`
+      <span class="eyebrow">Circuito · Vigente 2026</span>
+      <h3 class="display m-title">${esc(first.circuit || first.name)}</h3>
+      <div class="box">
+        <div class="line"><span>Lugar</span><strong>${esc(first.place || '—')}</strong></div>
+        <div class="line"><span>Estado</span><strong>${esc(estado)}</strong></div>
+      </div>
+      <div class="box" style="margin-top:18px">
+        <h4>🏁 Carreras 2026 en este circuito</h4>
+        ${races.map(r => `
+          <div class="line">
+            <span>Ronda ${pad(r.round)} · ${esc(r.name)}</span>
+            <strong>${esc(r.date)}${r.done ? ' · Finalizada' : ''}</strong>
+          </div>`).join('')}
+      </div>`);
+  }
+
+  // Captura antes que app.js: en las tarjetas de circuitos (vigentes o históricas),
+  // si el circuito está en el calendario 2026, se usa la ficha coherente con ese calendario.
+  document.addEventListener('click', e => {
+    const c = e.target.closest('[data-circ]');
+    if (!c) return;
+    const id = c.dataset.circ;
+    const vigente = getRaces().some(r => r.circuitId === id);
+    if (!vigente) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    openCircuitVigente(id);
+  }, true);
+
   /* ---------- Columna derecha: Constructores arriba, Pilotos con chances debajo ---------- */
 
   function ensureGridLayout(two) {
@@ -159,7 +260,6 @@
     two.style.alignItems = 'start';
   }
 
-  // Columna derecha con Constructores primero
   function ensureRightColumn(two) {
     const teamTable = $('#teamTable');
     const teamPanel = teamTable ? teamTable.closest('.panel') : null;
@@ -172,12 +272,10 @@
       right.className = 'side';
     }
     if (right.parentElement !== two) two.appendChild(right);
-    // Constructores siempre como primer hijo de la columna derecha
     if (right.firstElementChild !== teamPanel) right.insertBefore(teamPanel, right.firstChild);
     return right;
   }
 
-  // Quita cualquier bloque "Pilotos con chances" que no esté en la columna derecha
   function purgeStrayChances(right) {
     document.querySelectorAll('h3').forEach(h => {
       if (!TITULO_CHANCES.test(h.textContent || '')) return;
@@ -203,7 +301,6 @@
       box.id = 'parcheChances';
       box.className = 'glass panel';
     }
-    // Chances siempre al final de la columna derecha (debajo de Constructores)
     if (box.parentElement !== right || right.lastElementChild !== box) right.appendChild(box);
 
     const races = getRaces();
@@ -271,6 +368,8 @@
     b.innerHTML = html;
     m.classList.add('open');
     document.body.style.overflow = 'hidden';
+    const panel = m.querySelector('.panel-m');
+    if (panel) panel.scrollTop = 0;
   }
 
   const fmtDia = d => {
@@ -385,6 +484,46 @@
     }
   });
 
+  /* ---------- Botón "subir" (solo en la página) ---------- */
+
+  function injectTopStyles() {
+    if ($('#parcheTopStyle')) return;
+    const st = document.createElement('style');
+    st.id = 'parcheTopStyle';
+    st.textContent = `
+      .pt-btn{position:fixed;right:18px;bottom:22px;z-index:55;width:48px;height:48px;border-radius:50%;
+        border:1px solid rgba(225,6,0,.6);background:var(--red,#e10600);color:#fff;font-size:22px;line-height:1;
+        cursor:pointer;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.45);
+        opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .25s ease,transform .25s ease}
+      .pt-btn.show{opacity:1;transform:none;pointer-events:auto}
+      .pt-btn:hover{filter:brightness(1.15)}
+    `;
+    document.head.appendChild(st);
+  }
+
+  let topBtn = null;
+
+  function ensureTopButton() {
+    injectTopStyles();
+    if (topBtn) return;
+    topBtn = document.createElement('button');
+    topBtn.className = 'pt-btn';
+    topBtn.type = 'button';
+    topBtn.setAttribute('aria-label', 'Subir');
+    topBtn.title = 'Subir';
+    topBtn.textContent = '↑';
+    topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    document.body.appendChild(topBtn);
+    window.addEventListener('scroll', syncTop, { passive: true });
+  }
+
+  function syncTop() {
+    ensureTopButton();
+    const modal = $('#modal');
+    const open = modal && modal.classList.contains('open');
+    topBtn.classList.toggle('show', !open && window.scrollY > 400);
+  }
+
   /* ---------- Foto de motoristas: aviso si no carga ---------- */
 
   function checkMotores() {
@@ -407,10 +546,12 @@
 
   function tick() {
     try {
+      quitarMensajesAPI();
       renderDrivers();
       renderTeams();
       renderCircuits();
       renderContenders();
+      checkHistoryLoad();
       checkMotores();
     } catch (err) {
       console.warn('[parche fOnefan]', err);
@@ -418,7 +559,9 @@
   }
 
   window.addEventListener('load', () => {
+    ensureTopButton();
     tick();
     setInterval(tick, 2500);
+    syncTop();
   });
 })();
