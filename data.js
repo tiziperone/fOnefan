@@ -1,6 +1,7 @@
 // ================= DATOS DRIVERWIN · TEMPORADA 2026 =================
 // Respaldo sin conexión: lo usa app.js solo si la API no responde.
 // Los cascos se buscan en Fotos/Casco<Nombre>.webp usando el id del piloto.
+// Última actualización de respaldo: GP de Singapur 2026 (11/10/2026).
 
 const PTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 const SPR = [8, 7, 6, 5, 4, 3, 2, 1];
@@ -19,13 +20,16 @@ const TEAMS = [
   { id: 'cadillac', name: 'Cadillac',         color: '#C9C9D1' }
 ];
 
+// Puntos de respaldo. Confirmados tras el GP de Singapur 2026:
+// Antonelli 340, Russell 238, Hamilton 229, Verstappen 221, Leclerc 215.
+// El resto quedó con valores anteriores: la página lo reemplaza con los datos en vivo.
 const DRIVERS = [
-  { id: 'antonelli', name: 'Andrea Kimi Antonelli', team: 'mercedes', basePts: 320 },
-  { id: 'russell',   name: 'George Russell',        team: 'mercedes', basePts: 236 },
-  { id: 'hamilton',  name: 'Lewis Hamilton',        team: 'ferrari',  basePts: 214 },
-  { id: 'leclerc',   name: 'Charles Leclerc',       team: 'ferrari',  basePts: 191 },
+  { id: 'antonelli', name: 'Andrea Kimi Antonelli', team: 'mercedes', basePts: 340 },
+  { id: 'russell',   name: 'George Russell',        team: 'mercedes', basePts: 238 },
+  { id: 'hamilton',  name: 'Lewis Hamilton',        team: 'ferrari',  basePts: 229 },
+  { id: 'leclerc',   name: 'Charles Leclerc',       team: 'ferrari',  basePts: 215 },
   { id: 'norris',    name: 'Lando Norris',          team: 'mclaren',  basePts: 188 },
-  { id: 'verstappen',name: 'Max Verstappen',        team: 'redbull',  basePts: 188 },
+  { id: 'verstappen',name: 'Max Verstappen',        team: 'redbull',  basePts: 221 },
   { id: 'piastri',   name: 'Oscar Piastri',         team: 'mclaren',  basePts: 128 },
   { id: 'hadjar',    name: 'Isack Hadjar',          team: 'redbull',  basePts: 110 },
   { id: 'lawson',    name: 'Liam Lawson',           team: 'rb',       basePts: 65  },
@@ -60,8 +64,8 @@ const CALENDAR = [
   { r: 13, id: 'monza',       name: 'GP de Italia',               date: '04 - 06 Sep',    start: '2026-09-04', sprint: false, done: true,  flag: '🇮🇹' },
   { r: 14, id: 'madrid',      name: 'GP de España (Madrid)',      date: '11 - 13 Sep',    start: '2026-09-11', sprint: false, done: true,  flag: '🇪🇸' },
   { r: 15, id: 'azerbaiyan',  name: 'GP de Azerbaiyán',           date: '24 - 26 Sep',    start: '2026-09-24', sprint: false, done: true,  flag: '🇦🇿' },
-  { r: 16, id: 'bahrain',     name: 'GP de Baréin',               date: '02 - 04 Oct',    start: '2026-10-02', sprint: false, done: true,  flag: '🇧🇭' },
-  { r: 17, id: 'singapur',    name: 'GP de Singapur',             date: '09 - 11 Oct',    start: '2026-10-09', sprint: true,  done: false, flag: '🇸🇬' },
+  { r: 16, id: 'bahrain',     name: 'GP de Baréin (en Sepang, Malasia)', date: '02 - 04 Oct', start: '2026-10-02', sprint: false, done: true,  flag: '🇧🇭' },
+  { r: 17, id: 'singapur',    name: 'GP de Singapur',             date: '09 - 11 Oct',    start: '2026-10-09', sprint: true,  done: true,  flag: '🇸🇬' },
   { r: 18, id: 'usa',         name: 'GP de Estados Unidos',       date: '23 - 25 Oct',    start: '2026-10-23', sprint: true,  done: false, flag: '🇺🇸' },
   { r: 19, id: 'mexico',      name: 'GP de México',               date: '30 Oct - 01 Nov',start: '2026-10-30', sprint: false, done: false, flag: '🇲🇽' },
   { r: 20, id: 'brasil',      name: 'GP de São Paulo',            date: '06 - 08 Nov',    start: '2026-11-06', sprint: true,  done: false, flag: '🇧🇷' },

@@ -62,7 +62,7 @@ h1,h2,h3{font-family:'Orbitron',sans-serif !important;letter-spacing:.05em;text-
 .rec-table th{text-align:left;padding:10px 8px;border-bottom:2px solid var(--line);color:#a0a0b0;font-size:13px;letter-spacing:.1em}
 .rec-table td{padding:12px 8px;border-bottom:1px solid rgba(255,255,255,.05);color:#f0f0f5;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600}
 .rec-table tr:hover td{background:rgba(255,255,255,.02)}
-.rec-table td:first-child{font-weight:700;color:var(--red);width:38px;font-family:'Orbitron',sans-serif;font-size:13px}
+.rec-table td:first-child{font-weight:700;color:var(--red);width:48px;font-family:'Orbitron',sans-serif;font-size:13px}
 .rec-table td:last-child{font-weight:700;color:#fff;text-align:right;font-family:'Orbitron',sans-serif;font-size:14px}
 .rec-note{font-size:13px;color:#8b8b99;margin-top:12px;line-height:1.6}
 
@@ -80,6 +80,11 @@ h1,h2,h3{font-family:'Orbitron',sans-serif !important;letter-spacing:.05em;text-
 .dcard .dc-hel.team-hel::after{display:none}
 .team-logo,.helmet-img{mix-blend-mode:normal !important;filter:none !important;-webkit-backface-visibility:hidden;backface-visibility:hidden}
 .svg-box.team-modal-visual{background:transparent;border:0;padding:0}
+
+/* TRAZADOS DE CIRCUITOS: se dibujan como línea de contorno, no como mancha */
+.trk path,.svg-box.track path{fill:none !important;stroke:#8a8a9c;stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;transition:stroke .3s}
+.circ:hover .trk path{stroke:var(--red)}
+.svg-box.track path{stroke:var(--red)}
 
 /* NEUMÁTICOS */
 .tyre-card{position:relative;text-align:center;padding:26px 20px 22px;--c:var(--red)}
@@ -404,7 +409,7 @@ img{max-width:100%}
       </article>
       <article class="part-card">
         <h4>Unidad de potencia 50 / 50</h4>
-        <p>Combina un motor V6 turbo de 1,6 litros con un MGU-K que aporta hasta unos 350 kW. Desde 2026 la parte eléctrica pesa casi la mitad de la potencia total, y el MGU-H fue eliminado. El combustible es 100 % sostenible.</p>
+        <p>Combina un motor V6 turbo de 1,6 litros con un MGU-K que aporta hasta 350 kW. Desde 2026 la parte eléctrica pesa casi la mitad de la potencia total, y el MGU-H fue eliminado. El combustible es 100 % sostenible.</p>
       </article>
       <article class="part-card">
         <h4>Halo y seguridad</h4>
@@ -430,7 +435,7 @@ img{max-width:100%}
         </article>
         <article class="part-card">
           <h4>Manual Override (sobregiro)</h4>
-          <p>Reemplaza al DRS en 2026. Al apretarlo, el piloto libera energía eléctrica extra para atacar o defender. Su uso tiene límites de velocidad, hasta unos 337 km/h, y reglas de disponibilidad que define el reglamento.</p>
+          <p>Reemplaza al DRS en 2026. Al apretarlo, el piloto libera energía eléctrica extra para atacar o defender. Con el modo boost, la potencia extra se mantiene hasta unos 337 km/h, y su uso depende de estar a menos de 1 segundo del auto de adelante.</p>
         </article>
         <article class="part-card">
           <h4>Modos de motor y recarga</h4>
@@ -456,27 +461,28 @@ img{max-width:100%}
   <section class="view" id="v-records">
     <div class="sec-head">
       <div><span class="eyebrow">Historia & Leyendas</span><h2 class="display">Récords Históricos</h2></div>
-      <p>Estadísticas de todos los tiempos, de todos los pilotos, actualizadas después del GP de Singapur 2026.</p>
+      <p>Estadísticas de todos los tiempos, de todos los pilotos, verificadas con fuentes públicas hasta el GP de Singapur 2026. Se actualizan después de cada carrera.</p>
     </div>
 
     <div class="records-grid">
       <div class="part-card record-card">
-        <h4>👑 Top 5 Campeonatos Mundiales</h4>
+        <h4>👑 Campeonatos Mundiales</h4>
         <table class="rec-table">
           <thead><tr><th>Pos</th><th>Piloto</th><th>Títulos</th></tr></thead>
           <tbody>
-            <tr><td>1</td><td>Michael Schumacher</td><td>7</td></tr>
-            <tr><td>2</td><td>Lewis Hamilton</td><td>7</td></tr>
+            <tr><td>=1</td><td>Michael Schumacher</td><td>7</td></tr>
+            <tr><td>=1</td><td>Lewis Hamilton</td><td>7</td></tr>
             <tr><td>3</td><td>Juan Manuel Fangio</td><td>5</td></tr>
-            <tr><td>4</td><td>Alain Prost</td><td>4</td></tr>
-            <tr><td>5</td><td>Sebastian Vettel</td><td>4</td></tr>
+            <tr><td>=4</td><td>Alain Prost</td><td>4</td></tr>
+            <tr><td>=4</td><td>Sebastian Vettel</td><td>4</td></tr>
+            <tr><td>=4</td><td>Max Verstappen</td><td>4</td></tr>
           </tbody>
         </table>
-        <p class="rec-note">Max Verstappen también tiene 4 títulos (2021 a 2024), por lo que comparte el puesto 4 y 5.</p>
+        <p class="rec-note">Verstappen logró sus 4 títulos seguidos entre 2021 y 2024.</p>
       </div>
 
       <div class="part-card record-card">
-        <h4>🏆 Top 5 Pilotos con más Victorias</h4>
+        <h4>🏆 Más Victorias en Grandes Premios</h4>
         <table class="rec-table">
           <thead><tr><th>Pos</th><th>Piloto</th><th>Victorias</th></tr></thead>
           <tbody>
@@ -487,10 +493,11 @@ img{max-width:100%}
             <tr><td>5</td><td>Alain Prost</td><td>51</td></tr>
           </tbody>
         </table>
+        <p class="rec-note">Verstappen ganó en Baréin (corrido en Sepang, Malasia) y en Singapur 2026, y llegó a 73 victorias.</p>
       </div>
 
       <div class="part-card record-card">
-        <h4>⏱️ Top 5 Pole Positions</h4>
+        <h4>⏱️ Más Pole Positions</h4>
         <table class="rec-table">
           <thead><tr><th>Pos</th><th>Piloto</th><th>Poles</th></tr></thead>
           <tbody>
@@ -501,24 +508,27 @@ img{max-width:100%}
             <tr><td>5</td><td>Max Verstappen</td><td>50</td></tr>
           </tbody>
         </table>
+        <p class="rec-note">Verstappen logró su pole número 50 en la clasificación de Singapur 2026.</p>
       </div>
 
       <div class="part-card record-card">
-        <h4>🥇 Top 5 Pilotos con más Podios</h4>
+        <h4>🥇 Más Podios</h4>
         <table class="rec-table">
           <thead><tr><th>Pos</th><th>Piloto</th><th>Podios</th></tr></thead>
           <tbody>
-            <tr><td>1</td><td>Lewis Hamilton</td><td>207</td></tr>
+            <tr><td>1</td><td>Lewis Hamilton</td><td>202</td></tr>
             <tr><td>2</td><td>Michael Schumacher</td><td>155</td></tr>
-            <tr><td>3</td><td>Max Verstappen</td><td>137</td></tr>
+            <tr><td>3</td><td>Max Verstappen</td><td>136</td></tr>
             <tr><td>4</td><td>Sebastian Vettel</td><td>122</td></tr>
-            <tr><td>5</td><td>Alain Prost</td><td>106</td></tr>
+            <tr><td>=5</td><td>Alain Prost</td><td>106</td></tr>
+            <tr><td>=5</td><td>Fernando Alonso</td><td>106</td></tr>
           </tbody>
         </table>
+        <p class="rec-note">Verstappen superó a Vettel y quedó tercero con 136 podios.</p>
       </div>
 
       <div class="part-card record-card">
-        <h4>🏎️ Victorias en una Misma Escudería</h4>
+        <h4>🏎️ Victorias con una Misma Escudería</h4>
         <table class="rec-table">
           <thead><tr><th>Pos</th><th>Piloto / Escudería</th><th>Triunfos</th></tr></thead>
           <tbody>
@@ -549,11 +559,14 @@ img{max-width:100%}
     <div class="part-card" style="margin-top: 24px;">
       <h4 style="color: var(--red); font-size: 18px; margin-bottom: 12px;">🔥 Otros récords históricos</h4>
       <ul style="color: #c0c0cb; line-height: 1.8; font-size: 14.5px; padding-left: 20px;">
-        <li><b>Más victorias en una temporada:</b> Max Verstappen con 19 victorias en 2023 (86.3% de victorias).</li>
+        <li><b>Más victorias en una temporada:</b> Max Verstappen con 19 victorias en 2023 (86,4 % de las carreras).</li>
+        <li><b>Más podios en una temporada:</b> Max Verstappen con 21 podios en 2023, en 22 carreras.</li>
         <li><b>Más victorias consecutivas:</b> Max Verstappen con 10 triunfos seguidos (GP de Miami a GP de Italia 2023).</li>
-        <li><b>Escudería con más Campeonatos de Constructores:</b> Scuderia Ferrari con 16 títulos mundiales.</li>
-        <li><b>Más puntos en una sola temporada:</b> Max Verstappen con 575 puntos en 2023.</li>
-        <li><b>GP más rápido de la historia:</b> GP de Italia 2003 (Monza), ganado por Michael Schumacher a 247.58 km/h de media.</li>
+        <li><b>Más puntos en una temporada:</b> Max Verstappen con 575 puntos en 2023.</li>
+        <li><b>Más vueltas rápidas:</b> Michael Schumacher con 77.</li>
+        <li><b>Más victorias saliendo desde la pole:</b> Lewis Hamilton con 61.</li>
+        <li><b>Escudería con más títulos de constructores:</b> Scuderia Ferrari con 16. McLaren es segunda con 10 (incluye 2024 y 2025).</li>
+        <li><b>GP más rápido de la historia:</b> GP de Italia 2003 (Monza), ganado por Michael Schumacher a 247,58 km/h de media.</li>
       </ul>
     </div>
   </section>
@@ -571,7 +584,7 @@ img{max-width:100%}
 
 <footer><p>fOnefan • Plataforma de información sobre Fórmula 1 • Perone Tiziano</p></footer>
 
-<script src="data.js?v=20261011_v5"></script>
+<script src="data.js?v=20261013_v6"></script>
 <script src="app.js?v=20261011_v5"></script>
 
 <script>
@@ -998,7 +1011,7 @@ setInterval(() => {
           ['El combustible', 'Mezcla de nafta con 10 % de etanol.', '100 % combustible sostenible, sin componentes de origen fósil.'],
           ['La aerodinámica', 'Los autos se pegaban al asfalto por el efecto suelo, con alerones casi fijos.', 'Los alerones cambian de posición: modo recta para ganar velocidad y modo curva para agarrar más en las esquinas.'],
           ['Los adelantamientos', 'El DRS abría una solapa en zonas marcadas si el auto de atrás estaba cerca.', 'Chau DRS. Ahora el piloto usa energía eléctrica extra (Manual Override y Boost) para atacar o defender.'],
-          ['El tamaño y el peso', 'Autos más grandes, con peso mínimo de 800 kg.', 'Autos más chicos y livianos, con peso mínimo de 768 kg (unos 32 kg menos).'],
+          ['El tamaño y el peso', 'Autos más grandes, con peso mínimo de 800 kg.', 'Autos más chicos y livianos, con peso mínimo de 768 kg (unos 30 kg menos).'],
           ['Los equipos', '10 escuderías en la parrilla.', '11 escuderías: Audi reemplaza a Sauber y Cadillac debuta.']
         ]
       },
@@ -1013,9 +1026,11 @@ setInterval(() => {
       { type: 'card', icon: '⚡', title: 'Adelantamientos sin DRS',
         t: 'El DRS era una solapa que se abría en zonas fijas. Ahora el adelantamiento depende de cuánta energía eléctrica le queda al piloto y de cuándo decide usarla. Es más estratégico y menos automático.' },
       { type: 'card', icon: '📏', title: 'Autos más chicos y livianos',
-        t: 'Los autos son más compactos y pesan unos 32 kg menos que antes. Esto busca que sean más ágiles, sobre todo en las curvas lentas.' },
+        t: 'Los autos son más compactos y pesan unos 30 kg menos que antes (de 798 a 768 kg). Esto busca que sean más ágiles, sobre todo en las curvas lentas.' },
       { type: 'card', icon: '🏁', title: 'Nuevos protagonistas',
-        t: 'Audi toma el lugar de Sauber como equipo de fábrica, y Cadillac debuta como nueva escudería. Honda provee motores a Aston Martin y Ford se asocia con Red Bull.' },
+        t: 'Audi reemplaza a Sauber como equipo de fábrica. Honda provee motores a Aston Martin y Red Bull usa motores Ford. Cadillac debuta como 11.º equipo, con motores Ferrari hasta que llegue su propia unidad de potencia.' },
+      { type: 'card', icon: '🇺🇸', title: 'Cadillac, el debutante',
+        t: 'Pilotos: Sergio Pérez y Valtteri Bottas. Sede en Silverstone (Reino Unido) y en Indiana (EE. UU.). Hasta la pausa de verano de 2026 seguía sin puntos (su mejor resultado fue 13.º). En agosto Marcin Budkowski reemplazó a Graeme Lowdon como jefe de equipo.' },
       { type: 'card', icon: '🔁', title: 'Lo que sigue igual',
         t: 'Los neumáticos siguen siendo Pirelli, la tabla de puntos (25, 18, 15…) no cambió y la clasificación sigue en tres tandas: Q1, Q2 y Q3.' }
     ]
@@ -1636,6 +1651,225 @@ setInterval(() => {
       ? a0_0x5ec2f5(race, data)
       : a0_0x6161b8(race) + '<div class="box"><p class="muted">Resultados en proceso de carga.</p></div>';
   };
+})();
+</script>
+
+<script>
+/* =====================================================
+   ESCUDERÍAS: ficha completa + logo de Aston Martin
+   - Títulos de constructores (años y cantidad).
+   - Cantidad de pilotos en la historia y sus nombres.
+   - Puntos de cada piloto en 2026.
+   - Logo de Aston Martin sobre placa clara (sin procesar).
+   ===================================================== */
+(function () {
+  if (typeof a0_0x484245 === 'undefined') return;
+
+  const esc = s => (typeof a0_0x4046d8 === 'function' ? a0_0x4046d8(s) : String(s == null ? '' : s));
+  const DIR = (typeof a0_0x4e953e !== 'undefined' && a0_0x4e953e) ? a0_0x4e953e : 'Fotos/';
+
+  // Años en que cada escudería ganó el campeonato de constructores
+  const TITLES = {
+    ferrari:  [1961, 1964, 1975, 1976, 1977, 1979, 1982, 1983, 1999, 2000, 2001, 2002, 2003, 2004, 2007, 2008],
+    mclaren:  [1974, 1984, 1985, 1988, 1989, 1990, 1991, 1998, 2024, 2025],
+    williams: [1980, 1981, 1986, 1987, 1992, 1993, 1994, 1996, 1997],
+    mercedes: [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021],
+    red_bull: [2010, 2011, 2012, 2013, 2022, 2023],
+    alpine:   [2005, 2006]
+  };
+
+  const ENGINE_2026 = {
+    mercedes: 'Mercedes', ferrari: 'Ferrari', mclaren: 'Mercedes',
+    redbull: 'Ford (Red Bull Powertrains)', rb: 'Ford (Red Bull Powertrains)',
+    alpine: 'Mercedes', haas: 'Ferrari', audi: 'Audi (fábrica)',
+    williams: 'Mercedes', aston: 'Honda', cadillac: 'Ferrari (cliente hasta 2028)'
+  };
+
+  const CADILLAC = {
+    pais: 'Estados Unidos (con base en Reino Unido)',
+    sede: 'Silverstone (Reino Unido) y Fishers (Indiana, EE. UU.)',
+    fundada: '2026 (debut)',
+    jefe: 'Marcin Budkowski (desde el GP de Países Bajos 2026)',
+    pilotos: ['Sergio Pérez', 'Valtteri Bottas']
+  };
+
+  const APIID = { redbull: 'red_bull', aston: 'aston_martin' };
+  const histMemo = {};
+  let fichaActual = null;
+
+  // Variantes de nombre que devuelve la API
+  if (typeof a0_0x46d03e !== 'undefined') {
+    a0_0x46d03e['Cadillac'] = {
+      pais: 'Estados Unidos',
+      fundada: '2026 (debut)',
+      motor: 'Ferrari',
+      sede: 'Silverstone (Reino Unido) y Fishers (EE. UU.)'
+    };
+  }
+  if (typeof a0_0x53c167 !== 'undefined') {
+    Object.assign(a0_0x53c167, {
+      'cadillac f1 team': 'Cadillac',
+      'cadillac formula 1 team': 'Cadillac',
+      'cadillac f1': 'Cadillac',
+      'racing bulls': 'RB',
+      'red bull racing': 'Red Bull',
+      'aston martin f1 team': 'Aston Martin'
+    });
+  }
+  if (typeof a0_0x474f9b !== 'undefined') {
+    Object.assign(a0_0x474f9b, {
+      'cadillac': 'Cadillac F1 Team',
+      'cadillac f1 team': 'Cadillac F1 Team'
+    });
+  }
+
+  // Estilos: placa clara para logos sin procesar y realce de Cadillac
+  const st = document.createElement('style');
+  st.textContent = `
+    .tc-plate{display:inline-flex;align-items:center;justify-content:center;background:#f4f4f7;border-radius:16px;padding:10px 16px;box-shadow:0 6px 18px rgba(0,0,0,.35);max-width:90%}
+    .team-logo-raw{display:block;height:110px;width:auto;max-width:100%;object-fit:contain;mix-blend-mode:normal;filter:none}
+    .tc-modal-logo{display:flex;justify-content:center;margin:4px 0 20px}
+    .tc-modal-logo .team-logo-raw{height:150px}
+    .tc-name-only{font-family:var(--f-nav);font-size:20px;letter-spacing:.1em;text-transform:uppercase;color:#fff}
+    img.team-logo[src*="adillac"],img.team-logo[data-alt*="adillac"]{filter:drop-shadow(0 0 2px rgba(255,255,255,.6)) drop-shadow(0 0 8px rgba(255,255,255,.25)) !important}
+  `;
+  document.head.appendChild(st);
+
+  function teamsList() {
+    return (a0_0x484245.teams && a0_0x484245.teams.length)
+      ? a0_0x484245.teams
+      : (typeof TEAMS !== 'undefined' ? TEAMS : []);
+  }
+
+  function findTeam(name) {
+    const list = teamsList();
+    const n = String(name || '').toLowerCase();
+    return list.find(t => t.name === name) || list.find(t => String(t.name).toLowerCase() === n);
+  }
+
+  const isCad = t => /cadillac/i.test((t && (t.name || t.id)) || '');
+
+  function refOf(name) {
+    const dict = (typeof a0_0x46d03e !== 'undefined') ? a0_0x46d03e : {};
+    const n = String(name || '').toLowerCase().trim();
+    if (!n) return {};
+    if (n.includes('cadillac')) return dict['Cadillac'] || {};
+    const k = Object.keys(dict).find(key => {
+      const kk = key.toLowerCase();
+      return n.includes(kk) || kk.includes(n);
+    });
+    return k ? dict[k] : {};
+  }
+
+  // Logo en la ficha: sobre placa clara, sin procesar
+  function logoHtml(t) {
+    const files = (typeof a0_0x415557 === 'function') ? a0_0x415557(t.name) : [];
+    if (!files || !files.length) return `<span class="tc-name-only">${esc(t.name)}</span>`;
+    return `<div class="tc-plate"><img class="team-logo-raw" src="${DIR}${esc(files[0])}" alt="${esc(t.name)}"></div>`;
+  }
+
+  // Pilotos que corrieron para la escudería (toda la historia)
+  async function histNames(apiId) {
+    if (histMemo[apiId]) return histMemo[apiId];
+    const r = await fetch('https://api.jolpi.ca/ergast/f1/constructors/' + apiId + '/drivers.json?limit=1000');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const list = ((j.MRData && j.MRData.DriverTable && j.MRData.DriverTable.Drivers) || [])
+      .map(d => d.givenName + ' ' + d.familyName);
+    histMemo[apiId] = list;
+    return list;
+  }
+
+  // Ficha de la escudería (al tocar la tarjeta)
+  window.a0_0x243121 = function (teamName) {
+    const t = findTeam(teamName);
+    if (!t) return;
+    fichaActual = t.id;
+
+    const pos = teamsList().indexOf(t) + 1;
+    const ref = refOf(t.name);
+    const ext = isCad(t) ? CADILLAC : {};
+    const apiId = APIID[t.id] || t.id;
+    const titles = TITLES[apiId] || [];
+    const drivers = (a0_0x484245.drivers || []).filter(d => d.team === t.id);
+
+    const drvRows = drivers.length
+      ? drivers.map(d => `<div class="line"><span>${esc(d.name)}</span><strong>${d.basePts || 0} pts</strong></div>`).join('')
+      : '<p class="muted">Sin pilotos cargados.</p>';
+
+    const titleYears = titles.length
+      ? titles.slice().sort((a, b) => b - a).map(y => `<span class="yr">${y}</span>`).join('')
+      : '<span class="muted">Sin títulos de constructores</span>';
+
+    const jefe = ext.jefe
+      ? `<div class="stat"><span>Jefe de equipo</span><strong>${esc(ext.jefe)}</strong></div>`
+      : '';
+
+    a0_0x4491d0(`
+      <span class="eyebrow">Escudería · Temporada 2026</span>
+      <h3 class="display m-title">${esc(t.name)}</h3>
+      <div class="tc-modal-logo">${logoHtml(t)}</div>
+      <div class="m-grid">
+        <div class="stat"><span>Puntos 2026</span><strong>${t.pts != null ? t.pts : 0}</strong></div>
+        <div class="stat"><span>Posición</span><strong>${pos}º</strong></div>
+        <div class="stat"><span>País</span><strong>${esc(ext.pais || ref.pais || '—')}</strong></div>
+        <div class="stat"><span>Fundada</span><strong>${esc(ext.fundada || ref.fundada || '—')}</strong></div>
+        <div class="stat"><span>Sede</span><strong>${esc(ext.sede || ref.sede || '—')}</strong></div>
+        <div class="stat"><span>Motor 2026</span><strong>${esc(ENGINE_2026[t.id] || ref.motor || '—')}</strong></div>
+        ${jefe}
+        <div class="stat"><span>Títulos de constructores</span><strong>${titles.length}</strong></div>
+        <div class="stat"><span>Pilotos en la historia</span><strong id="tcCount">…</strong></div>
+      </div>
+      <div class="box" style="margin-top:18px">
+        <h4>🏆 Títulos de constructores</h4>
+        <div class="yrs">${titleYears}</div>
+        ${apiId === 'alpine' ? '<p class="rec-note">Títulos obtenidos como Renault, antecesor de Alpine.</p>' : ''}
+      </div>
+      <div class="box" style="margin-top:18px"><h4>🏎️ Pilotos 2026 y puntos</h4>${drvRows}</div>
+      <div class="box" style="margin-top:18px">
+        <h4>🕰️ Nombres a lo largo del tiempo</h4>
+        <div class="tpills" id="tcHist"><span class="muted">Cargando historial…</span></div>
+      </div>
+    `);
+
+    histNames(apiId).then(list => {
+      if (fichaActual !== t.id) return;
+      const c = document.getElementById('tcCount');
+      if (c) c.textContent = list.length ? list.length : '—';
+      const box = document.getElementById('tcHist');
+      if (box) box.innerHTML = list.length
+        ? list.map(n => `<span class="tpill">${esc(n)}</span>`).join('')
+        : '<span class="muted">Sin datos</span>';
+    }).catch(() => {
+      if (fichaActual !== t.id) return;
+      const c = document.getElementById('tcCount');
+      if (c) c.textContent = '—';
+      const box = document.getElementById('tcHist');
+      if (box) box.innerHTML = '<span class="muted">No se pudo cargar el historial.</span>';
+    });
+  };
+
+  // Logo de Aston Martin: se reemplaza por una versión sin procesar sobre placa clara
+  function fixAstonLogos() {
+    document.querySelectorAll('#teamGrid .dcard').forEach(card => {
+      if (!/aston/i.test(card.textContent || '')) return;
+      card.querySelectorAll('img.team-logo').forEach(img => {
+        const src = img.dataset.cleanFor || img.getAttribute('src');
+        if (!src || /^blob:/.test(src)) return;
+        const wrap = document.createElement('span');
+        wrap.className = 'tc-plate';
+        const raw = document.createElement('img');
+        raw.className = 'team-logo-raw';
+        raw.alt = 'Aston Martin';
+        raw.src = src;
+        wrap.appendChild(raw);
+        img.replaceWith(wrap);
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', fixAstonLogos);
+  setInterval(fixAstonLogos, 400);
 })();
 </script>
 </body>
