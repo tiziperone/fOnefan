@@ -411,3 +411,10 @@ footer{text-align:center;color:var(--muted);font-family:var(--f-nav);font-size:1
   .quiz{padding:20px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.btn-collab {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
