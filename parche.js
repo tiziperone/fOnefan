@@ -2,7 +2,7 @@
    parche.js · fOnefan
    Restaura, sin tocar app.js:
    - Pilotos, escuderías y circuitos (si la sección quedó vacía)
-   - Bloque "Pilotos con chances" debajo de la tabla de constructores
+   - Columna derecha: Constructores arriba y, debajo, Pilotos con chances
    - Horarios en Argentina para carreras próximas
    - Aviso si no carga la foto de motoristas
    ===================================================== */
@@ -16,8 +16,8 @@
   const LIVE = () => (typeof a0_0x484245 !== 'undefined' && a0_0x484245) || {};
   const pad = n => String(n).padStart(2, '0');
   const TZ_AR = 'America/Argentina/Buenos_Aires';
+  const TITULO_CHANCES = /pilotos con chances/i;
 
-  // Estado de las tarjetas (para abrir la ficha al tocarlas)
   const CARDS = { drv: [], team: [], race: [] };
 
   /* ---------- Datos ---------- */
@@ -150,26 +150,61 @@
       </div>`).join('');
   }
 
-  /* ---------- Pilotos con chances (debajo de Constructores) ---------- */
+  /* ---------- Columna derecha: Constructores arriba, Pilotos con chances debajo ---------- */
+
+  function ensureGridLayout(two) {
+    if (two.dataset.parche === '1') return;
+    two.dataset.parche = '1';
+    two.style.gridTemplateColumns = '1fr 1fr';
+    two.style.alignItems = 'start';
+  }
+
+  // Columna derecha con Constructores primero
+  function ensureRightColumn(two) {
+    const teamTable = $('#teamTable');
+    const teamPanel = teamTable ? teamTable.closest('.panel') : null;
+    if (!teamPanel) return null;
+
+    let right = $('#parcheRight');
+    if (!right) {
+      right = document.createElement('div');
+      right.id = 'parcheRight';
+      right.className = 'side';
+    }
+    if (right.parentElement !== two) two.appendChild(right);
+    // Constructores siempre como primer hijo de la columna derecha
+    if (right.firstElementChild !== teamPanel) right.insertBefore(teamPanel, right.firstChild);
+    return right;
+  }
+
+  // Quita cualquier bloque "Pilotos con chances" que no esté en la columna derecha
+  function purgeStrayChances(right) {
+    document.querySelectorAll('h3').forEach(h => {
+      if (!TITULO_CHANCES.test(h.textContent || '')) return;
+      const block = h.closest('.glass, .panel, .contend') || h.parentElement;
+      if (!block) return;
+      const isOurs = block.id === 'parcheChances' && block.parentElement === right;
+      if (!isOurs) block.remove();
+    });
+  }
 
   function renderContenders() {
-    const teamTable = $('#teamTable');
-    const panel = teamTable ? teamTable.closest('.panel') : null;
-    const target = panel || $('#v-standings');
-    if (!target) return;
+    const two = $('#v-standings .two');
+    if (!two) return;
+    ensureGridLayout(two);
 
-    // Elimina versiones anteriores que hayan quedado en otro lugar
-    document.querySelectorAll('.contend').forEach(el => { if (el.id !== 'parcheChances') el.remove(); });
+    const right = ensureRightColumn(two);
+    if (!right) return;
+    purgeStrayChances(right);
 
     let box = $('#parcheChances');
     if (!box) {
-      box = document.createElement('section');
+      box = document.createElement('div');
       box.id = 'parcheChances';
-      box.className = 'contend';
-      box.style.cssText = 'margin-top:26px;padding:22px 0 0;border-top:1px solid var(--line);';
+      box.className = 'glass panel';
     }
-    // Siempre dentro del panel de Constructores, al final
-    if (box.parentElement !== target) target.appendChild(box);
+    // Chances siempre al final de la columna derecha (debajo de Constructores)
+    if (box.parentElement !== right || right.lastElementChild !== box) right.appendChild(box);
 
     const races = getRaces();
     const left = races.filter(r => !r.done);
@@ -185,16 +220,13 @@
     const second = drivers[1] || { pts: 0 };
     const teams = getTeams();
     const head = `
-      <div class="ct-head">
-        <span class="eyebrow">Chances</span>
-        <h3 class="display" style="font-size:clamp(22px,2.6vw,28px)">Pilotos con chances de ser campeón</h3>
-        <p class="muted">${left.length ? `Quedan ${left.length} carreras · ${pool} pts por repartir.` : 'Temporada finalizada.'}</p>
-      </div>`;
+      <h3>Pilotos con chances de salir campeones</h3>
+      <p class="muted" style="font-size:14px;margin:-6px 0 14px">${left.length ? `Quedan ${left.length} carreras · ${pool} pts por repartir.` : 'Temporada finalizada.'}</p>`;
 
     if (!left.length || leader.pts - second.pts > pool) {
       box.innerHTML = head + `
         <div class="ct-decided">
-          <span class="eyebrow">${left.length ? 'Título matemáticamente decidido' : 'Campeón del mundo'}</span>
+          <span class="eyebrow">Campeón del mundo</span>
           <b>${esc(leader.name)}</b>
           <span class="muted">${leader.pts} pts</span>
         </div>`;
@@ -241,7 +273,6 @@
     document.body.style.overflow = 'hidden';
   }
 
-  // Horarios en Argentina (día y hora) para carreras que todavía no se disputaron
   const fmtDia = d => {
     const s = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ_AR }).format(d);
     return s.charAt(0).toUpperCase() + s.slice(1);
@@ -291,8 +322,6 @@
       </div>`);
   }
 
-  // Este listener se registra después de app.js, así que corre después y
-  // reemplaza la ficha genérica por la versión con horarios.
   document.addEventListener('click', e => {
     const c = e.target.closest('[data-race]');
     if (!c) return;

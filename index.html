@@ -217,6 +217,17 @@ img{max-width:100%}
   .spd-bar{grid-template-columns:64px 1fr 60px}
   .drv-tools{max-width:100%}
 }
+
+/* HERO: los tres botones en una misma fila, todos rojos */
+.hero .cta{flex-wrap:nowrap;align-items:stretch}
+.hero .cta .btn{white-space:nowrap;padding:12px 18px;letter-spacing:.08em;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:14px}
+@media (max-width:1100px){
+  .hero .cta{flex-wrap:wrap}
+}
+@media (max-width:640px){
+  .hero .cta{flex-wrap:wrap}
+  .hero .cta .btn{flex:1 1 140px;white-space:normal;text-align:center}
+}
 </style>
 </head>
 <body>
@@ -268,8 +279,8 @@ img{max-width:100%}
         <p class="lead">Calendario, campeonato, circuitos y escuderías en un solo lugar. Todo lo que necesitas para seguir cada vuelta.</p>
         <div class="cta">
           <button class="btn" data-view="standings" data-jump="cal">Ver calendario</button>
-          <button class="btn ghost" data-view="info">Aprende todo sobre F1</button>
-          <a href="https://cafecito.app/fonefan" target="_blank" rel="noopener noreferrer" class="btn ghost btn-collab">
+          <button class="btn" data-view="info">Aprende todo sobre F1</button>
+          <a href="https://cafecito.app/fonefan" target="_blank" rel="noopener noreferrer" class="btn btn-collab">
             🏎️ Ayúdame a mantener la página :)
           </a>
         </div>
