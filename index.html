@@ -692,12 +692,38 @@ img{max-width:100%}
   }, 100);
 })();
 
-/* Desinstalación de Service Workers previa para forzar actualización inmediata en celulares */
+/* =====================================================
+   SERVICE WORKER: registro y actualización automática
+   (funciona en Android e iOS)
+   ===================================================== */
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    for (let reg of regs) {
-      reg.unregister();
-    }
+  // Solo recargamos al cambiar de versión si ya había una versión anterior controlando la página
+  const habiaControlador = !!navigator.serviceWorker.controller;
+  let recargando = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!habiaControlador || recargando) return;
+    recargando = true;
+    location.reload();
+  });
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      // Buscar versión nueva cada vez que la app vuelve a primer plano (clave en iPhone)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) reg.update();
+      });
+
+      // Si aparece una versión nueva, la activamos de inmediato
+      reg.addEventListener('updatefound', () => {
+        const nueva = reg.installing;
+        nueva.addEventListener('statechange', () => {
+          if (nueva.state === 'installed' && navigator.serviceWorker.controller) {
+            nueva.postMessage('SKIP_WAITING');
+          }
+        });
+      });
+    }).catch(err => console.warn('No se pudo registrar el service worker:', err));
   });
 }
 
