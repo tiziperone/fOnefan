@@ -52,7 +52,6 @@ h1,h2,h3{font-family:'Orbitron',sans-serif !important;letter-spacing:.05em;text-
 .volante-section{margin-top:70px;padding:10px 0 0;text-align:center;position:relative;overflow:hidden}
 .volante-section::before{content:"";position:absolute;left:50%;top:38%;width:min(780px,100%);height:min(520px,90vw);transform:translate(-50%,-50%);background:radial-gradient(ellipse at center,rgba(255,255,255,.055),transparent 65%);pointer-events:none;z-index:0}
 .volante-section>*{position:relative;z-index:1}
-/* Más brillo al volante; el fondo oscuro casi no cambia (el negro sigue siendo negro) */
 .volante-img{width:100%;max-width:560px;height:auto;margin:18px auto 0;display:block;filter:brightness(1.75) contrast(1.15) grayscale(.25);-webkit-mask-image:radial-gradient(ellipse at center,#000 38%,transparent 70%);mask-image:radial-gradient(ellipse at center,#000 38%,transparent 70%)}
 .volante-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:40px;text-align:left}
 
@@ -270,6 +269,9 @@ img{max-width:100%}
         <div class="cta">
           <button class="btn" data-view="standings" data-jump="cal">Ver calendario</button>
           <button class="btn ghost" data-view="info">Aprende todo sobre F1</button>
+          <a href="https://cafecito.app/fonefan" target="_blank" rel="noopener noreferrer" class="btn ghost btn-collab">
+            🏎️ Ayúdame a mantener la página :)
+          </a>
         </div>
       </div>
       <div class="hero-r">
@@ -282,12 +284,6 @@ img{max-width:100%}
           <div class="cd"><b id="cdH">00</b><span>Horas</span></div>
           <div class="cd"><b id="cdM">00</b><span>Min</span></div>
           <div class="cd"><b id="cdS">00</b><span>Seg</span></div>
-        </div>
-
-        <div style="margin-top: 20px; text-align: center;">
-          <a href="https://cafecito.app/fonefan" target="_blank" rel="noopener noreferrer" class="btn btn-collab">
-            🏎️ Ayúdame a mantener la página :)
-          </a>
         </div>
 
         <div class="live-box" id="liveBox" hidden>
@@ -477,8 +473,7 @@ img{max-width:100%}
       </div>
     </div>
   </section>
-
-  <!-- RÉCORDS -->
+    <!-- RÉCORDS -->
   <section class="view" id="v-records">
     <div class="sec-head">
       <div><span class="eyebrow">Historia & Leyendas</span><h2 class="display">Récords Históricos</h2></div>
@@ -606,7 +601,6 @@ img{max-width:100%}
 
 <script src="data.js?v=20261013_v6"></script>
 <script src="app.js?v=20261011_v5"></script>
-
 <script>
 /* Supresión del texto "cargando historial..." si aparece (solo observadores, sin temporizadores) */
 (function() {

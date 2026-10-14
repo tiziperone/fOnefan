@@ -2,7 +2,8 @@
    parche.js · fOnefan
    Restaura, sin tocar app.js:
    - Pilotos, escuderías y circuitos (si la sección quedó vacía)
-   - Bloque "Pilotos con chances" bajo la tabla de constructores
+   - Bloque "Pilotos con chances" debajo de la tabla de constructores
+   - Horarios en Argentina para carreras próximas
    - Aviso si no carga la foto de motoristas
    ===================================================== */
 (function () {
@@ -14,6 +15,7 @@
   const sinAcentos = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
   const LIVE = () => (typeof a0_0x484245 !== 'undefined' && a0_0x484245) || {};
   const pad = n => String(n).padStart(2, '0');
+  const TZ_AR = 'America/Argentina/Buenos_Aires';
 
   // Estado de las tarjetas (para abrir la ficha al tocarlas)
   const CARDS = { drv: [], team: [], race: [] };
@@ -52,13 +54,15 @@
     const cal = LIVE().calendar;
     const src = cal && cal.length ? cal : (typeof CALENDAR !== 'undefined' ? CALENDAR : []);
     return src.map(r => ({
+      id: r.id,
       round: r.round || r.r,
       name: r.name,
       date: r.dateLabel || r.date || '',
       place: r.place || r.circuit || '',
       flag: r.flag || '',
       sprint: !!r.sprint,
-      done: !!r.done
+      done: !!r.done,
+      sessions: r.sessions || []
     }));
   }
 
@@ -146,25 +150,26 @@
       </div>`).join('');
   }
 
-  /* ---------- Pilotos con chances ---------- */
+  /* ---------- Pilotos con chances (debajo de Constructores) ---------- */
 
   function renderContenders() {
-    const dt = $('#drvTable');
-    const anchor = dt ? dt.closest('.two') : null;
-    const target = anchor || $('#v-standings');
+    const teamTable = $('#teamTable');
+    const panel = teamTable ? teamTable.closest('.panel') : null;
+    const target = panel || $('#v-standings');
     if (!target) return;
 
-    // Elimina la versión anterior (si existe) y deja solo la nueva
+    // Elimina versiones anteriores que hayan quedado en otro lugar
     document.querySelectorAll('.contend').forEach(el => { if (el.id !== 'parcheChances') el.remove(); });
 
     let box = $('#parcheChances');
     if (!box) {
       box = document.createElement('section');
       box.id = 'parcheChances';
-      box.className = 'glass contend';
-      box.style.marginTop = '22px';
-      target.after(box);
+      box.className = 'contend';
+      box.style.cssText = 'margin-top:26px;padding:22px 0 0;border-top:1px solid var(--line);';
     }
+    // Siempre dentro del panel de Constructores, al final
+    if (box.parentElement !== target) target.appendChild(box);
 
     const races = getRaces();
     const left = races.filter(r => !r.done);
@@ -182,7 +187,7 @@
     const head = `
       <div class="ct-head">
         <span class="eyebrow">Chances</span>
-        <h3 class="display">Pilotos con chances de ser campeón</h3>
+        <h3 class="display" style="font-size:clamp(22px,2.6vw,28px)">Pilotos con chances de ser campeón</h3>
         <p class="muted">${left.length ? `Quedan ${left.length} carreras · ${pool} pts por repartir.` : 'Temporada finalizada.'}</p>
       </div>`;
 
@@ -226,7 +231,7 @@
     box.innerHTML = head + `<div class="ct-list">${cards}</div>`;
   }
 
-  /* ---------- Fichas al tocar una tarjeta ---------- */
+  /* ---------- Fichas ---------- */
 
   function openModal(html) {
     const m = $('#modal'), b = $('#mBody');
@@ -235,6 +240,66 @@
     m.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
+
+  // Horarios en Argentina (día y hora) para carreras que todavía no se disputaron
+  const fmtDia = d => {
+    const s = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ_AR }).format(d);
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+  const fmtHora = d => new Intl.DateTimeFormat('es-AR', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: TZ_AR
+  }).format(d) + ' hs';
+
+  function etiquetaSesion(n) {
+    const s = String(n || '').trim();
+    if (/^clasificaci[oó]n$/i.test(s)) return 'Clasificación (Qualy)';
+    return s;
+  }
+
+  function horariosHTML(race) {
+    const ses = (race.sessions || [])
+      .slice()
+      .sort((a, b) => (Date.parse(a.when) || 0) - (Date.parse(b.when) || 0));
+
+    if (!ses.length) {
+      return '<p class="muted" style="font-size:14px">Horarios no disponibles todavía.</p>';
+    }
+
+    return ses.map(s => {
+      const label = esc(etiquetaSesion(s.name));
+      if (s.tbc || !s.when || isNaN(Date.parse(s.when))) {
+        return `<div class="line"><span>${label}</span><strong>Por confirmar</strong></div>`;
+      }
+      const d = new Date(s.when);
+      return `<div class="line"><span>${label}</span><strong>${esc(fmtDia(d))} · ${esc(fmtHora(d))}</strong></div>`;
+    }).join('');
+  }
+
+  function openHorarios(race) {
+    openModal(`
+      <span class="eyebrow">Ronda ${pad(race.round)} · ${esc(race.flag)}</span>
+      <h3 class="display m-title">${esc(race.name)}</h3>
+      <div class="box">
+        <h4>🕒 Horarios (hora de Argentina)</h4>
+        ${horariosHTML(race)}
+      </div>
+      <div class="box" style="margin-top:18px">
+        <div class="line"><span>Fechas</span><strong>${esc(race.date)}</strong></div>
+        <div class="line"><span>Lugar</span><strong>${esc(race.place || '—')}</strong></div>
+        <div class="line"><span>Formato</span><strong>${race.sprint ? 'Con Sprint' : 'Estándar'}</strong></div>
+        <div class="line"><span>Estado</span><strong>Por correr</strong></div>
+      </div>`);
+  }
+
+  // Este listener se registra después de app.js, así que corre después y
+  // reemplaza la ficha genérica por la versión con horarios.
+  document.addEventListener('click', e => {
+    const c = e.target.closest('[data-race]');
+    if (!c) return;
+    const race = getRaces().find(r => r.id === c.dataset.race);
+    if (!race || race.done) return;
+    openHorarios(race);
+  });
 
   document.addEventListener('click', e => {
     const c = e.target.closest('.parche-card');
@@ -278,6 +343,7 @@
     if (k === 'race') {
       const r = CARDS.race[i];
       if (!r) return;
+      if (!r.done) { openHorarios(r); return; }
       openModal(`
         <span class="eyebrow">Ronda ${pad(r.round)} · ${esc(r.flag)}</span>
         <h3 class="display m-title">${esc(r.name)}</h3>
@@ -285,7 +351,7 @@
           <div class="line"><span>Fechas</span><strong>${esc(r.date)}</strong></div>
           <div class="line"><span>Lugar</span><strong>${esc(r.place || '—')}</strong></div>
           <div class="line"><span>Formato</span><strong>${r.sprint ? 'Con Sprint' : 'Estándar'}</strong></div>
-          <div class="line"><span>Estado</span><strong>${r.done ? 'Finalizada' : 'Por correr'}</strong></div>
+          <div class="line"><span>Estado</span><strong>Finalizada</strong></div>
         </div>`);
     }
   });
