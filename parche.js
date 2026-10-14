@@ -5,6 +5,8 @@
    - Columna derecha: Constructores arriba y, debajo, Pilotos con chances
    - Horarios en Argentina para carreras próximas
    - Fichas de circuitos (vigentes e históricos) coherentes con el calendario
+   - Fichas de circuito acomodadas para celular
+   - Trazado del circuito en las tarjetas de Calendario y en Próximas carreras
    - Reemplaza los mensajes "requieren conexión a la API"
    - Botón "subir" en la página (no dentro de las fichas)
    - Aviso si la lista histórica tarda o no carga
@@ -26,6 +28,49 @@
   const CARDS = { drv: [], team: [], race: [] };
   const WAIT_TICKS = 3; // ~7,5 s con el intervalo de 2,5 s
   const waitCount = { drv: 0, team: 0, circ: 0 };
+
+  /* ---------- Estilos propios ---------- */
+
+  function injectStyles() {
+    if ($('#parcheStyle')) return;
+    const st = document.createElement('style');
+    st.id = 'parcheStyle';
+    st.textContent = `
+      .pt-btn{position:fixed;right:18px;bottom:22px;z-index:55;width:48px;height:48px;border-radius:50%;
+        border:1px solid rgba(225,6,0,.6);background:var(--red,#e10600);color:#fff;font-size:22px;line-height:1;
+        cursor:pointer;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.45);
+        opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .25s ease,transform .25s ease}
+      .pt-btn.show{opacity:1;transform:none;pointer-events:auto}
+      .pt-btn:hover{filter:brightness(1.15)}
+
+      .parche-circ-ficha .m-title{font-size:clamp(28px,8vw,40px);line-height:1;word-break:break-word;margin:8px 0 18px}
+      .parche-circ-ficha .box{padding:14px}
+      .parche-circ-ficha .box h4{font-size:12px;margin-bottom:8px}
+      .parche-circ-ficha .line{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 0}
+      .parche-circ-ficha .line span{font-size:13px;color:var(--muted)}
+      .parche-circ-ficha .line strong{font-size:15px;white-space:normal;text-align:left;overflow-wrap:anywhere}
+
+      /* Trazado dentro de las tarjetas de carreras próximas */
+      .cal-track{display:flex;justify-content:center;align-items:center;margin:10px 0 2px;height:110px}
+      .cal-track svg{width:100%;height:100%;max-width:180px;overflow:visible}
+      .cal-track path{fill:none !important;stroke:var(--red);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+      .up-track{display:flex;align-items:center;gap:12px;margin-top:8px}
+      .up-track .up-svg{width:72px;height:56px;flex-shrink:0}
+      .up-track .up-svg svg{width:100%;height:100%;overflow:visible}
+      .up-track .up-svg path{fill:none !important;stroke:var(--red);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+      .up-track small{color:var(--muted);font-size:12px}
+
+      @media (max-width:640px){
+        .modal .panel-m{padding:20px 16px;max-height:92vh}
+        .parche-circ-ficha .m-title{font-size:30px}
+        .parche-circ-ficha .x{top:12px;right:12px}
+        .parche-circ-ficha .line strong{font-size:14px}
+        .cal-track{height:90px}
+        .up-track .up-svg{width:60px;height:46px}
+      }
+    `;
+    document.head.appendChild(st);
+  }
 
   /* ---------- Datos ---------- */
 
@@ -213,7 +258,6 @@
       </div>`).join('');
   }
 
-  // Ficha de circuito unificada: si el circuito está en el calendario 2026, muestra sus datos
   function openCircuitVigente(circId) {
     const races = getRaces().filter(r => r.circuitId === circId).sort((a, b) => a.round - b.round);
     if (!races.length) return;
@@ -235,11 +279,9 @@
             <span>Ronda ${pad(r.round)} · ${esc(r.name)}</span>
             <strong>${esc(r.date)}${r.done ? ' · Finalizada' : ''}</strong>
           </div>`).join('')}
-      </div>`);
+      </div>`, 'parche-circ-ficha');
   }
 
-  // Captura antes que app.js: en las tarjetas de circuitos (vigentes o históricas),
-  // si el circuito está en el calendario 2026, se usa la ficha coherente con ese calendario.
   document.addEventListener('click', e => {
     const c = e.target.closest('[data-circ]');
     if (!c) return;
@@ -250,6 +292,59 @@
     e.stopImmediatePropagation();
     openCircuitVigente(id);
   }, true);
+
+  /* ---------- Trazado en las tarjetas de carreras (Calendario e Inicio) ---------- */
+
+  // Copia el SVG del trazado desde la pestaña Circuitos (ya dibujada)
+  function trackSvgFor(circuitId) {
+    if (!circuitId) return '';
+    const el = Array.from(document.querySelectorAll('#circGrid [data-circ]'))
+      .find(x => x.dataset.circ === circuitId);
+    const svg = el ? el.querySelector('svg') : null;
+    if (!svg) return '';
+    const copy = svg.cloneNode(true);
+    copy.removeAttribute('width');
+    copy.removeAttribute('height');
+    copy.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    return copy.outerHTML;
+  }
+
+  function addTracksToCalendar() {
+    const grid = document.getElementById('calGrid');
+    if (!grid) return;
+    const races = getRaces();
+    grid.querySelectorAll('[data-race]').forEach(card => {
+      if (card.querySelector('.cal-track')) return;
+      const race = races.find(r => r.id === card.dataset.race);
+      if (!race || !race.circuitId) return;
+      const svg = trackSvgFor(race.circuitId);
+      if (!svg) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'cal-track';
+      wrap.innerHTML = svg;
+      // Va después del número de ronda y el nombre, antes del pie de la tarjeta
+      const foot = card.querySelector('.foot');
+      if (foot) card.insertBefore(wrap, foot);
+      else card.appendChild(wrap);
+    });
+  }
+
+  function addTracksToUpcoming() {
+    const list = document.getElementById('upList');
+    if (!list) return;
+    const races = getRaces().filter(r => !r.done);
+    list.querySelectorAll('[data-race]').forEach(item => {
+      if (item.querySelector('.up-track')) return;
+      const race = races.find(r => r.id === item.dataset.race);
+      if (!race || !race.circuitId) return;
+      const svg = trackSvgFor(race.circuitId);
+      if (!svg) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'up-track';
+      wrap.innerHTML = `<div class="up-svg">${svg}</div><small>${esc(race.circuit || race.place || '')}</small>`;
+      item.appendChild(wrap);
+    });
+  }
 
   /* ---------- Columna derecha: Constructores arriba, Pilotos con chances debajo ---------- */
 
@@ -362,13 +457,16 @@
 
   /* ---------- Fichas ---------- */
 
-  function openModal(html) {
+  function openModal(html, extraClass) {
     const m = $('#modal'), b = $('#mBody');
     if (!m || !b) return;
     b.innerHTML = html;
+    const panel = m.querySelector('.panel-m');
+    if (panel) {
+      panel.className = 'glass panel-m' + (extraClass ? ' ' + extraClass : '');
+    }
     m.classList.add('open');
     document.body.style.overflow = 'hidden';
-    const panel = m.querySelector('.panel-m');
     if (panel) panel.scrollTop = 0;
   }
 
@@ -486,25 +584,10 @@
 
   /* ---------- Botón "subir" (solo en la página) ---------- */
 
-  function injectTopStyles() {
-    if ($('#parcheTopStyle')) return;
-    const st = document.createElement('style');
-    st.id = 'parcheTopStyle';
-    st.textContent = `
-      .pt-btn{position:fixed;right:18px;bottom:22px;z-index:55;width:48px;height:48px;border-radius:50%;
-        border:1px solid rgba(225,6,0,.6);background:var(--red,#e10600);color:#fff;font-size:22px;line-height:1;
-        cursor:pointer;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.45);
-        opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .25s ease,transform .25s ease}
-      .pt-btn.show{opacity:1;transform:none;pointer-events:auto}
-      .pt-btn:hover{filter:brightness(1.15)}
-    `;
-    document.head.appendChild(st);
-  }
-
   let topBtn = null;
 
   function ensureTopButton() {
-    injectTopStyles();
+    injectStyles();
     if (topBtn) return;
     topBtn = document.createElement('button');
     topBtn.className = 'pt-btn';
@@ -551,6 +634,8 @@
       renderTeams();
       renderCircuits();
       renderContenders();
+      addTracksToCalendar();
+      addTracksToUpcoming();
       checkHistoryLoad();
       checkMotores();
     } catch (err) {
