@@ -1,19 +1,68 @@
 /* =====================================================
    parche.js · fOnefan
-   Restaura, sin tocar app.js:
-   - Pilotos, escuderías y circuitos (si la sección quedó vacía)
-   - Columna derecha: Constructores arriba y, debajo, Pilotos con chances
-   - Horarios en Argentina para carreras próximas
-   - Fichas de circuitos (vigentes e históricos) coherentes con el calendario
-   - Fichas de circuito acomodadas para celular
-   - Trazado del circuito en las tarjetas de Calendario y en Próximas carreras
-   - Reemplaza los mensajes "requieren conexión a la API"
-   - Botón "subir" en la página (no dentro de las fichas)
-   - Aviso si la lista histórica tarda o no carga
-   - Aviso si no carga la foto de motoristas
+   - Caché de la API Jolpi (historia más rápida desde la 2.ª carga)
+   - Resto de mejoras de la página (ver versión anterior)
    ===================================================== */
 (function () {
   'use strict';
+
+  /* ---------- Caché de la API histórica ---------- */
+
+  const CACHE_PREFIX = 'fo-api:';
+  const DAY = 24 * 60 * 60 * 1000;
+  const SEASON_NOW = new Date().getFullYear();
+
+  // Temporada en curso: caché corta. Temporadas pasadas: caché larga.
+  function ttlFor(url) {
+    const m = url.match(/\/ergast\/f1\/(\d{4})\//);
+    if (m && +m[1] < SEASON_NOW) return 7 * DAY;
+    return 10 * 60 * 1000;
+  }
+
+  function readCache(key) {
+    try {
+      const raw = localStorage.getItem(CACHE_PREFIX + key);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (Date.now() > obj.exp) return null;
+      return obj.body;
+    } catch (e) { return null; }
+  }
+
+  function writeCache(key, body, ttl) {
+    try {
+      localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ exp: Date.now() + ttl, body }));
+    } catch (e) { /* cuota llena: seguimos sin caché */ }
+  }
+
+  const realFetch = window.fetch.bind(window);
+
+  window.fetch = function (input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const method = (init && init.method) || (input && input.method) || 'GET';
+    if (method !== 'GET' || url.indexOf('api.jolpi.ca/ergast/f1/') === -1) {
+      return realFetch(input, init);
+    }
+
+    const key = url;
+    const cached = readCache(key);
+    if (cached) {
+      return Promise.resolve(new Response(JSON.stringify(cached), {
+        status: 200, headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    return realFetch(input, init).then(res => {
+      if (res.ok) {
+        res.clone().json()
+          .then(body => writeCache(key, body, ttlFor(url)))
+          .catch(() => {});
+      }
+      return res;
+    });
+  };
+
+  /* ---------- Resto de la página ---------- */
 
   const $ = (s, r = document) => r.querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -26,10 +75,8 @@
   const MSG_API = /requieren conexi[oó]n a la API/i;
 
   const CARDS = { drv: [], team: [], race: [] };
-  const WAIT_TICKS = 3; // ~7,5 s con el intervalo de 2,5 s
+  const WAIT_TICKS = 3;
   const waitCount = { drv: 0, team: 0, circ: 0 };
-
-  /* ---------- Estilos propios ---------- */
 
   function injectStyles() {
     if ($('#parcheStyle')) return;
@@ -42,15 +89,12 @@
         opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .25s ease,transform .25s ease}
       .pt-btn.show{opacity:1;transform:none;pointer-events:auto}
       .pt-btn:hover{filter:brightness(1.15)}
-
       .parche-circ-ficha .m-title{font-size:clamp(28px,8vw,40px);line-height:1;word-break:break-word;margin:8px 0 18px}
       .parche-circ-ficha .box{padding:14px}
       .parche-circ-ficha .box h4{font-size:12px;margin-bottom:8px}
       .parche-circ-ficha .line{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 0}
       .parche-circ-ficha .line span{font-size:13px;color:var(--muted)}
       .parche-circ-ficha .line strong{font-size:15px;white-space:normal;text-align:left;overflow-wrap:anywhere}
-
-      /* Trazado dentro de las tarjetas de carreras próximas */
       .cal-track{display:flex;justify-content:center;align-items:center;margin:10px 0 2px;height:110px}
       .cal-track svg{width:100%;height:100%;max-width:180px;overflow:visible}
       .cal-track path{fill:none !important;stroke:var(--red);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
@@ -59,7 +103,6 @@
       .up-track .up-svg svg{width:100%;height:100%;overflow:visible}
       .up-track .up-svg path{fill:none !important;stroke:var(--red);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
       .up-track small{color:var(--muted);font-size:12px}
-
       @media (max-width:640px){
         .modal .panel-m{padding:20px 16px;max-height:92vh}
         .parche-circ-ficha .m-title{font-size:30px}
@@ -71,8 +114,6 @@
     `;
     document.head.appendChild(st);
   }
-
-  /* ---------- Datos ---------- */
 
   function getTeams() {
     const live = LIVE().teams;
@@ -120,8 +161,6 @@
     }));
   }
 
-  /* ---------- Imágenes ---------- */
-
   function logoSrc(teamName) {
     if (typeof a0_0x415557 !== 'function') return '';
     const f = a0_0x415557(teamName);
@@ -138,14 +177,11 @@
     ? `<img class="${cls}" src="${esc(src)}" alt="" loading="lazy" onerror="this.style.display='none'">`
     : '';
 
-  /* ---------- Render de secciones vacías ---------- */
-
   function renderDrivers() {
     const grid = $('#drvGrid');
     const tab = $('#drvTabs .chip.on');
     if (!grid || (tab && tab.dataset.dt !== 'act')) return;
     if (grid.querySelector('.dcard')) return;
-
     const teams = getTeams();
     const list = getDrivers().sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
     CARDS.drv = list;
@@ -170,7 +206,6 @@
     const tab = $('#teamTabs .chip.on');
     if (!grid || (tab && tab.dataset.tt !== 'act')) return;
     if (grid.querySelector('.dcard')) return;
-
     const list = getTeams().sort((a, b) => b.pts - a.pts);
     CARDS.team = list;
     grid.innerHTML = list.map((t, i) => {
@@ -187,8 +222,6 @@
     }).join('');
   }
 
-  /* ---------- Mensajes "requieren conexión a la API": se quitan ---------- */
-
   function quitarMensajesAPI() {
     document.querySelectorAll('#drvStatus, #teamStatus, #drvTable, #teamTable, #drvGrid, #teamGrid, #circGrid').forEach(el => {
       if (MSG_API.test(el.textContent || '')) {
@@ -200,8 +233,6 @@
       if (MSG_API.test(p.textContent || '')) p.remove();
     });
   }
-
-  /* ---------- Aviso si la lista histórica tarda o no carga ---------- */
 
   function avisoHTML(id) {
     return `
@@ -227,7 +258,6 @@
       if (!grid || !tab || tab.dataset[c.tabAttr] !== 'hist') { waitCount[c.key] = 0; return; }
       if (grid.querySelector('.parche-aviso')) return;
       if (grid.children.length > 0) { waitCount[c.key] = 0; return; }
-
       waitCount[c.key]++;
       if (waitCount[c.key] < WAIT_TICKS) return;
       grid.innerHTML = avisoHTML(c.key);
@@ -238,8 +268,6 @@
     const b = e.target.closest('[data-parche-recargar]');
     if (b) location.reload();
   });
-
-  /* ---------- Circuitos ---------- */
 
   function renderCircuits() {
     const grid = $('#circGrid');
@@ -264,7 +292,6 @@
     const first = races[0];
     const next = races.find(r => !r.done);
     const estado = next ? `Vigente · próxima ronda ${pad(next.round)}` : 'Vigente · temporada 2026 disputada';
-
     openModal(`
       <span class="eyebrow">Circuito · Vigente 2026</span>
       <h3 class="display m-title">${esc(first.circuit || first.name)}</h3>
@@ -286,16 +313,12 @@
     const c = e.target.closest('[data-circ]');
     if (!c) return;
     const id = c.dataset.circ;
-    const vigente = getRaces().some(r => r.circuitId === id);
-    if (!vigente) return;
+    if (!getRaces().some(r => r.circuitId === id)) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     openCircuitVigente(id);
   }, true);
 
-  /* ---------- Trazado en las tarjetas de carreras (Calendario e Inicio) ---------- */
-
-  // Copia el SVG del trazado desde la pestaña Circuitos (ya dibujada)
   function trackSvgFor(circuitId) {
     if (!circuitId) return '';
     const el = Array.from(document.querySelectorAll('#circGrid [data-circ]'))
@@ -322,7 +345,6 @@
       const wrap = document.createElement('div');
       wrap.className = 'cal-track';
       wrap.innerHTML = svg;
-      // Va después del número de ronda y el nombre, antes del pie de la tarjeta
       const foot = card.querySelector('.foot');
       if (foot) card.insertBefore(wrap, foot);
       else card.appendChild(wrap);
@@ -346,8 +368,6 @@
     });
   }
 
-  /* ---------- Columna derecha: Constructores arriba, Pilotos con chances debajo ---------- */
-
   function ensureGridLayout(two) {
     if (two.dataset.parche === '1') return;
     two.dataset.parche = '1';
@@ -359,7 +379,6 @@
     const teamTable = $('#teamTable');
     const teamPanel = teamTable ? teamTable.closest('.panel') : null;
     if (!teamPanel) return null;
-
     let right = $('#parcheRight');
     if (!right) {
       right = document.createElement('div');
@@ -385,7 +404,6 @@
     const two = $('#v-standings .two');
     if (!two) return;
     ensureGridLayout(two);
-
     const right = ensureRightColumn(two);
     if (!right) return;
     purgeStrayChances(right);
@@ -455,16 +473,12 @@
     box.innerHTML = head + `<div class="ct-list">${cards}</div>`;
   }
 
-  /* ---------- Fichas ---------- */
-
   function openModal(html, extraClass) {
     const m = $('#modal'), b = $('#mBody');
     if (!m || !b) return;
     b.innerHTML = html;
     const panel = m.querySelector('.panel-m');
-    if (panel) {
-      panel.className = 'glass panel-m' + (extraClass ? ' ' + extraClass : '');
-    }
+    if (panel) panel.className = 'glass panel-m' + (extraClass ? ' ' + extraClass : '');
     m.classList.add('open');
     document.body.style.overflow = 'hidden';
     if (panel) panel.scrollTop = 0;
@@ -485,14 +499,8 @@
   }
 
   function horariosHTML(race) {
-    const ses = (race.sessions || [])
-      .slice()
-      .sort((a, b) => (Date.parse(a.when) || 0) - (Date.parse(b.when) || 0));
-
-    if (!ses.length) {
-      return '<p class="muted" style="font-size:14px">Horarios no disponibles todavía.</p>';
-    }
-
+    const ses = (race.sessions || []).slice().sort((a, b) => (Date.parse(a.when) || 0) - (Date.parse(b.when) || 0));
+    if (!ses.length) return '<p class="muted" style="font-size:14px">Horarios no disponibles todavía.</p>';
     return ses.map(s => {
       const label = esc(etiquetaSesion(s.name));
       if (s.tbc || !s.when || isNaN(Date.parse(s.when))) {
@@ -582,8 +590,6 @@
     }
   });
 
-  /* ---------- Botón "subir" (solo en la página) ---------- */
-
   let topBtn = null;
 
   function ensureTopButton() {
@@ -607,8 +613,6 @@
     topBtn.classList.toggle('show', !open && window.scrollY > 400);
   }
 
-  /* ---------- Foto de motoristas: aviso si no carga ---------- */
-
   function checkMotores() {
     document.querySelectorAll('img.motores-img').forEach(img => {
       if (img.dataset.chk) return;
@@ -624,8 +628,6 @@
       setTimeout(() => { if (img.complete && img.naturalWidth === 0) fail(); }, 4000);
     });
   }
-
-  /* ---------- Bucle ---------- */
 
   function tick() {
     try {

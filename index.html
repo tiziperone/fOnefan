@@ -8,6 +8,45 @@
 <meta http-equiv="Expires" content="0">
 <title>fOnefan</title>
 
+<script>
+/* Caché de la API histórica: se instala antes que app.js para interceptar sus pedidos */
+(function () {
+  'use strict';
+  const PREFIX = 'fo-api:';
+  const DAY = 86400000;
+  const YEAR = new Date().getFullYear();
+  const ttl = url => {
+    const m = url.match(/\/ergast\/f1\/(\d{4})\//);
+    return m && +m[1] < YEAR ? 7 * DAY : 10 * 60 * 1000;
+  };
+  const realFetch = window.fetch.bind(window);
+  window.fetch = function (input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const method = (init && init.method) || (input && input.method) || 'GET';
+    if (method !== 'GET' || url.indexOf('api.jolpi.ca/ergast/f1/') === -1) return realFetch(input, init);
+    try {
+      const raw = localStorage.getItem(PREFIX + url);
+      if (raw) {
+        const o = JSON.parse(raw);
+        if (Date.now() < o.exp) {
+          return Promise.resolve(new Response(JSON.stringify(o.body), {
+            status: 200, headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+      }
+    } catch (e) {}
+    return realFetch(input, init).then(res => {
+      if (res.ok) {
+        res.clone().json().then(body => {
+          try { localStorage.setItem(PREFIX + url, JSON.stringify({ exp: Date.now() + ttl(url), body })); } catch (e) {}
+        }).catch(() => {});
+      }
+      return res;
+    });
+  };
+})();
+</script>
+
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#06060a">
 <link rel="icon" type="image/png" sizes="192x192" href="Fotos/icon-192.png">
@@ -228,6 +267,22 @@ img{max-width:100%}
   .hero .cta{flex-wrap:wrap}
   .hero .cta .btn{flex:1 1 140px;white-space:normal;text-align:center}
 }
+
+/* CAMPEONATO: en escritorio, Pilotos a la izquierda y Constructores + Chances a la derecha */
+@media (min-width: 981px){
+  #v-standings .two{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:22px;
+    align-items:start;
+  }
+  #v-standings .two > .panel:first-child{grid-column:1;grid-row:1}
+  #v-standings .two > #parcheRight{
+    grid-column:2;grid-row:1;
+    display:flex;flex-direction:column;gap:22px;min-width:0;
+  }
+  #v-standings #parcheChances{margin:0}
+}
 </style>
 </head>
 <body>
@@ -257,8 +312,8 @@ img{max-width:100%}
     <div class="tabs">
       <button class="tab active" data-view="home">Inicio</button>
       <button class="tab" data-view="standings">Campeonato</button>
-      <button class="tab" data-view="circuits">Circuitos</button>
       <button class="tab" data-view="pilotos">Pilotos</button>
+      <button class="tab" data-view="circuits">Circuitos</button>
       <button class="tab" data-view="escuderias">Escuderías</button>
       <button class="tab" data-view="monoplaza">Monoplaza</button>
       <button class="tab" data-view="records">Récords</button>
