@@ -1914,45 +1914,6 @@ window.addEventListener('load', function () {
   F.innerHTML = '<p class="pie-linea">fOnefan • Plataforma de información sobre Fórmula 1</p>';
 });
 </script>
-<script src="parche.js?v=20261015_6"></script>
-<script>
-/* PARCHE DE REPARACIÓN: Fallback local para Estadísticas de Pilotos e Historial de Circuitos */
-(function() {
-  'use strict';
-
-  // 1. Desbloqueo de estadísticas en la modal de piloto si la API Ergast falla
-  const origFetch = window.fetch;
-  window.fetch = function(input, init) {
-    return origFetch(input, init).catch(err => {
-      console.warn('[fOnefan Fix] Fetch interceptado por fallo de red/API:', input);
-      return new Response(JSON.stringify({ MRData: { CircuitTable: { Circuits: [] }, RaceTable: { Races: [] } } }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    });
-  };
-
-  // 2. Parche para la vista de Circuitos Históricos (reutiliza el calendario si Ergast da error)
-  document.addEventListener('DOMContentLoaded', () => {
-    const circsView = document.getElementById('v-circuits');
-    if (!circsView) return;
-
-    circsView.addEventListener('click', e => {
-      const btn = e.target.closest('button');
-      if (btn && btn.textContent.toLowerCase().includes('historial')) {
-        setTimeout(() => {
-          const grid = document.getElementById('circGrid');
-          if (grid && grid.textContent.includes('No se pudo cargar')) {
-            if (typeof a0_0x484245 !== 'undefined' && a0_0x484245.calendar) {
-              // Si falla la API histórica, dibuja de inmediato la lista de circuitos locales
-              if (typeof a0_0x50272c === 'function') a0_0x50272c();
-            }
-          }
-        }, 600);
-      }
-    });
-  });
-})();
-</script>
+<script src="parche.js?v=20261015_8"></script>
 </body>
 </html>
