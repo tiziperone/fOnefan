@@ -559,6 +559,11 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
 
   // Reemplaza la precarga de toda la historia que hacía app.js al iniciar.
   window.a0_0x521c52 = async function () {
+    if (HOF_PILOTOS_FIJO && HOF_PILOTOS_FIJO.length) {
+      a0_0x484245.champs = HOF_PILOTOS_FIJO;
+      a0_0x484245.champsDone = true;
+      return HOF_PILOTOS_FIJO;
+    }
     const champs = await cargarCampeonesPilotos();
     a0_0x484245.champs = champs;
     a0_0x484245.champsDone = true;
