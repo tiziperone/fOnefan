@@ -70,11 +70,7 @@
     });
   };
 
-  /* ---------- Trazados de Las Vegas y Caesars Palace ----------
-     - El circuito de Las Vegas que está en el calendario 2026 usa el trazado
-       actual del Strip (las-vegas-1).
-     - Los circuitos de Las Vegas que ya no están en el calendario usan el
-       trazado de Caesars Palace. */
+  /* ---------- Trazados de Las Vegas y Caesars Palace ---------- */
 
   const VEGAS_ID = 'las-vegas-1';
   const VEGAS_ACTUAL = { lat: 36.175, lon: -115.1364 };   // entrada las-vegas-1
@@ -124,8 +120,17 @@
   const MSG_API = /requieren conexi[oó]n a la API/i;
 
   const CARDS = { drv: [], team: [] };
-  const WAIT_TICKS = 3;
+  const WAIT_TICKS = 1;
   const waitCount = { drv: 0, team: 0, circ: 0 };
+
+  const NUM_MAP_2026 = {
+    antonelli: '12', russell: '63', hamilton: '44', leclerc: '16',
+    norris: '1', verstappen: '3', piastri: '81', hadjar: '6',
+    lawson: '30', lindblad: '41', gasly: '10', colapinto: '43',
+    bearman: '87', ocon: '31', bortoleto: '5', hulkenberg: '27',
+    albon: '23', sainz: '55', alonso: '14', stroll: '18',
+    bottas: '77', perez: '11'
+  };
 
   function injectStyles() {
     if ($('#parcheStyle')) return;
@@ -182,16 +187,13 @@
       .cal-track svg{width:100%;height:100%;max-width:180px;overflow:visible}
       .cal-track path{fill:none !important;stroke:var(--red);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
 
-      /* ===== Próximas carreras (Inicio) ===== */
-      .up{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 12px}
-      .up>span{min-width:0;overflow-wrap:anywhere;line-height:1.3}
-      .up>small{white-space:nowrap}
-      .up .up-track{grid-column:1/-1;display:flex;align-items:center;gap:14px;margin:2px 0 0;
-        padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid var(--line)}
-      .up .up-track .up-svg{width:88px;height:64px;flex-shrink:0;display:grid;place-items:center}
+      /* ===== Próximas carreras (Diseño horizontal estilizado) ===== */
+      .up{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px 16px;padding:12px 18px}
+      .up .up-track{display:flex;align-items:center;gap:8px;margin:0;padding:0;background:none;border:none}
+      .up .up-track .up-svg{width:46px;height:32px;flex-shrink:0;display:grid;place-items:center}
       .up .up-track .up-svg svg{width:100%;height:100%;overflow:visible}
-      .up .up-track .up-svg path{fill:none !important;stroke:var(--red);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
-      .up .up-track small{color:var(--muted);font-size:13px;line-height:1.35;min-width:0;overflow-wrap:anywhere}
+      .up .up-track .up-svg path{fill:none !important;stroke:var(--red,#e10600);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+      .up .up-track small{display:none}
 
       /* ===== Campeonato: pequeños retoques generales ===== */
       #v-standings .srow:nth-child(-n+3) .pos{color:var(--red)}
@@ -255,15 +257,12 @@
         font-family:var(--f-disp);font-weight:900;font-style:italic;font-size:19px;line-height:1.2}
       .num-faq summary::-webkit-details-marker{display:none}
       .num-faq summary::after{content:"+";position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:26px;color:var(--red);font-style:normal}
-      .num-faq[open] summary::after{content:"\\2013"}
+      .num-faq[open] summary::after{content:"2013"}
       .num-faq .info-text{margin:0;padding:0 20px 18px}
 
       @media (max-width:640px){
-        /* Próximas carreras */
-        .up{grid-template-columns:1fr;padding:12px;font-size:14px;gap:6px}
-        .up>small{white-space:normal;font-size:13px}
-        .up .up-track{padding:10px;gap:12px}
-        .up .up-track .up-svg{width:96px;height:68px}
+        .up{padding:10px 14px;gap:10px}
+        .up .up-track .up-svg{width:36px;height:26px}
         .cal-track{height:90px}
 
         /* Tabla de posiciones */
@@ -304,7 +303,6 @@
       @media (max-width:380px){
         #v-standings .srow{grid-template-columns:24px minmax(0,1fr) auto;gap:8px}
         #v-standings .who b{font-size:14px}
-        .up .up-track .up-svg{width:80px;height:58px}
       }
     `;
     document.head.appendChild(st);
@@ -328,7 +326,7 @@
     if (live && live.length) {
       return live.map(d => ({
         id: d.id, name: d.name, team: d.team, teamName: d.teamName || '',
-        pts: d.basePts || 0, code: d.code || '', num: d.num || ''
+        pts: d.basePts != null ? d.basePts : (d.pts || 0), code: d.code || '', num: d.num || d.driver_number || ''
       }));
     }
     if (typeof DRIVERS === 'undefined') return [];
@@ -378,17 +376,17 @@
     const grid = $('#drvGrid');
     const tab = $('#drvTabs .chip.on');
     if (!grid || (tab && tab.dataset.dt !== 'act')) return;
-    if (grid.querySelector('.dcard')) return;
     const teams = getTeams();
     const list = getDrivers().sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
     CARDS.drv = list;
     grid.innerHTML = list.map((d, i) => {
       const col = (teams.find(t => t.id === d.team) || {}).color || '#e10600';
+      const realNum = d.num || NUM_MAP_2026[d.id] || pad(i + 1);
       return `
-        <article class="glass dcard parche-card" data-k="drv" data-i="${i}" style="--c:${col}">
+        <article class="glass dcard parche-card" data-k="drv" data-i="${i}" data-drv-name="${esc(d.name)}" style="--c:${col}">
           <div class="dc-hel">${imgTag(helmSrc(d), 'helmet-img')}</div>
           <div class="dhead">
-            <span class="dnum">${pad(i + 1)}</span>
+            <span class="dnum">${pad(realNum)}</span>
             <span class="dcode">${esc(d.code || d.id.slice(0, 3).toUpperCase())}</span>
           </div>
           <h3>${esc(d.name)}</h3>
@@ -402,13 +400,12 @@
     const grid = $('#teamGrid');
     const tab = $('#teamTabs .chip.on');
     if (!grid || (tab && tab.dataset.tt !== 'act')) return;
-    if (grid.querySelector('.dcard')) return;
     const list = getTeams().sort((a, b) => b.pts - a.pts);
     CARDS.team = list;
     grid.innerHTML = list.map((t, i) => {
       const src = logoSrc(t.name);
       return `
-        <article class="glass dcard parche-card" data-k="team" data-i="${i}" style="--c:${t.color}">
+        <article class="glass dcard parche-card" data-k="team" data-i="${i}" data-team-name="${esc(t.name)}" style="--c:${t.color}">
           <div class="dc-hel team-hel">
             ${src ? imgTag(src, 'team-logo') : `<span class="tc-name-only">${esc(t.name)}</span>`}
           </div>
@@ -419,9 +416,7 @@
     }).join('');
   }
 
-  /* ---------- Salón de la Fama de escuderías ----------
-     Campeonatos de CONSTRUCTORES (1958–2025). Los conteos se calculan
-     desde esta lista, no se escriben a mano. */
+  /* ---------- Salón de la Fama de escuderías ---------- */
 
   const HOF_CAMPEONES = [
     [1958,'Vanwall'],[1959,'Cooper'],[1960,'Cooper'],[1961,'Ferrari'],[1962,'BRM'],
@@ -511,7 +506,6 @@
   }
 
   function watchHof() {
-    // Captura antes que app.js: en la pestaña "Salón" no corre su función vieja
     window.addEventListener('click', e => {
       const chip = e.target.closest && e.target.closest('#teamTabs .chip');
       if (!chip || chip.dataset.tt !== 'hof') return;
@@ -523,7 +517,6 @@
       ensureHof();
     }, true);
 
-    // Si app.js vuelve a escribir la grilla mientras el Salón está activo, lo reemplazamos
     const grid = $('#teamGrid');
     if (grid && !grid.dataset.hofWatch) {
       grid.dataset.hofWatch = '1';
@@ -578,9 +571,6 @@
     if (b) location.reload();
   });
 
-  /* ---------- Circuitos vigentes ----------
-     Se usan las tarjetas y la ficha completas de app.js. Solo se asegura que
-     se rendericen si la cuadrícula quedó vacía. */
   function ensureCircuits() {
     const grid = $('#circGrid');
     if (!grid || grid.children.length) return;
@@ -591,7 +581,6 @@
     a0_0x50272c();
   }
 
-  /* ---------- Trazado de Las Vegas en la tarjeta de circuitos vigentes ---------- */
   function fixVegasCard() {
     const card = document.querySelector('#circGrid .circ[data-circ="las-vegas-1"]');
     if (!card || card.dataset.vfix === '1') return;
@@ -603,11 +592,6 @@
     card.dataset.vfix = '1';
   }
 
-  /* ---------- Historial: trazados repetidos ----------
-     Si dos circuitos distintos terminan con exactamente el mismo dibujo, se
-     queda con él primero el que está en el calendario 2026, luego Caesars
-     Palace, y después el más cercano al trazado. Los otros muestran
-     "Trazado no disponible". Solo corre cuando cambió algo en la grilla. */
   function coordsDe(id) {
     const hist = (typeof a0_0x4722c6 !== 'undefined' && a0_0x4722c6.hist) || [];
     let c = hist.find(x => x.id === id);
@@ -682,7 +666,6 @@
     return s.outerHTML;
   }
 
-  // Las carreras del calendario son siempre circuitos vigentes.
   function trackEntryFor(race) {
     const list = (typeof a0_0xcaf996 !== 'undefined') ? a0_0xcaf996 : [];
     if (esVegasLike(race.circuitId)) return list.find(c => c.id === VEGAS_ID) || null;
@@ -691,7 +674,6 @@
     return a0_0x7fb4d2(race.lat, race.lon);
   }
 
-  // Devuelve { key, svg } o null si todavía no está listo (se reintenta en el próximo ciclo).
   function trackFor(race) {
     if (!race || !race.circuitId) return null;
     const entry = trackEntryFor(race);
@@ -749,7 +731,7 @@
         item.appendChild(wrap);
       }
       wrap.dataset.tk = tr.key;
-      wrap.innerHTML = `<div class="up-svg">${tr.svg}</div><small>${esc(race.circuit || race.place || '')}</small>`;
+      wrap.innerHTML = `<div class="up-svg">${tr.svg}</div>`;
     });
   }
 
@@ -927,46 +909,25 @@
   document.addEventListener('click', e => {
     const c = e.target.closest('.parche-card');
     if (!c) return;
-    const i = +c.dataset.i;
     const k = c.dataset.k;
 
     if (k === 'drv') {
-      const d = CARDS.drv[i];
-      if (!d) return;
-      openModal(`
-        <span class="eyebrow">Piloto · Temporada 2026</span>
-        <h3 class="display m-title">${esc(d.name)}</h3>
-        <div class="m-grid">
-          <div class="stat"><span>Puntos 2026</span><strong>${d.pts}</strong></div>
-          <div class="stat"><span>Posición</span><strong>${i + 1}º</strong></div>
-          <div class="stat"><span>Escudería</span><strong>${esc(d.teamName || '—')}</strong></div>
-          <div class="stat"><span>Número</span><strong>${esc(d.num || '—')}</strong></div>
-        </div>`);
-    }
-
-    if (k === 'team') {
-      const t = CARDS.team[i];
-      if (!t) return;
-      const drv = getDrivers().filter(d => d.team === t.id);
-      const src = logoSrc(t.name);
-      openModal(`
-        <span class="eyebrow">Escudería · Temporada 2026</span>
-        <h3 class="display m-title">${esc(t.name)}</h3>
-        ${src ? `<div class="tc-modal-logo"><img class="team-logo big" src="${esc(src)}" alt=""></div>` : ''}
-        <div class="m-grid">
-          <div class="stat"><span>Puntos 2026</span><strong>${t.pts}</strong></div>
-          <div class="stat"><span>Posición</span><strong>${i + 1}º</strong></div>
-        </div>
-        <div class="box" style="margin-top:18px">
-          <h4>🏎️ Pilotos 2026</h4>
-          ${drv.map(d => `<div class="line"><span>${esc(d.name)}</span><strong>${d.pts} pts</strong></div>`).join('') || '<p class="muted">Sin pilotos cargados.</p>'}
-        </div>`);
+      const name = c.dataset.drvName;
+      if (name && typeof window.a0_0x68b92b === 'function') {
+        window.a0_0x68b92b(name);
+      } else if (name && typeof window.a0_0x243121 === 'function') {
+        window.a0_0x243121(name);
+      }
+    } else if (k === 'team') {
+      const teamName = c.dataset.teamName;
+      if (teamName && typeof window.a0_0x243121 === 'function') {
+        window.a0_0x243121(teamName);
+      }
     }
   });
 
   /* ---------- Info · Números de pilotos ---------- */
 
-  // Números en uso en la temporada 2026: número → [piloto, código, escudería]
   const NUM_USO = {
     1:  ['Lando Norris', 'NOR', 'McLaren'],
     3:  ['Max Verstappen', 'VER', 'Red Bull'],
@@ -980,7 +941,7 @@
     18: ['Lance Stroll', 'STR', 'Aston Martin'],
     23: ['Alexander Albon', 'ALB', 'Williams'],
     27: ['Nico Hülkenberg', 'HUL', 'Audi'],
-    30: ['Liam Lawson', 'LAW', 'Racing Bulls'],
+    30: ['Liam Lawson', 'Racing Bulls'],
     31: ['Esteban Ocon', 'OCO', 'Haas'],
     41: ['Arvid Lindblad', 'LIN', 'Racing Bulls'],
     43: ['Franco Colapinto', 'COL', 'Alpine'],
@@ -992,7 +953,6 @@
     87: ['Oliver Bearman', 'BEA', 'Haas']
   };
 
-  // Reservados: sin piloto activo, pero congelados por el reglamento
   const NUM_RES = {
     4:  'Reservado: es el número permanente de Lando Norris, que este año corre con el 1 como campeón.',
     2:  'Reservado: lo usó Logan Sargeant por última vez en 2024. Sigue congelado por el reglamento.',
@@ -1129,7 +1089,6 @@
 
   try { addNumbersSection(); } catch (err) { console.warn('[parche fOnefan] números', err); }
 
-  // Mapa de números: detalle al tocar y filtros
   document.addEventListener('click', e => {
     const cell = e.target.closest('.num-cell');
     if (cell) {
@@ -1151,46 +1110,31 @@
     }
   });
 
-  /* ---------- Corrección de contención de trazados ----------
-     Los SVG de los trazados se salían de su caja y se encimaban con
-     las tarjetas. Acá se fija el tamaño de la caja y el SVG queda
-     recortado dentro de ella. */
+  /* ---------- Corrección de contención de trazados ---------- */
   function injectTrackFix() {
     if ($('#parcheTrackFix')) return;
     const st = document.createElement('style');
     st.id = 'parcheTrackFix';
     st.textContent = `
-      /* Próximas carreras (Inicio) */
-      #upList .up{position:relative;overflow:hidden}
       #upList .up .up-track{
-        grid-column:1/-1;box-sizing:border-box;height:84px;
-        padding:8px 12px;overflow:hidden;contain:paint;
-        display:flex;align-items:center;gap:14px;
+        box-sizing:border-box;
+        padding:0;overflow:hidden;
+        display:inline-flex;align-items:center;
       }
       #upList .up .up-track .up-svg{
-        position:relative;flex:0 0 64px;width:64px;height:64px;
-        overflow:hidden;display:block;
+        position:relative;width:44px;height:28px;
+        overflow:hidden;display:grid;place-items:center;
       }
       #upList .up .up-track .up-svg svg{
-        position:absolute;inset:0;width:100%;height:100%;
-        overflow:hidden;display:block;
+        width:100%;height:100%;overflow:visible;display:block;
       }
-      #upList .up .up-track small{min-width:0;overflow-wrap:anywhere}
 
-      /* Calendario */
       #calGrid .cal-track{
-        position:relative;height:110px;overflow:hidden;contain:paint;
-        margin:10px 0 2px;display:flex;justify-content:center;align-items:center;
+        position:relative;height:100px;overflow:hidden;
+        margin:8px 0 2px;display:flex;justify-content:center;align-items:center;
       }
       #calGrid .cal-track svg{
-        position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);
-        overflow:hidden;display:block;
-      }
-
-      @media (max-width:640px){
-        #upList .up .up-track{height:76px;padding:6px 10px;gap:10px}
-        #upList .up .up-track .up-svg{flex-basis:56px;width:56px;height:56px}
-        #calGrid .cal-track{height:90px}
+        width:100%;height:100%;max-width:180px;overflow:visible;display:block;
       }
     `;
     document.head.appendChild(st);
