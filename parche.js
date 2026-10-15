@@ -1,5 +1,7 @@
 /* =====================================================
    parche.js · fOnefan
+   - Caché de la API histórica (solo respuestas válidas)
+   - Datos bajo demanda: solo lo que se muestra
    - Trazado correcto de Las Vegas (vigente) y Caesars Palace (histórico)
    - Vista previa de trazados en "Próximas" y calendario calculada directo
    - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
@@ -13,11 +15,99 @@
 (function () {
   'use strict';
 
+  /* ---------- Caché de la API histórica (solo respuestas válidas) ---------- */
+
+  const CACHE_PREFIX = 'fo-api:';
+  const DAY = 24 * 60 * 60 * 1000;
+  const SEASON_NOW = new Date().getFullYear();
+
+  function ttlFor(url) {
+    const m = url.match(/\/ergast\/f1\/(\d{4})\//);
+    if (m && +m[1] < SEASON_NOW) return 7 * DAY;
+    return 10 * 60 * 1000;
+  }
+
+  function esRespuestaValida(body) {
+    return !!(body && body.MRData && typeof body.MRData === 'object');
+  }
+
+  function tieneDatos(body) {
+    const m = body && body.MRData;
+    if (!m) return false;
+    const t = m.StandingsTable || m.RaceTable || m.CircuitTable || m.DriverTable;
+    if (!t) return false;
+    const listas = Object.values(t).find(Array.isArray);
+    return listas ? listas.length > 0 : false;
+  }
+
+  function readCache(key) {
+    try {
+      const raw = localStorage.getItem(CACHE_PREFIX + key);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || Date.now() > obj.exp || !esRespuestaValida(obj.body)) {
+        localStorage.removeItem(CACHE_PREFIX + key);
+        return null;
+      }
+      return obj.body;
+    } catch (e) {
+      try { localStorage.removeItem(CACHE_PREFIX + key); } catch (_) {}
+      return null;
+    }
+  }
+
+  function writeCache(key, body, ttl) {
+    if (!tieneDatos(body)) return;
+    try {
+      localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ exp: Date.now() + ttl, body }));
+    } catch (e) { /* cuota llena: seguimos sin caché */ }
+  }
+
+  // Limpieza: borra entradas viejas o dañadas de versiones anteriores
+  (function limpiarCacheDañada() {
+    try {
+      Object.keys(localStorage)
+        .filter(k => k.startsWith(CACHE_PREFIX))
+        .forEach(k => {
+          try {
+            const obj = JSON.parse(localStorage.getItem(k));
+            if (!obj || Date.now() > obj.exp || !tieneDatos(obj.body)) localStorage.removeItem(k);
+          } catch (e) { localStorage.removeItem(k); }
+        });
+    } catch (e) {}
+  })();
+
+  const realFetch = window.fetch.bind(window);
+
+  window.fetch = function (input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const method = (init && init.method) || (input && input.method) || 'GET';
+    if (method !== 'GET' || url.indexOf('api.jolpi.ca/ergast/f1/') === -1) {
+      return realFetch(input, init);
+    }
+
+    const cached = readCache(url);
+    if (cached) {
+      return Promise.resolve(new Response(JSON.stringify(cached), {
+        status: 200, headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    return realFetch(input, init).then(res => {
+      if (res.ok) {
+        res.clone().json()
+          .then(body => writeCache(url, body, ttlFor(url)))
+          .catch(() => {});
+      }
+      return res;
+    });
+  };
+
   /* ---------- Trazados de Las Vegas y Caesars Palace ---------- */
 
   const VEGAS_ID = 'las-vegas-1';
-  const VEGAS_ACTUAL = { lat: 36.175, lon: -115.1364 };   // entrada las-vegas-1
-  const CAESARS = { lat: 36.1169, lon: -115.175 };         // entrada de Caesars Palace
+  const VEGAS_ACTUAL = { lat: 36.175, lon: -115.1364 };
+  const CAESARS = { lat: 36.1169, lon: -115.175 };
 
   const esCaesarsId = id => /caesar/i.test(String(id || ''));
   const esVegasLike = id => /vegas/i.test(String(id || '')) && !esCaesarsId(id);
@@ -317,7 +407,6 @@
 
   /* ---------- Pilotos y escuderías ----------
      La grilla se redibuja SOLO cuando cambian los datos o la pestaña.
-     Así el clic no cae en un nodo que se reemplaza cada 2,5 s.
      Las tarjetas de piloto usan data-drv, que app.js ya maneja. */
 
   function renderDrivers() {
@@ -375,6 +464,133 @@
         </article>`;
     }).join('');
   }
+
+  /* ---------- Datos bajo demanda: solo lo que se muestra ---------- */
+
+  const sleepP = ms => new Promise(r => setTimeout(r, ms));
+  const careerMap = {};
+  const CARRERA_TTL = 12 * 60 * 60 * 1000;
+
+  // Pedido a la API con reintentos suaves ante 429
+  async function jol(path) {
+    for (let i = 0; i < 4; i++) {
+      try { return await a0_0x182c22(path, 1); }
+      catch (e) { if (i === 3) throw e; await sleepP(2000 * (i + 1)); }
+    }
+  }
+
+  // Estadísticas de carrera de UN piloto (solo cuando se abre su ficha)
+  async function careerStats(id) {
+    const k = 'fo-carrera:' + id;
+    try {
+      const raw = JSON.parse(localStorage.getItem(k) || 'null');
+      if (raw && Date.now() < raw.exp && raw.st) return raw.st;
+    } catch (e) {}
+
+    const races = [];
+    let off = 0, total = Infinity;
+    while (off < total) {
+      const j = await jol(`/drivers/${id}/results.json?limit=100&offset=${off}`);
+      total = +j.MRData.total || 0;
+      const rs = j.MRData.RaceTable.Races || [];
+      if (!rs.length) break;
+      races.push(...rs);
+      off += 100;
+      if (off < total) await sleepP(350);
+    }
+
+    const st = {
+      starts: 0, wins: 0, podiums: 0, poles: 0, fl: 0, pts: 0,
+      first: null, last: null, team: '', teamDate: '', number: '', teams: [],
+      name: id, nat: '', dob: '', code: '', num: ''
+    };
+
+    races.forEach(r => {
+      const res = (r.Results || [])[0];
+      if (!res) return;
+      const d = r.date;
+      st.starts++;
+      if (res.position === '1') st.wins++;
+      if (['1', '2', '3'].includes(res.position)) st.podiums++;
+      if (res.grid === '1') st.poles++;
+      if (res.FastestLap && res.FastestLap.rank === '1') st.fl++;
+      st.pts += +res.points || 0;
+      if (!st.first || d < st.first) st.first = d;
+      if (!st.last || d > st.last) st.last = d;
+
+      const cn = res.Constructor && res.Constructor.name;
+      if (cn && !st.teams.includes(cn)) st.teams.push(cn);
+      if (cn && d >= st.teamDate) { st.teamDate = d; st.team = cn; st.number = res.number || st.number; }
+
+      const dr = res.Driver || {};
+      st.name = [dr.givenName, dr.familyName].filter(Boolean).join(' ') || st.name;
+      st.nat = dr.nationality || st.nat;
+      st.dob = dr.dateOfBirth || st.dob;
+      st.code = dr.code || st.code;
+      st.num = dr.permanentNumber || st.num;
+    });
+
+    try {
+      localStorage.setItem(k, JSON.stringify({ exp: Date.now() + CARRERA_TTL, st }));
+    } catch (e) {}
+    return st;
+  }
+
+  // Campeones de todas las temporadas: una sola llamada
+  async function cargarCampeonesPilotos() {
+    const j = await jol('/driverStandings/1.json?limit=100');
+    const listas = j.MRData.StandingsTable.StandingsLists || [];
+    return listas.map(l => {
+      const s = l.DriverStandings[0];
+      const dr = s.Driver;
+      return {
+        season: +l.season,
+        driverId: dr.driverId,
+        name: [dr.givenName, dr.familyName].filter(Boolean).join(' '),
+        nat: dr.nationality || '',
+        dob: dr.dateOfBirth || '',
+        code: dr.code || '',
+        num: dr.permanentNumber || '',
+        team: (s.Constructors || []).map(c => c.name).join(' / '),
+        points: +s.points || 0,
+        wins: +s.wins || 0
+      };
+    }).sort((a, b) => b.season - a.season);
+  }
+
+  // Reemplaza la precarga de toda la historia que hacía app.js al iniciar
+  window.a0_0x521c52 = async function (cb) {
+    const champs = await cargarCampeonesPilotos();
+    a0_0x484245.champs = champs;
+    a0_0x484245.champsDone = true;
+    if (typeof cb === 'function') cb();
+    return champs;
+  };
+
+  // Ya no se precarga el historial al abrir la pestaña Pilotos
+  window.a0_0x536bd9 = function () {};
+
+  // Ficha de piloto: pide solo a ese piloto
+  window.a0_0x12a8c8 = async function (id) {
+    a0_0x522712 = id;
+    const d = (LIVE().drivers || []).find(x => x.id === id) || {};
+    a0_0x4491d0(`
+      <span class="eyebrow">Piloto</span>
+      <h3 class="display m-title">${esc(d.name || id)}</h3>
+      <div class="box"><p class="muted" style="font-size:13px">Cargando estadísticas de la carrera…</p></div>`);
+
+    try {
+      await Promise.all([
+        careerStats(id).then(st => { careerMap[id] = st; }),
+        a0_0x31cdae(id).catch(() => null)
+      ]);
+      a0_0x4722c6.drv = { list: [], byId: {}, stats: careerMap, info: {} };
+      if (a0_0x522712 === id) a0_0x3f0359('#mBody').innerHTML = a0_0x21906d(id);
+    } catch (err) {
+      console.warn('[fOnefan] carrera de', id, err);
+      if (a0_0x522712 === id) a0_0x3f0359('#mBody').innerHTML = a0_0x21906d(id, true);
+    }
+  };
 
   /* ---------- Salón de la Fama de escuderías ---------- */
 
