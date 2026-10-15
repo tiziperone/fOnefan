@@ -1061,25 +1061,76 @@
     const st = document.createElement('style');
     st.id = 'parcheTrackFix';
     st.textContent = `
+      /* Próximas carreras: el texto ocupa el espacio libre y el trazado tiene columna propia */
+      #upList .up{
+        display:grid !important;
+        grid-template-columns:minmax(0,1fr) 64px !important;
+        align-items:center;
+        column-gap:14px;
+        row-gap:6px;
+        overflow:hidden;
+      }
+      #upList .up > *:not(.up-track){min-width:0;overflow-wrap:anywhere}
       #upList .up .up-track{
+        grid-column:2;
+        grid-row:1 / span 2;
+        display:flex;
+        align-items:center;
+        justify-content:flex-end;
+        margin:0;
+        padding:0;
+        background:none;
+        border:0;
+        overflow:hidden;
         box-sizing:border-box;
-        padding:0;overflow:hidden;
-        display:inline-flex;align-items:center;
       }
       #upList .up .up-track .up-svg{
-        position:relative;width:44px;height:28px;
-        overflow:hidden;display:grid;place-items:center;
+        position:relative;
+        width:56px;
+        height:40px;
+        flex-shrink:0;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        overflow:hidden;
       }
       #upList .up .up-track .up-svg svg{
-        width:100%;height:100%;overflow:visible;display:block;
+        display:block;
+        width:100%;
+        height:100%;
+        max-width:100%;
+        max-height:100%;
+        overflow:visible;
       }
+      #upList .up .up-track .up-svg path{
+        vector-effect:non-scaling-stroke;
+        stroke-width:1.8;
+      }
+      #upList .up .up-track small{display:none}
 
+      /* Calendario: misma idea, caja fija dentro de la tarjeta */
       #calGrid .cal-track{
-        position:relative;height:100px;overflow:hidden;
-        margin:8px 0 2px;display:flex;justify-content:center;align-items:center;
+        position:relative;
+        height:100px;
+        overflow:hidden;
+        margin:8px 0 2px;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        box-sizing:border-box;
       }
       #calGrid .cal-track svg{
-        width:100%;height:100%;max-width:180px;overflow:visible;display:block;
+        width:100%;
+        height:100%;
+        max-width:180px;
+        max-height:100%;
+        overflow:visible;
+        display:block;
+      }
+
+      @media (max-width:640px){
+        #upList .up{grid-template-columns:minmax(0,1fr) 48px !important;column-gap:10px}
+        #upList .up .up-track .up-svg{width:44px;height:32px}
       }
     `;
     document.head.appendChild(st);
