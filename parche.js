@@ -7,10 +7,9 @@
    - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
    - Celulares: sin saltos en tarjetas, "Próximas" y "Tabla de posiciones"
    - Modal de horarios: el texto ya no se sale de la tarjeta en celulares
-   - Salón de la Fama de escuderías y de pilotos: render propio, sin recargar
+   - Pilotos: "Pilotos actuales" y "Salón de la Fama" los maneja este parche
    - Trazados contenidos dentro de su caja (sin encimarse con las tarjetas)
    - Info: sección "Números de pilotos"
-   - Pilotos y escuderías: la grilla solo se redibuja si cambian los datos
    ===================================================== */
 (function () {
   'use strict';
@@ -406,45 +405,38 @@
     ? `<img class="${cls}" src="${esc(src)}" alt="" loading="lazy" onerror="this.style.display='none'">`
     : '';
 
-  /* ---------- Pilotos y escuderías ----------
-     La grilla se redibuja SOLO cuando cambian los datos o la pestaña.
-     Las tarjetas de piloto usan data-drv, que app.js ya maneja. */
+  /* ---------- Pilotos actuales ---------- */
 
   function renderDrivers() {
-  const grid = $('#drvGrid');
-  const tab = $('#drvTabs .chip.on');
-  if (!grid || !tab || tab.dataset.dt !== 'act') return;
+    const grid = $('#drvGrid');
+    const tab = $('#drvTabs .chip.on');
+    if (!grid || !tab || tab.dataset.dt !== 'act') return;
 
-  // Si la grilla todavía muestra el Salón, la reemplazamos
-  if (grid.dataset.hofPil) {
+    const teams = getTeams();
+    const list = getDrivers().sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+    CARDS.drv = list;
+
+    const key = JSON.stringify(list.map(d => [d.id, d.pts, d.teamName]));
+    if (grid.dataset.key === key && grid.children.length && grid.dataset.hofPil !== 'ok') return;
+    grid.dataset.key = key;
     grid.dataset.hofPil = '';
-    grid.dataset.key = '';
+
+    grid.innerHTML = list.map((d, i) => {
+      const col = (teams.find(t => t.id === d.team) || {}).color || '#e10600';
+      const realNum = d.num || NUM_MAP_2026[d.id] || pad(i + 1);
+      return `
+        <article class="glass dcard" data-drv="${esc(d.id)}" style="--c:${col}">
+          <div class="dc-hel">${imgTag(helmSrc(d), 'helmet-img')}</div>
+          <div class="dhead">
+            <span class="dnum">${pad(realNum)}</span>
+            <span class="dcode">${esc(d.code || d.id.slice(0, 3).toUpperCase())}</span>
+          </div>
+          <h3>${esc(d.name)}</h3>
+          <div class="dteam">${esc(d.teamName)}</div>
+          <div class="dfoot"><span>${d.pts} pts</span><span>Ver ficha →</span></div>
+        </article>`;
+    }).join('');
   }
-
-  const teams = getTeams();
-  const list = getDrivers().sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
-  CARDS.drv = list;
-
-  const key = JSON.stringify(list.map(d => [d.id, d.pts, d.teamName]));
-  if (grid.dataset.key === key && grid.children.length) return;
-  grid.dataset.key = key;
-
-  grid.innerHTML = list.map((d, i) => {
-    const col = (teams.find(t => t.id === d.team) || {}).color || '#e10600';
-    const realNum = d.num || NUM_MAP_2026[d.id] || pad(i + 1);
-    return `
-      <article class="glass dcard" data-drv="${esc(d.id)}" style="--c:${col}">
-        <div class="dc-hel">${imgTag(helmSrc(d), 'helmet-img')}</div>
-        <div class="dhead">
-          <span class="dnum">${pad(realNum)}</span>
-          <span class="dcode">${esc(d.code || d.id.slice(0, 3).toUpperCase())}</span>
-        </div>
-        <h3>${esc(d.name)}</h3>
-        <div class="dteam">${esc(d.teamName)}</div>
-        <div class="dfoot"><span>${d.pts} pts</span><span>Ver ficha →</span></div>
-      </article>`;
-  }).join('');
-}
 
   function renderTeams() {
     const grid = $('#teamGrid');
@@ -566,7 +558,6 @@
   }
 
   // Reemplaza la precarga de toda la historia que hacía app.js al iniciar.
-  // No llama al callback: el render del Salón lo hace este parche.
   window.a0_0x521c52 = async function () {
     const champs = await cargarCampeonesPilotos();
     a0_0x484245.champs = champs;
@@ -577,7 +568,7 @@
   // Ya no se precarga el historial al abrir la pestaña Pilotos
   window.a0_0x536bd9 = function () {};
 
-  // Render de progreso de app.js para el Salón: lo reemplaza renderHofPilotos
+  // Render de progreso de app.js para el Salón: no se usa
   window.a0_0xdd43dd = function () {};
 
   // Ficha de piloto: pide solo a ese piloto
@@ -602,21 +593,13 @@
     }
   };
 
-  // Evita que app.js pinte el Salón de la Fama de pilotos con su versión propia
-  window.a0_0x5bdb86 = (function (original) {
-    return function () {
-      const tab = $('#drvTabs .chip.on');
-      if (tab && tab.dataset.dt === 'hof') return;
-      if (typeof original === 'function') return original.apply(this, arguments);
-    };
-  })(window.a0_0x5bdb86);
+  // app.js no debe pintar la grilla de pilotos: lo hace este parche
+  window.a0_0x5bdb86 = function () {};
 
-  /* ---------- Salón de la Fama de pilotos (render propio) ---------- */
+  /* ---------- Salón de la Fama de pilotos ---------- */
 
   let champsPromesa = null;
 
-  // Una sola carga de campeones aunque se llame varias veces.
-  // Al llegar los datos, pinta el Salón directamente.
   function asegurarCampeones() {
     if (LIVE().champs && LIVE().champs.length) return Promise.resolve(LIVE().champs);
     if (!champsPromesa) {
@@ -624,9 +607,6 @@
         .then(list => {
           LIVE().champs = list;
           LIVE().champsDone = true;
-          const grid = $('#drvGrid');
-          if (grid) grid.dataset.hofPil = '';
-          renderHofPilotos();
           return list;
         })
         .catch(err => {
@@ -651,33 +631,10 @@
       .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
   }
 
-  function renderHofPilotos() {
-    const tab = $('#drvTabs .chip.on');
-    if (!tab || tab.dataset.dt !== 'hof') return;
-
+  function pintarHofPilotos(champs) {
     const grid = $('#drvGrid');
     const status = $('#drvStatus');
     if (!grid) return;
-
-    const champs = LIVE().champs || [];
-
-    if (!champs.length) {
-      if (grid.dataset.hofPil !== 'loading') {
-        grid.dataset.hofPil = 'loading';
-        grid.innerHTML = '<p class="parche-loading">Cargando campeones…</p>';
-      }
-      if (status) status.textContent = '';
-      asegurarCampeones()
-        .catch(err => {
-          console.warn('[fOnefan] campeones', err);
-          grid.dataset.hofPil = 'error';
-          grid.innerHTML = '<p class="parche-loading">No se pudo cargar el Salón de la Fama. Tocá Recargar.</p>';
-        });
-      return;
-    }
-
-    if (grid.dataset.hofPil === 'ok' && grid.querySelector('.hof-card')) return;
-
     const lista = buildHofPilotos(champs);
     grid.dataset.hofPil = 'ok';
     grid.innerHTML = lista.map(p => `
@@ -690,23 +647,72 @@
         <div class="hof-pais">${esc(p.nat)}${p.team ? ' · ' + esc(p.team) : ''}</div>
         <div class="hof-yrs">${p.titles.map(y => `<span class="hof-yr">${y}</span>`).join('')}</div>
       </article>`).join('');
-
     if (status) status.textContent = lista.length + ' campeones del mundo · temporadas 1950–2025';
   }
 
-  // Al cambiar de pestaña de pilotos: marcar el estado y repintar
-document.addEventListener('click', e => {
-  const chip = e.target.closest && e.target.closest('#drvTabs .chip');
-  if (!chip) return;
-  const g = $('#drvGrid');
-  if (g) {
-    g.dataset.hofPil = '';
-    g.dataset.key = '';
-    g.innerHTML = '';
+  function renderHofPilotos() {
+    const tab = $('#drvTabs .chip.on');
+    if (!tab || tab.dataset.dt !== 'hof') return;
+
+    const grid = $('#drvGrid');
+    if (!grid) return;
+
+    const champs = LIVE().champs || [];
+    if (champs.length) {
+      if (grid.dataset.hofPil !== 'ok') pintarHofPilotos(champs);
+      return;
+    }
+
+    if (grid.dataset.hofPil !== 'loading') {
+      grid.dataset.hofPil = 'loading';
+      grid.innerHTML = '<p class="parche-loading">Cargando campeones…</p>';
+      asegurarCampeones()
+        .then(list => {
+          // Solo pinta si seguimos en el Salón
+          const t = $('#drvTabs .chip.on');
+          if (t && t.dataset.dt === 'hof') pintarHofPilotos(list);
+        })
+        .catch(err => {
+          console.warn('[fOnefan] campeones', err);
+          const g = $('#drvGrid');
+          if (g) {
+            g.dataset.hofPil = 'error';
+            g.innerHTML = '<p class="parche-loading">No se pudo cargar el Salón de la Fama. Tocá Recargar.</p>';
+          }
+        });
+    }
   }
-  // Pequeña espera para que app.js actualice el chip activo antes de pintar
-  setTimeout(tick, 60);
-});
+
+  /* ---------- Cambio de pestaña de pilotos (único responsable) ---------- */
+
+  // Interceptamos el clic antes que app.js: así no hay dos códigos pintando la misma grilla
+  function setDrvTab(dt) {
+    document.querySelectorAll('#drvTabs .chip').forEach(c => {
+      c.classList.toggle('on', c.dataset.dt === dt);
+    });
+    const tools = $('#drvTools');
+    if (tools) tools.style.display = 'none';
+
+    const grid = $('#drvGrid');
+    const status = $('#drvStatus');
+    if (status) status.textContent = '';
+    if (!grid) return;
+
+    grid.dataset.key = '';
+    grid.dataset.hofPil = '';
+    grid.innerHTML = '';
+
+    if (dt === 'act') renderDrivers();
+    else renderHofPilotos();
+  }
+
+  document.addEventListener('click', e => {
+    const chip = e.target.closest && e.target.closest('#drvTabs .chip');
+    if (!chip) return;
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    setDrvTab(chip.dataset.dt);
+  }, true);
 
   /* ---------- Salón de la Fama de escuderías ---------- */
 
@@ -1509,14 +1515,6 @@ document.addEventListener('click', e => {
     });
   }
 
-  function limpiarEstadoCarga() {
-    // Si app.js dejó un texto de progreso en el Salón de pilotos, lo quitamos
-    const drvStatus = $('#drvStatus');
-    const tab = $('#drvTabs .chip.on');
-    if (!drvStatus || !tab || tab.dataset.dt !== 'hof') return;
-    if (/cargando/i.test(drvStatus.textContent || '')) drvStatus.textContent = '';
-  }
-
   function tick() {
     if (document.hidden) return;
     try {
@@ -1532,7 +1530,6 @@ document.addEventListener('click', e => {
       addTracksToCalendar();
       addTracksToUpcoming();
       renderHofPilotos();
-      limpiarEstadoCarga();
       checkHistoryLoad();
       checkMotores();
     } catch (err) {
