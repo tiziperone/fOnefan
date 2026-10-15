@@ -584,7 +584,7 @@
         careerStats(id).then(st => { careerMap[id] = st; }),
         a0_0x31cdae(id).catch(() => null)
       ]);
-      a0_0x4722c6.drv = { list: [], byId: {}, stats: careerMap, info: {} };
+          a0_0x4722c6.drv = { list: [], byId: careerMap, stats: careerMap, info: {} };
       if (a0_0x522712 === id) a0_0x3f0359('#mBody').innerHTML = a0_0x21906d(id);
     } catch (err) {
       console.warn('[fOnefan] carrera de', id, err);
