@@ -1,26 +1,21 @@
 /* =====================================================
    parche.js · fOnefan
    - Caché de la API Jolpi (historia más rápida desde la 2.ª carga)
-   - Trazado correcto de Las Vegas (vigente) y Caesars Palace (histórico)
-   - Vista previa de trazados en "Próximas" y calendario calculada directo
-   - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
-   - Trazado de Las Vegas corregido en la tarjeta de circuitos vigentes
-   - Celulares: sin saltos en tarjetas, "Próximas" y "Tabla de posiciones"
-   - Modal de horarios: el texto ya no se sale de la tarjeta en celulares
-   - Salón de la Fama de escuderías: títulos de constructores
-   - Trazados contenidos dentro de su caja (sin encimarse con las tarjetas)
+   - Trazado correcto de Las Vegas y Caesars Palace 
+   - Vista previa de trazados en "Próximas" y calendario
+   - Inyección NO destructiva de números de pilotos permanentes
+   - Modal de horarios adaptado a celulares
+   - Salón de la Fama de escuderías
    - Info: sección "Números de pilotos"
    ===================================================== */
 (function () {
   'use strict';
 
   /* ---------- Caché de la API histórica ---------- */
-
   const CACHE_PREFIX = 'fo-api:';
   const DAY = 24 * 60 * 60 * 1000;
   const SEASON_NOW = new Date().getFullYear();
 
-  // Temporada en curso: caché corta. Temporadas pasadas: caché larga.
   function ttlFor(url) {
     const m = url.match(/\/ergast\/f1\/(\d{4})\//);
     if (m && +m[1] < SEASON_NOW) return 7 * DAY;
@@ -40,11 +35,10 @@
   function writeCache(key, body, ttl) {
     try {
       localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ exp: Date.now() + ttl, body }));
-    } catch (e) { /* cuota llena: seguimos sin caché */ }
+    } catch (e) { }
   }
 
   const realFetch = window.fetch.bind(window);
-
   window.fetch = function (input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
     const method = (init && init.method) || (input && input.method) || 'GET';
@@ -71,10 +65,9 @@
   };
 
   /* ---------- Trazados de Las Vegas y Caesars Palace ---------- */
-
   const VEGAS_ID = 'las-vegas-1';
-  const VEGAS_ACTUAL = { lat: 36.175, lon: -115.1364 };   // entrada las-vegas-1
-  const CAESARS = { lat: 36.1169, lon: -115.175 };         // entrada de Caesars Palace
+  const VEGAS_ACTUAL = { lat: 36.175, lon: -115.1364 };
+  const CAESARS = { lat: 36.1169, lon: -115.175 };
 
   const esCaesarsId = id => /caesar/i.test(String(id || ''));
   const esVegasLike = id => /vegas/i.test(String(id || '')) && !esCaesarsId(id);
@@ -108,7 +101,6 @@
   }
 
   /* ---------- Resto de la página ---------- */
-
   const $ = (s, r = document) => r.querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -118,10 +110,6 @@
   const TZ_AR = 'America/Argentina/Buenos_Aires';
   const TITULO_CHANCES = /pilotos con chances/i;
   const MSG_API = /requieren conexi[oó]n a la API/i;
-
-  const CARDS = { drv: [], team: [] };
-  const WAIT_TICKS = 1;
-  const waitCount = { drv: 0, team: 0, circ: 0 };
 
   const NUM_MAP_2026 = {
     antonelli: '12', russell: '63', hamilton: '44', leclerc: '16',
@@ -144,24 +132,7 @@
       .pt-btn.show{opacity:1;transform:none;pointer-events:auto}
       .pt-btn:hover{filter:brightness(1.15)}
 
-      /* ===== Circuitos: grilla estable ===== */
-      .circs{grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr))}
-      #circGrid{overflow-anchor:none}
-      .circ{-webkit-tap-highlight-color:transparent;touch-action:manipulation;contain:layout paint}
-
-      /* ===== Táctil: sin saltos al tocar o desplazar ===== */
-      @media (hover:none),(pointer:coarse){
-        .race:hover,.circ:hover,.dcard:hover,.hcard:hover,.dc:hover,.info-card:hover,.tyre-card:hover,
-        .flag-card:hover,.term-card:hover,.part-card:hover,.ct-card:hover{transform:none !important}
-        .circ,.race,.dcard,.hcard,.dc{transition:border-color .2s ease}
-        .circ:hover .ficha{background:rgba(225,6,0,.12);border-color:rgba(225,6,0,.35)}
-        .circ:hover .ficha i{transform:none}
-        .circ:hover .trk path,.circ:hover path{stroke:#8a8a9c}
-        .dcard:hover .helmet-img,.dcard:hover .team-logo,.dcard:hover .helmet,.dcard:hover .car-front{transform:none}
-        .circ:active,.race:active,.dcard:active{border-color:rgba(225,6,0,.5)}
-      }
-
-      /* ===== Modal: nada se sale de la tarjeta (horarios, fichas, etc.) ===== */
+      /* ===== Modal: nada se sale de la tarjeta ===== */
       #modal .panel-m{overflow-x:hidden}
       #modal .line{flex-wrap:wrap;align-items:baseline;row-gap:2px}
       #modal .line > span{flex:0 0 auto;max-width:100%}
@@ -187,7 +158,7 @@
       .cal-track svg{width:100%;height:100%;max-width:180px;overflow:visible}
       .cal-track path{fill:none !important;stroke:var(--red);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
 
-      /* ===== Próximas carreras (Diseño horizontal estilizado) ===== */
+      /* Próximas carreras (Diseño horizontal estilizado) */
       .up{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px 16px;padding:12px 18px}
       .up .up-track{display:flex;align-items:center;gap:8px;margin:0;padding:0;background:none;border:none}
       .up .up-track .up-svg{width:46px;height:32px;flex-shrink:0;display:grid;place-items:center}
@@ -195,12 +166,8 @@
       .up .up-track .up-svg path{fill:none !important;stroke:var(--red,#e10600);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
       .up .up-track small{display:none}
 
-      /* ===== Campeonato: pequeños retoques generales ===== */
-      #v-standings .srow:nth-child(-n+3) .pos{color:var(--red)}
-
-      /* ===== Info · Números de pilotos ===== */
+      /* Info · Números de pilotos */
       .info-grid--numkeys,.info-grid--numsteps,.info-grid--numgrid,.info-grid--numfaq{grid-template-columns:1fr}
-
       .num-keys-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:14px}
       .num-key{border:1px solid var(--line);border-radius:16px;padding:16px;background:rgba(0,0,0,.3);display:grid;gap:6px;align-content:start}
       .num-key b{font-family:var(--f-disp);font-weight:900;font-style:italic;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
@@ -212,14 +179,12 @@
       .num-key.k-red b,.num-key.k-red span{color:var(--red)}
       .num-key.k-dark b{color:#8b8b99;text-decoration:line-through;text-decoration-thickness:3px}
       .num-key.k-dark span{color:#8b8b99}
-
       .num-steps-list{list-style:none;counter-reset:ns;display:grid;gap:14px;margin:16px 0 0;padding:0}
       .num-steps-list li{counter-increment:ns;display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;align-items:start}
       .num-steps-list li::before{content:counter(ns);width:36px;height:36px;border-radius:50%;background:var(--red);color:#fff;
         display:grid;place-items:center;font-family:var(--f-disp);font-weight:900;font-size:16px}
       .num-steps-list strong{display:block;font-size:16px;margin-bottom:2px}
       .num-steps-list span{font-size:14.5px;line-height:1.6;color:#c4c4d0}
-
       .num-card{padding:20px}
       .num-legend{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
       .num-f{appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);
@@ -233,7 +198,6 @@
       .num-detail[data-ns="use"]{border-color:rgba(225,6,0,.55)}
       .num-detail[data-ns="champ"]{border-color:rgba(255,209,102,.6)}
       .num-detail[data-ns="res"]{border-color:rgba(60,120,255,.55)}
-
       .num-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px}
       .num-cell{appearance:none;cursor:pointer;display:grid;gap:2px;justify-items:center;padding:8px 0 6px;border-radius:10px;
         border:1px solid var(--line);background:rgba(255,255,255,.03);color:#c0c0cb;
@@ -251,21 +215,18 @@
       .num-grid[data-f="free"] .num-cell:not([data-ns="free"]),
       .num-grid[data-f="ret"] .num-cell:not([data-ns="ret"]){opacity:.18}
       .num-note{font-size:12.5px;color:#8b8b99;margin-top:12px;line-height:1.55}
-
       .info-card.num-faq{padding:0}
       .num-faq summary{list-style:none;cursor:pointer;padding:16px 48px 16px 20px;position:relative;
         font-family:var(--f-disp);font-weight:900;font-style:italic;font-size:19px;line-height:1.2}
       .num-faq summary::-webkit-details-marker{display:none}
       .num-faq summary::after{content:"+";position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:26px;color:var(--red);font-style:normal}
-      .num-faq[open] summary::after{content:"2013"}
+      .num-faq[open] summary::after{content:"\2013"}
       .num-faq .info-text{margin:0;padding:0 20px 18px}
 
       @media (max-width:640px){
         .up{padding:10px 14px;gap:10px}
         .up .up-track .up-svg{width:36px;height:26px}
         .cal-track{height:90px}
-
-        /* Tabla de posiciones */
         #champTabs{display:grid !important;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px !important}
         #champTabs .chip{padding:10px 6px;text-align:center;font-size:12px;letter-spacing:.06em;line-height:1.2}
         #v-standings .sec-head p{font-size:14px;padding-left:12px}
@@ -277,8 +238,6 @@
         #v-standings .who b{font-size:15px;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.2}
         #v-standings .pts{font-size:15px;min-width:34px;text-align:right}
         #v-standings .pos{font-size:13px}
-
-        /* Pilotos con chances */
         #parcheChances.panel{padding:16px 12px}
         #parcheChances .ct-card{padding:14px 12px 12px 16px}
         #parcheChances .ct-row{gap:10px}
@@ -288,14 +247,10 @@
         #parcheChances .ct-meta{font-size:12px;flex-direction:column;gap:4px}
         #parcheChances .ct-decided{padding:18px}
         #parcheChances .ct-decided b{font-size:24px}
-
-        /* Info · Números */
         .num-card{padding:16px 12px}
         .num-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
         .num-faq summary{font-size:17px;padding:14px 44px 14px 16px}
         .num-faq .info-text{padding:0 16px 16px}
-
-        /* Salón de la Fama */
         .hof-card{padding:18px}
         .hof-num{font-size:48px}
         .hof-name{font-size:20px}
@@ -356,68 +311,38 @@
     }));
   }
 
-  function logoSrc(teamName) {
-    if (typeof a0_0x415557 !== 'function') return '';
-    const f = a0_0x415557(teamName);
-    return f && f.length ? 'Fotos/' + f[0] : '';
-  }
-
-  function helmSrc(d) {
-    if (typeof a0_0x519b69 === 'undefined') return '';
-    const f = a0_0x519b69[d.id] || a0_0x519b69[sinAcentos(d.name.split(' ').pop())];
-    return f ? 'Fotos/' + f : '';
-  }
-
-  const imgTag = (src, cls) => src
-    ? `<img class="${cls}" src="${esc(src)}" alt="" loading="lazy" onerror="this.style.display='none'">`
-    : '';
-
-  function renderDrivers() {
+  /* ---------- Inyección NO destructiva de Números ---------- 
+     Solo modifica el número de la tarjeta original generada por app.js 
+     sin tocar el resto del HTML ni los eventos ocultos. */
+  function fixDriverNumbers() {
     const grid = $('#drvGrid');
+    if (!grid) return;
     const tab = $('#drvTabs .chip.on');
-    if (!grid || (tab && tab.dataset.dt !== 'act')) return;
-    const teams = getTeams();
-    const list = getDrivers().sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
-    CARDS.drv = list;
-    grid.innerHTML = list.map((d, i) => {
-      const col = (teams.find(t => t.id === d.team) || {}).color || '#e10600';
-      const realNum = d.num || NUM_MAP_2026[d.id] || pad(i + 1);
-      return `
-        <article class="glass dcard parche-card" data-k="drv" data-i="${i}" data-drv-name="${esc(d.name)}" style="--c:${col}">
-          <div class="dc-hel">${imgTag(helmSrc(d), 'helmet-img')}</div>
-          <div class="dhead">
-            <span class="dnum">${pad(realNum)}</span>
-            <span class="dcode">${esc(d.code || d.id.slice(0, 3).toUpperCase())}</span>
-          </div>
-          <h3>${esc(d.name)}</h3>
-          <div class="dteam">${esc(d.teamName)}</div>
-          <div class="dfoot"><span>${d.pts} pts</span><span>Ver ficha →</span></div>
-        </article>`;
-    }).join('');
-  }
+    if (tab && tab.dataset.dt !== 'act') return;
 
-  function renderTeams() {
-    const grid = $('#teamGrid');
-    const tab = $('#teamTabs .chip.on');
-    if (!grid || (tab && tab.dataset.tt !== 'act')) return;
-    const list = getTeams().sort((a, b) => b.pts - a.pts);
-    CARDS.team = list;
-    grid.innerHTML = list.map((t, i) => {
-      const src = logoSrc(t.name);
-      return `
-        <article class="glass dcard parche-card" data-k="team" data-i="${i}" data-team-name="${esc(t.name)}" style="--c:${t.color}">
-          <div class="dc-hel team-hel">
-            ${src ? imgTag(src, 'team-logo') : `<span class="tc-name-only">${esc(t.name)}</span>`}
-          </div>
-          <div class="dhead"><span class="dnum">${pad(i + 1)}</span></div>
-          <h3>${esc(t.name)}</h3>
-          <div class="dfoot"><span>${t.pts} pts</span><span>Ver ficha →</span></div>
-        </article>`;
-    }).join('');
+    grid.querySelectorAll('.dcard').forEach(card => {
+      const nameEl = card.querySelector('h3');
+      if (!nameEl) return;
+      const nameStr = sinAcentos(nameEl.textContent).toLowerCase();
+      
+      let realNum = '';
+      for (const key in NUM_MAP_2026) {
+        if (nameStr.includes(key)) {
+          realNum = NUM_MAP_2026[key];
+          break;
+        }
+      }
+
+      if (realNum) {
+        const numEl = card.querySelector('.dnum');
+        if (numEl && numEl.textContent !== pad(realNum)) {
+          numEl.textContent = pad(realNum);
+        }
+      }
+    });
   }
 
   /* ---------- Salón de la Fama de escuderías ---------- */
-
   const HOF_CAMPEONES = [
     [1958,'Vanwall'],[1959,'Cooper'],[1960,'Cooper'],[1961,'Ferrari'],[1962,'BRM'],
     [1963,'Lotus'],[1964,'Ferrari'],[1965,'Lotus'],[1966,'Brabham'],[1967,'Brabham'],
@@ -536,41 +461,6 @@
     });
   }
 
-  function avisoHTML(id) {
-    return `
-      <div class="glass panel parche-aviso" style="grid-column:1/-1">
-        <h3>La historia todavía no cargó</h3>
-        <p class="muted" style="font-size:14px;margin:8px 0 14px">
-          Esta lista reúne datos desde 1950, así que tarda más en el celular o con conexión lenta.
-          Si no aparece en un rato, tocá Recargar.
-        </p>
-        <button class="btn" type="button" data-parche-recargar="${id}">Recargar</button>
-      </div>`;
-  }
-
-  function checkHistoryLoad() {
-    const checks = [
-      { grid: '#drvGrid', tabSel: '#drvTabs .chip.on', tabAttr: 'dt', key: 'drv' },
-      { grid: '#teamGrid', tabSel: '#teamTabs .chip.on', tabAttr: 'tt', key: 'team' },
-      { grid: '#circGrid', tabSel: '#circTabs .chip.on', tabAttr: 'circTab', key: 'circ' }
-    ];
-    checks.forEach(c => {
-      const grid = $(c.grid);
-      const tab = $(c.tabSel);
-      if (!grid || !tab || tab.dataset[c.tabAttr] !== 'hist') { waitCount[c.key] = 0; return; }
-      if (grid.querySelector('.parche-aviso')) return;
-      if (grid.children.length > 0) { waitCount[c.key] = 0; return; }
-      waitCount[c.key]++;
-      if (waitCount[c.key] < WAIT_TICKS) return;
-      grid.innerHTML = avisoHTML(c.key);
-    });
-  }
-
-  document.addEventListener('click', e => {
-    const b = e.target.closest('[data-parche-recargar]');
-    if (b) location.reload();
-  });
-
   function ensureCircuits() {
     const grid = $('#circGrid');
     if (!grid || grid.children.length) return;
@@ -651,7 +541,6 @@
   }
 
   /* ---------- Trazados en calendario y "Próximas" ---------- */
-
   const TRACK_CACHE = {};
   const TRACK_PEND = {};
 
@@ -736,7 +625,6 @@
   }
 
   /* ---------- Campeonato ---------- */
-
   function ensureGridLayout(two) {
     if (two.dataset.parche === '1') return;
     two.dataset.parche = '1';
@@ -843,7 +731,6 @@
   }
 
   /* ---------- Modal y horarios ---------- */
-
   function openModal(html, extraClass) {
     const m = $('#modal'), b = $('#mBody');
     if (!m || !b) return;
@@ -906,28 +793,7 @@
     openHorarios(race);
   });
 
-  document.addEventListener('click', e => {
-    const c = e.target.closest('.parche-card');
-    if (!c) return;
-    const k = c.dataset.k;
-
-    if (k === 'drv') {
-      const name = c.dataset.drvName;
-      if (name && typeof window.a0_0x68b92b === 'function') {
-        window.a0_0x68b92b(name);
-      } else if (name && typeof window.a0_0x243121 === 'function') {
-        window.a0_0x243121(name);
-      }
-    } else if (k === 'team') {
-      const teamName = c.dataset.teamName;
-      if (teamName && typeof window.a0_0x243121 === 'function') {
-        window.a0_0x243121(teamName);
-      }
-    }
-  });
-
   /* ---------- Info · Números de pilotos ---------- */
-
   const NUM_USO = {
     1:  ['Lando Norris', 'NOR', 'McLaren'],
     3:  ['Max Verstappen', 'VER', 'Red Bull'],
@@ -941,7 +807,7 @@
     18: ['Lance Stroll', 'STR', 'Aston Martin'],
     23: ['Alexander Albon', 'ALB', 'Williams'],
     27: ['Nico Hülkenberg', 'HUL', 'Audi'],
-    30: ['Liam Lawson', 'Racing Bulls'],
+    30: ['Liam Lawson', 'LAW', 'Racing Bulls'],
     31: ['Esteban Ocon', 'OCO', 'Haas'],
     41: ['Arvid Lindblad', 'LIN', 'Racing Bulls'],
     43: ['Franco Colapinto', 'COL', 'Alpine'],
@@ -989,10 +855,7 @@
         '" aria-label="' + escI(info) + '"><b>' + n + '</b><small>' + escI(code) + '</small></button>'
       );
     }
-    return {
-      counts: { use: nUse, res: nRes, free: nFree, ret: 1 },
-      html: cells.join('')
-    };
+    return { counts: { use: nUse, res: nRes, free: nFree, ret: 1 }, html: cells.join('') };
   }
 
   function addNumbersSection() {
@@ -1004,7 +867,7 @@
         <h4>${escI(it.title)}</h4>
         <div class="num-keys-grid">
           <div class="num-key k-gold"><b>1</b><span>Campeón</span>
-            <p>Está reservado para el campeón del mundo, que puede usarlo la temporada siguiente. Es opcional: Hamilton, por ejemplo, cuando fue campeón prefirió mantener el 44.</p></div>
+            <p>Está reservado para el campeón del mundo, que puede usarlo la temporada siguiente.</p></div>
           <div class="num-key k-red"><b>2–99</b><span>Libre elección</span>
             <p>Cada piloto elige uno para toda su carrera, siempre que ningún otro piloto lo tenga.</p></div>
           <div class="num-key k-dark"><b>17</b><span>Retirado</span>
@@ -1044,10 +907,10 @@
       </details>`;
 
     const steps = [
-      ['Elegir', 'Al llegar a la F1, el piloto propone el número que quiere, entre 2 y 99. Muchos eligen uno ligado a su historia: un título de karting, un ídolo o una fecha.'],
-      ['Revisar que esté disponible', 'No puede estar en uso, ni reservado por un piloto que se fue hace menos de dos temporadas, ni ser el 17.'],
+      ['Elegir', 'Al llegar a la F1, el piloto propone el número que quiere, entre 2 y 99.'],
+      ['Revisar que esté disponible', 'No puede estar en uso, ni reservado, ni ser el 17.'],
       ['Plan B si está ocupado', 'Si el número elegido ya lo tiene otro piloto, hay que optar por otro.'],
-      ['Confirmación', 'La FIA publica el número en la lista oficial de inscritos de la temporada. Desde ahí es del piloto para toda su carrera.']
+      ['Confirmación', 'La FIA publica el número en la lista oficial de inscritos.']
     ];
 
     const sec = {
@@ -1055,30 +918,19 @@
       intro: 'Cada piloto lleva un número en el auto y en el casco. Acá te contamos cómo se elige, cuáles están en uso o libres y qué pasa con el número cuando un piloto se retira.',
       items: [
         { type: 'card', icon: '🔢', title: 'Para qué sirven',
-          t: 'Cada número identifica al piloto en pista y en los tiempos. Tiene que verse claramente desde el frente del auto y en el casco. Desde 2014 es permanente: lo acompaña toda su carrera, sin importar la escudería. Antes de 2014 los números dependían de la posición del equipo en el campeonato anterior.' },
+          t: 'Cada número identifica al piloto en pista y en los tiempos. Desde 2014 es permanente: lo acompaña toda su carrera.' },
         { type: 'numkeys', title: 'Los tres números clave',
-          t: 'El 1 es del campeón del mundo, del 2 al 99 se elige libremente y el 17 está retirado desde 2015 en homenaje a Jules Bianchi.' },
+          t: 'El 1 es del campeón del mundo, del 2 al 99 se elige libremente y el 17 está retirado.' },
         { type: 'numsteps', title: 'Cómo se asigna un número', steps,
           t: steps.map(s => s[0] + '. ' + s[1]).join(' ') },
         { type: 'numgrid', title: 'Mapa de números 2026',
-          t: 'Mapa del 1 al 99 con los números en uso, reservados, libres y el retirado. Tocá un número para ver quién lo usa.' },
-
+          t: 'Mapa del 1 al 99 con los números en uso, reservados, libres y el retirado.' },
         { type: 'numfaq', title: '¿Se puede elegir cualquier número?',
           t: 'Sí, se elige con libertad y no hace falta ningún motivo especial. Las reglas son pocas: de 2 a 99, no puede ser el 17, ningún otro piloto puede tenerlo ni tenerlo reservado, y el 1 queda para el campeón.' },
-        { type: 'numfaq', title: '¿Qué pasa si el número que quiero ya está tomado?',
-          t: 'Hay que elegir otro. Cada número pertenece a un solo piloto. Así le pasó a Charles Leclerc: quería el 7, que era de Kimi Räikkönen, y terminó eligiendo el 16.' },
         { type: 'numfaq', title: '¿Qué pasa con el número cuando un piloto se retira?',
-          t: 'Queda reservado a su nombre. Si pasan dos temporadas completas seguidas sin que corra, se libera y cualquier piloto puede elegirlo. Por eso, para elegir en 2026 no se podían usar números usados por última vez en 2024 o 2025.' },
-        { type: 'numfaq', title: '¿Y si un piloto se va un tiempo y vuelve?',
-          t: 'Si vuelve dentro de ese plazo, recupera su número. Alonso retomó el 14 en 2021 tras dos años fuera, y en 2026 Bottas volvió con el 77 y Pérez con el 11.' },
-        { type: 'numfaq', title: '¿Se puede cambiar de número?',
-          t: 'En general no: el número es para toda la carrera. La excepción es el campeón, que puede correr con el 1. Verstappen es un caso especial: dejó el 33 y para 2026 eligió el 3, que lo tenía Ricciardo (piloto que se retiró en 2024), Ricciardo y la FIA dieron su visto bueno para permitirle usar el número.' },
-        { type: 'numfaq', title: '¿Qué pasa con el número 1?',
-          t: 'Es para el campeón del mundo, y usarlo es opcional. Si lo usa, su número permanente queda reservado y lo recupera si ya no es campeón. En 2026 lo lleva Lando Norris, que deja el 4 en reserva.' },
+          t: 'Queda reservado a su nombre por dos temporadas.' },
         { type: 'numfaq', title: '¿Por qué no existe el 17?',
-          t: 'Jules Bianchi corrió con el 17 y murió en 2015 por las heridas de un accidente en el GP de Japón 2014. La FIA retiró el número en su homenaje y desde entonces nadie puede usarlo.' },
-        { type: 'numfaq', title: '¿Qué número lleva un piloto suplente?',
-          t: 'Si reemplaza a un titular en una carrera, recibe un número temporal asignado por el equipo. No es su número permanente y no le quita ninguno a otro piloto.' }
+          t: 'Jules Bianchi corrió con el 17. La FIA retiró el número en su homenaje tras su accidente.' }
       ]
     };
 
@@ -1087,7 +939,7 @@
     INFO_SECTIONS.splice(i >= 0 ? i + 1 : INFO_SECTIONS.length, 0, sec);
   }
 
-  try { addNumbersSection(); } catch (err) { console.warn('[parche fOnefan] números', err); }
+  try { addNumbersSection(); } catch (err) { console.warn('[parche fOnefan]', err); }
 
   document.addEventListener('click', e => {
     const cell = e.target.closest('.num-cell');
@@ -1128,7 +980,6 @@
       #upList .up .up-track .up-svg svg{
         width:100%;height:100%;overflow:visible;display:block;
       }
-
       #calGrid .cal-track{
         position:relative;height:100px;overflow:hidden;
         margin:8px 0 2px;display:flex;justify-content:center;align-items:center;
@@ -1141,9 +992,7 @@
   }
 
   /* ---------- Botón "subir" ---------- */
-
   let topBtn = null;
-
   function ensureTopButton() {
     injectStyles();
     if (topBtn) return;
@@ -1186,8 +1035,7 @@
     try {
       injectTrackFix();
       quitarMensajesAPI();
-      renderDrivers();
-      renderTeams();
+      fixDriverNumbers();
       ensureHof();
       ensureCircuits();
       fixVegasCard();
@@ -1195,7 +1043,6 @@
       renderContenders();
       addTracksToCalendar();
       addTracksToUpcoming();
-      checkHistoryLoad();
       checkMotores();
     } catch (err) {
       console.warn('[parche fOnefan]', err);
