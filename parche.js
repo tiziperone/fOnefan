@@ -1,74 +1,17 @@
 /* =====================================================
    parche.js · fOnefan
-   - Caché de la API Jolpi (historia más rápida desde la 2.ª carga)
    - Trazado correcto de Las Vegas (vigente) y Caesars Palace (histórico)
    - Vista previa de trazados en "Próximas" y calendario calculada directo
    - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
-   - Trazado de Las Vegas corregido en la tarjeta de circuitos vigentes
    - Celulares: sin saltos en tarjetas, "Próximas" y "Tabla de posiciones"
    - Modal de horarios: el texto ya no se sale de la tarjeta en celulares
    - Salón de la Fama de escuderías: títulos de constructores
    - Trazados contenidos dentro de su caja (sin encimarse con las tarjetas)
    - Info: sección "Números de pilotos"
+   - Pilotos y escuderías: la grilla solo se redibuja si cambian los datos
    ===================================================== */
 (function () {
   'use strict';
-
-  /* ---------- Caché de la API histórica ---------- */
-
-  const CACHE_PREFIX = 'fo-api:';
-  const DAY = 24 * 60 * 60 * 1000;
-  const SEASON_NOW = new Date().getFullYear();
-
-  // Temporada en curso: caché corta. Temporadas pasadas: caché larga.
-  function ttlFor(url) {
-    const m = url.match(/\/ergast\/f1\/(\d{4})\//);
-    if (m && +m[1] < SEASON_NOW) return 7 * DAY;
-    return 10 * 60 * 1000;
-  }
-
-  function readCache(key) {
-    try {
-      const raw = localStorage.getItem(CACHE_PREFIX + key);
-      if (!raw) return null;
-      const obj = JSON.parse(raw);
-      if (Date.now() > obj.exp) return null;
-      return obj.body;
-    } catch (e) { return null; }
-  }
-
-  function writeCache(key, body, ttl) {
-    try {
-      localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ exp: Date.now() + ttl, body }));
-    } catch (e) { /* cuota llena: seguimos sin caché */ }
-  }
-
-  const realFetch = window.fetch.bind(window);
-
-  window.fetch = function (input, init) {
-    const url = typeof input === 'string' ? input : (input && input.url) || '';
-    const method = (init && init.method) || (input && input.method) || 'GET';
-    if (method !== 'GET' || url.indexOf('api.jolpi.ca/ergast/f1/') === -1) {
-      return realFetch(input, init);
-    }
-
-    const key = url;
-    const cached = readCache(key);
-    if (cached) {
-      return Promise.resolve(new Response(JSON.stringify(cached), {
-        status: 200, headers: { 'Content-Type': 'application/json' }
-      }));
-    }
-
-    return realFetch(input, init).then(res => {
-      if (res.ok) {
-        res.clone().json()
-          .then(body => writeCache(key, body, ttlFor(url)))
-          .catch(() => {});
-      }
-      return res;
-    });
-  };
 
   /* ---------- Trazados de Las Vegas y Caesars Palace ---------- */
 
@@ -107,7 +50,7 @@
     };
   }
 
-  /* ---------- Resto de la página ---------- */
+  /* ---------- Utilidades ---------- */
 
   const $ = (s, r = document) => r.querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -161,7 +104,7 @@
         .circ:active,.race:active,.dcard:active{border-color:rgba(225,6,0,.5)}
       }
 
-      /* ===== Modal: nada se sale de la tarjeta (horarios, fichas, etc.) ===== */
+      /* ===== Modal: nada se sale de la tarjeta ===== */
       #modal .panel-m{overflow-x:hidden}
       #modal .line{flex-wrap:wrap;align-items:baseline;row-gap:2px}
       #modal .line > span{flex:0 0 auto;max-width:100%}
@@ -187,7 +130,7 @@
       .cal-track svg{width:100%;height:100%;max-width:180px;overflow:visible}
       .cal-track path{fill:none !important;stroke:var(--red);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
 
-      /* ===== Próximas carreras (Diseño horizontal estilizado) ===== */
+      /* ===== Próximas carreras ===== */
       .up{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px 16px;padding:12px 18px}
       .up .up-track{display:flex;align-items:center;gap:8px;margin:0;padding:0;background:none;border:none}
       .up .up-track .up-svg{width:46px;height:32px;flex-shrink:0;display:grid;place-items:center}
@@ -195,7 +138,7 @@
       .up .up-track .up-svg path{fill:none !important;stroke:var(--red,#e10600);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
       .up .up-track small{display:none}
 
-      /* ===== Campeonato: pequeños retoques generales ===== */
+      /* ===== Campeonato ===== */
       #v-standings .srow:nth-child(-n+3) .pos{color:var(--red)}
 
       /* ===== Info · Números de pilotos ===== */
@@ -257,7 +200,7 @@
         font-family:var(--f-disp);font-weight:900;font-style:italic;font-size:19px;line-height:1.2}
       .num-faq summary::-webkit-details-marker{display:none}
       .num-faq summary::after{content:"+";position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:26px;color:var(--red);font-style:normal}
-      .num-faq[open] summary::after{content:"2013"}
+      .num-faq[open] summary::after{content:"–"}
       .num-faq .info-text{margin:0;padding:0 20px 18px}
 
       @media (max-width:640px){
@@ -372,18 +315,29 @@
     ? `<img class="${cls}" src="${esc(src)}" alt="" loading="lazy" onerror="this.style.display='none'">`
     : '';
 
+  /* ---------- Pilotos y escuderías ----------
+     La grilla se redibuja SOLO cuando cambian los datos o la pestaña.
+     Así el clic no cae en un nodo que se reemplaza cada 2,5 s.
+     Las tarjetas de piloto usan data-drv, que app.js ya maneja. */
+
   function renderDrivers() {
     const grid = $('#drvGrid');
     const tab = $('#drvTabs .chip.on');
     if (!grid || (tab && tab.dataset.dt !== 'act')) return;
+
     const teams = getTeams();
     const list = getDrivers().sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
     CARDS.drv = list;
+
+    const key = JSON.stringify(list.map(d => [d.id, d.pts, d.teamName]));
+    if (grid.dataset.key === key && grid.children.length) return;
+    grid.dataset.key = key;
+
     grid.innerHTML = list.map((d, i) => {
       const col = (teams.find(t => t.id === d.team) || {}).color || '#e10600';
       const realNum = d.num || NUM_MAP_2026[d.id] || pad(i + 1);
       return `
-        <article class="glass dcard parche-card" data-k="drv" data-i="${i}" data-drv-name="${esc(d.name)}" style="--c:${col}">
+        <article class="glass dcard" data-drv="${esc(d.id)}" style="--c:${col}">
           <div class="dc-hel">${imgTag(helmSrc(d), 'helmet-img')}</div>
           <div class="dhead">
             <span class="dnum">${pad(realNum)}</span>
@@ -400,12 +354,18 @@
     const grid = $('#teamGrid');
     const tab = $('#teamTabs .chip.on');
     if (!grid || (tab && tab.dataset.tt !== 'act')) return;
+
     const list = getTeams().sort((a, b) => b.pts - a.pts);
     CARDS.team = list;
+
+    const key = JSON.stringify(list.map(t => [t.id, t.pts]));
+    if (grid.dataset.key === key && grid.children.length) return;
+    grid.dataset.key = key;
+
     grid.innerHTML = list.map((t, i) => {
       const src = logoSrc(t.name);
       return `
-        <article class="glass dcard parche-card" data-k="team" data-i="${i}" data-team-name="${esc(t.name)}" style="--c:${t.color}">
+        <article class="glass dcard parche-card" data-team-name="${esc(t.name)}" style="--c:${t.color}">
           <div class="dc-hel team-hel">
             ${src ? imgTag(src, 'team-logo') : `<span class="tc-name-only">${esc(t.name)}</span>`}
           </div>
@@ -494,6 +454,7 @@
     const d = buildHof();
     grid.innerHTML = d.html;
     grid.dataset.hofOk = '1';
+    grid.dataset.key = '';
     if (status) status.textContent = d.sub;
   }
 
@@ -516,13 +477,9 @@
       if (g) g.dataset.hofOk = '';
       ensureHof();
     }, true);
-
-    const grid = $('#teamGrid');
-    if (grid && !grid.dataset.hofWatch) {
-      grid.dataset.hofWatch = '1';
-      new MutationObserver(() => ensureHof()).observe(grid, { childList: true });
-    }
   }
+
+  /* ---------- Mensajes y avisos ---------- */
 
   function quitarMensajesAPI() {
     document.querySelectorAll('#drvStatus, #teamStatus, #drvTable, #teamTable, #drvGrid, #teamGrid, #circGrid').forEach(el => {
@@ -570,6 +527,8 @@
     const b = e.target.closest('[data-parche-recargar]');
     if (b) location.reload();
   });
+
+  /* ---------- Circuitos ---------- */
 
   function ensureCircuits() {
     const grid = $('#circGrid');
@@ -637,7 +596,7 @@
         const kx = Math.cos(pos.lat * Math.PI / 180);
         const dist = Math.hypot((entry.lon - pos.lon) * 111 * kx, (entry.lat - pos.lat) * 111);
         const prio = enCalendario(id) ? 0 : (esCaesarsId(id) ? 1 : 2);
-        return { x, dist, prio };
+        return { x: x, dist, prio };
       });
       if (meta.some(m => !m)) return;
       meta.sort((a, b) => a.prio - b.prio || a.dist - b.dist);
@@ -844,17 +803,6 @@
 
   /* ---------- Modal y horarios ---------- */
 
-  function openModal(html, extraClass) {
-    const m = $('#modal'), b = $('#mBody');
-    if (!m || !b) return;
-    b.innerHTML = html;
-    const panel = m.querySelector('.panel-m');
-    if (panel) panel.className = 'glass panel-m' + (extraClass ? ' ' + extraClass : '');
-    m.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    if (panel) panel.scrollTop = 0;
-  }
-
   const fmtDia = d => {
     const s = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ_AR }).format(d);
     return s.charAt(0).toUpperCase() + s.slice(1);
@@ -883,7 +831,10 @@
   }
 
   function openHorarios(race) {
-    openModal(`
+    const b = $('#mBody');
+    const m = $('#modal');
+    if (!b || !m) return;
+    b.innerHTML = `
       <span class="eyebrow">Ronda ${pad(race.round)} · ${esc(race.flag)}</span>
       <h3 class="display m-title">${esc(race.name)}</h3>
       <div class="box">
@@ -895,7 +846,11 @@
         <div class="line"><span>Lugar</span><strong>${esc(race.place || '—')}</strong></div>
         <div class="line"><span>Formato</span><strong>${race.sprint ? 'Con Sprint' : 'Estándar'}</strong></div>
         <div class="line"><span>Estado</span><strong>Por correr</strong></div>
-      </div>`);
+      </div>`;
+    const panel = m.querySelector('.panel-m');
+    if (panel) panel.scrollTop = 0;
+    m.classList.add('open');
+    document.body.style.overflow = 'hidden';
   }
 
   document.addEventListener('click', e => {
@@ -906,23 +861,13 @@
     openHorarios(race);
   });
 
+  // Escuderías: se abren desde acá. Pilotos: app.js los maneja con data-drv.
   document.addEventListener('click', e => {
-    const c = e.target.closest('.parche-card');
+    const c = e.target.closest('.parche-card[data-team-name]');
     if (!c) return;
-    const k = c.dataset.k;
-
-    if (k === 'drv') {
-      const name = c.dataset.drvName;
-      if (name && typeof window.a0_0x68b92b === 'function') {
-        window.a0_0x68b92b(name);
-      } else if (name && typeof window.a0_0x243121 === 'function') {
-        window.a0_0x243121(name);
-      }
-    } else if (k === 'team') {
-      const teamName = c.dataset.teamName;
-      if (teamName && typeof window.a0_0x243121 === 'function') {
-        window.a0_0x243121(teamName);
-      }
+    const teamName = c.dataset.teamName;
+    if (teamName && typeof window.a0_0x243121 === 'function') {
+      window.a0_0x243121(teamName);
     }
   });
 
