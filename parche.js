@@ -4,9 +4,11 @@
    - Trazado correcto de Las Vegas (vigente) y Caesars Palace (histórico)
    - Vista previa de trazados en "Próximas" y calendario calculada directo
    - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
+   - Trazado de Las Vegas corregido en la tarjeta de circuitos vigentes
    - Celulares: sin saltos en tarjetas, "Próximas" y "Tabla de posiciones"
    - Modal de horarios: el texto ya no se sale de la tarjeta en celulares
-   - Salón de la Fama de escuderías: campeonatos de constructores
+   - Salón de la Fama de escuderías: títulos de constructores
+   - Trazados contenidos dentro de su caja (sin encimarse con las tarjetas)
    - Info: sección "Números de pilotos"
    ===================================================== */
 (function () {
@@ -418,8 +420,8 @@
   }
 
   /* ---------- Salón de la Fama de escuderías ----------
-     Campeonatos de CONSTRUCTORES (1958–2025). Se dibuja cada vez que
-     app.js cambia #teamGrid estando en la pestaña "Salón de la Fama". */
+     Campeonatos de CONSTRUCTORES (1958–2025). Los conteos se calculan
+     desde esta lista, no se escriben a mano. */
 
   const HOF_CAMPEONES = [
     [1958,'Vanwall'],[1959,'Cooper'],[1960,'Cooper'],[1961,'Ferrari'],[1962,'BRM'],
@@ -482,37 +484,50 @@
     return { sub, html };
   }
 
-  let hofBusy = false;
+  function hofActivo() {
+    const tab = $('#teamTabs .chip.on');
+    return !!tab && tab.dataset.tt === 'hof';
+  }
 
   function ensureHof() {
-    if (hofBusy) return;
     const grid = $('#teamGrid');
-    const tab = $('#teamTabs .chip.on');
-    if (!grid || !tab || tab.dataset.tt !== 'hof') return;
-    if (grid.querySelector('.hof-card')) return;
+    const status = $('#teamStatus');
+    if (!grid || !hofActivo()) return;
+    if (grid.dataset.hofOk === '1' && grid.querySelector('.hof-card')) return;
 
-    hofBusy = true;
-    try {
-      injectStyles();
-      const d = buildHof();
-      grid.innerHTML = d.html;
-      const status = $('#teamStatus');
-      if (status) status.textContent = d.sub;
-    } finally {
-      hofBusy = false;
-    }
+    injectStyles();
+    const d = buildHof();
+    grid.innerHTML = d.html;
+    grid.dataset.hofOk = '1';
+    if (status) status.textContent = d.sub;
+  }
+
+  function setChipsHof() {
+    document.querySelectorAll('#teamTabs .chip').forEach(c => {
+      c.classList.toggle('on', c.dataset.tt === 'hof');
+    });
+    const tools = $('#teamTools');
+    if (tools) tools.style.display = 'none';
   }
 
   function watchHof() {
+    // Captura antes que app.js: en la pestaña "Salón" no corre su función vieja
+    window.addEventListener('click', e => {
+      const chip = e.target.closest && e.target.closest('#teamTabs .chip');
+      if (!chip || chip.dataset.tt !== 'hof') return;
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      setChipsHof();
+      const g = $('#teamGrid');
+      if (g) g.dataset.hofOk = '';
+      ensureHof();
+    }, true);
+
+    // Si app.js vuelve a escribir la grilla mientras el Salón está activo, lo reemplazamos
     const grid = $('#teamGrid');
     if (grid && !grid.dataset.hofWatch) {
       grid.dataset.hofWatch = '1';
-      new MutationObserver(ensureHof).observe(grid, { childList: true });
-    }
-    const tabs = $('#teamTabs');
-    if (tabs && !tabs.dataset.hofWatch) {
-      tabs.dataset.hofWatch = '1';
-      tabs.addEventListener('click', () => setTimeout(ensureHof, 0));
+      new MutationObserver(() => ensureHof()).observe(grid, { childList: true });
     }
   }
 
@@ -574,6 +589,18 @@
     if (!d.calendar || !d.calendar.length) return;
     if (typeof a0_0x4722c6 !== 'undefined' && a0_0x4722c6.tab !== 'vig') return;
     a0_0x50272c();
+  }
+
+  /* ---------- Trazado de Las Vegas en la tarjeta de circuitos vigentes ---------- */
+  function fixVegasCard() {
+    const card = document.querySelector('#circGrid .circ[data-circ="las-vegas-1"]');
+    if (!card || card.dataset.vfix === '1') return;
+    const holder = card.querySelector('.trk');
+    if (!holder) return;
+    const tr = trackFor({ circuitId: 'las-vegas-1', lat: VEGAS_ACTUAL.lat, lon: VEGAS_ACTUAL.lon });
+    if (!tr) return;
+    holder.innerHTML = tr.svg;
+    card.dataset.vfix = '1';
   }
 
   /* ---------- Historial: trazados repetidos ----------
@@ -1085,14 +1112,13 @@
         { type: 'numfaq', title: '¿Y si un piloto se va un tiempo y vuelve?',
           t: 'Si vuelve dentro de ese plazo, recupera su número. Alonso retomó el 14 en 2021 tras dos años fuera, y en 2026 Bottas volvió con el 77 y Pérez con el 11.' },
         { type: 'numfaq', title: '¿Se puede cambiar de número?',
-          t: 'En general no: el número es para toda la carrera. La excepción es el campeón, que puede correr con el 1. Verstappen es un caso especial: dejó el 33 y para 2026 eligió el 3, que lo tenia Ricciardo (piloto que se retiró en 2024), Ricciardo y la FIA dieron su visto bueno para permitirle usar el número.' },
+          t: 'En general no: el número es para toda la carrera. La excepción es el campeón, que puede correr con el 1. Verstappen es un caso especial: dejó el 33 y para 2026 eligió el 3, que lo tenía Ricciardo (piloto que se retiró en 2024), Ricciardo y la FIA dieron su visto bueno para permitirle usar el número.' },
         { type: 'numfaq', title: '¿Qué pasa con el número 1?',
           t: 'Es para el campeón del mundo, y usarlo es opcional. Si lo usa, su número permanente queda reservado y lo recupera si ya no es campeón. En 2026 lo lleva Lando Norris, que deja el 4 en reserva.' },
         { type: 'numfaq', title: '¿Por qué no existe el 17?',
           t: 'Jules Bianchi corrió con el 17 y murió en 2015 por las heridas de un accidente en el GP de Japón 2014. La FIA retiró el número en su homenaje y desde entonces nadie puede usarlo.' },
         { type: 'numfaq', title: '¿Qué número lleva un piloto suplente?',
-          t: 'Si reemplaza a un titular en una carrera, recibe un número temporal asignado por el equipo. No es su número permanente y no le quita ninguno a otro piloto.' },
-
+          t: 'Si reemplaza a un titular en una carrera, recibe un número temporal asignado por el equipo. No es su número permanente y no le quita ninguno a otro piloto.' }
       ]
     };
 
@@ -1124,6 +1150,51 @@
       box.querySelectorAll('[data-nf]').forEach(b => b.classList.toggle('on', g.dataset.f === b.dataset.nf));
     }
   });
+
+  /* ---------- Corrección de contención de trazados ----------
+     Los SVG de los trazados se salían de su caja y se encimaban con
+     las tarjetas. Acá se fija el tamaño de la caja y el SVG queda
+     recortado dentro de ella. */
+  function injectTrackFix() {
+    if ($('#parcheTrackFix')) return;
+    const st = document.createElement('style');
+    st.id = 'parcheTrackFix';
+    st.textContent = `
+      /* Próximas carreras (Inicio) */
+      #upList .up{position:relative;overflow:hidden}
+      #upList .up .up-track{
+        grid-column:1/-1;box-sizing:border-box;height:84px;
+        padding:8px 12px;overflow:hidden;contain:paint;
+        display:flex;align-items:center;gap:14px;
+      }
+      #upList .up .up-track .up-svg{
+        position:relative;flex:0 0 64px;width:64px;height:64px;
+        overflow:hidden;display:block;
+      }
+      #upList .up .up-track .up-svg svg{
+        position:absolute;inset:0;width:100%;height:100%;
+        overflow:hidden;display:block;
+      }
+      #upList .up .up-track small{min-width:0;overflow-wrap:anywhere}
+
+      /* Calendario */
+      #calGrid .cal-track{
+        position:relative;height:110px;overflow:hidden;contain:paint;
+        margin:10px 0 2px;display:flex;justify-content:center;align-items:center;
+      }
+      #calGrid .cal-track svg{
+        position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);
+        overflow:hidden;display:block;
+      }
+
+      @media (max-width:640px){
+        #upList .up .up-track{height:76px;padding:6px 10px;gap:10px}
+        #upList .up .up-track .up-svg{flex-basis:56px;width:56px;height:56px}
+        #calGrid .cal-track{height:90px}
+      }
+    `;
+    document.head.appendChild(st);
+  }
 
   /* ---------- Botón "subir" ---------- */
 
@@ -1169,11 +1240,13 @@
   function tick() {
     if (document.hidden) return;
     try {
+      injectTrackFix();
       quitarMensajesAPI();
       renderDrivers();
       renderTeams();
       ensureHof();
       ensureCircuits();
+      fixVegasCard();
       dedupeTracks();
       renderContenders();
       addTracksToCalendar();
