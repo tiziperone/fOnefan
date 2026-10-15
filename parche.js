@@ -411,34 +411,40 @@
      Las tarjetas de piloto usan data-drv, que app.js ya maneja. */
 
   function renderDrivers() {
-    const grid = $('#drvGrid');
-    const tab = $('#drvTabs .chip.on');
-    if (!grid || (tab && tab.dataset.dt !== 'act')) return;
+  const grid = $('#drvGrid');
+  const tab = $('#drvTabs .chip.on');
+  if (!grid || !tab || tab.dataset.dt !== 'act') return;
 
-    const teams = getTeams();
-    const list = getDrivers().sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
-    CARDS.drv = list;
-
-    const key = JSON.stringify(list.map(d => [d.id, d.pts, d.teamName]));
-    if (grid.dataset.key === key && grid.children.length) return;
-    grid.dataset.key = key;
-
-    grid.innerHTML = list.map((d, i) => {
-      const col = (teams.find(t => t.id === d.team) || {}).color || '#e10600';
-      const realNum = d.num || NUM_MAP_2026[d.id] || pad(i + 1);
-      return `
-        <article class="glass dcard" data-drv="${esc(d.id)}" style="--c:${col}">
-          <div class="dc-hel">${imgTag(helmSrc(d), 'helmet-img')}</div>
-          <div class="dhead">
-            <span class="dnum">${pad(realNum)}</span>
-            <span class="dcode">${esc(d.code || d.id.slice(0, 3).toUpperCase())}</span>
-          </div>
-          <h3>${esc(d.name)}</h3>
-          <div class="dteam">${esc(d.teamName)}</div>
-          <div class="dfoot"><span>${d.pts} pts</span><span>Ver ficha →</span></div>
-        </article>`;
-    }).join('');
+  // Si la grilla todavía muestra el Salón, la reemplazamos
+  if (grid.dataset.hofPil) {
+    grid.dataset.hofPil = '';
+    grid.dataset.key = '';
   }
+
+  const teams = getTeams();
+  const list = getDrivers().sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+  CARDS.drv = list;
+
+  const key = JSON.stringify(list.map(d => [d.id, d.pts, d.teamName]));
+  if (grid.dataset.key === key && grid.children.length) return;
+  grid.dataset.key = key;
+
+  grid.innerHTML = list.map((d, i) => {
+    const col = (teams.find(t => t.id === d.team) || {}).color || '#e10600';
+    const realNum = d.num || NUM_MAP_2026[d.id] || pad(i + 1);
+    return `
+      <article class="glass dcard" data-drv="${esc(d.id)}" style="--c:${col}">
+        <div class="dc-hel">${imgTag(helmSrc(d), 'helmet-img')}</div>
+        <div class="dhead">
+          <span class="dnum">${pad(realNum)}</span>
+          <span class="dcode">${esc(d.code || d.id.slice(0, 3).toUpperCase())}</span>
+        </div>
+        <h3>${esc(d.name)}</h3>
+        <div class="dteam">${esc(d.teamName)}</div>
+        <div class="dfoot"><span>${d.pts} pts</span><span>Ver ficha →</span></div>
+      </article>`;
+  }).join('');
+}
 
   function renderTeams() {
     const grid = $('#teamGrid');
@@ -688,18 +694,19 @@
     if (status) status.textContent = lista.length + ' campeones del mundo · temporadas 1950–2025';
   }
 
-  // Al cambiar de pestaña de pilotos: limpiar la grilla para que app.js pinte la nueva
-  document.addEventListener('click', e => {
-    const chip = e.target.closest && e.target.closest('#drvTabs .chip');
-    if (!chip) return;
-    const g = $('#drvGrid');
-    if (g) {
-      g.dataset.hofPil = '';
-      g.dataset.key = '';
-      if (chip.dataset.dt === 'act') g.innerHTML = '';
-    }
-    setTimeout(tick, 80);
-  });
+  // Al cambiar de pestaña de pilotos: marcar el estado y repintar
+document.addEventListener('click', e => {
+  const chip = e.target.closest && e.target.closest('#drvTabs .chip');
+  if (!chip) return;
+  const g = $('#drvGrid');
+  if (g) {
+    g.dataset.hofPil = '';
+    g.dataset.key = '';
+    g.innerHTML = '';
+  }
+  // Pequeña espera para que app.js actualice el chip activo antes de pintar
+  setTimeout(tick, 60);
+});
 
   /* ---------- Salón de la Fama de escuderías ---------- */
 
