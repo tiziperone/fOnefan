@@ -1,7 +1,10 @@
 /* =====================================================
    parche.js · fOnefan
    - Caché de la API Jolpi (historia más rápida desde la 2.ª carga)
-   - Resto de mejoras de la página (ver versión anterior)
+   - Trazado correcto de Las Vegas / Caesars Palace en todos los lugares
+   - Vista previa de trazados en "Próximas" y calendario calculada directo
+   - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
+   - Mejoras para celulares: "Próximas carreras" y "Tabla de posiciones"
    ===================================================== */
 (function () {
   'use strict';
@@ -62,6 +65,39 @@
     });
   };
 
+  /* ---------- Trazados de Las Vegas y Caesars Palace ----------
+     El buscador de app.js elige la pista más cercana por coordenadas y, para
+     Las Vegas, caía en el viejo circuito de Caesars Palace. Se fuerzan las
+     coordenadas de cada uno para que cada circuito use su propio trazado. */
+
+  const VEGAS_ID = 'las-vegas-1';
+  const VEGAS_ACTUAL = { lat: 36.175, lon: -115.1364 };   // entrada las-vegas-1
+  const CAESARS = { lat: 36.1169, lon: -115.175 };         // entrada de Caesars Palace
+
+  const esVegasActual = id => /vegas/i.test(String(id || '')) && !/caesar/i.test(String(id || ''));
+  const esCaesarsId = id => /caesar/i.test(String(id || ''));
+  const esCaesarsEntrada = c => c && Math.abs(c.lat - CAESARS.lat) < 0.001 && Math.abs(c.lon - CAESARS.lon) < 0.001;
+
+  function corregirPos(c) {
+    if (!c) return c;
+    if (esVegasActual(c.circuitId)) return Object.assign({}, c, VEGAS_ACTUAL);
+    if (esCaesarsId(c.circuitId)) return Object.assign({}, c, CAESARS);
+    return c;
+  }
+
+  if (typeof window.a0_0x4d4387 === 'function') {
+    const orig = window.a0_0x4d4387;
+    window.a0_0x4d4387 = function (lista) {
+      return orig.call(this, (lista || []).map(corregirPos));
+    };
+  }
+  if (typeof window.a0_0xcf7b97 === 'function') {
+    const orig = window.a0_0xcf7b97;
+    window.a0_0xcf7b97 = function (c) {
+      return orig.call(this, corregirPos(c));
+    };
+  }
+
   /* ---------- Resto de la página ---------- */
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -74,7 +110,7 @@
   const TITULO_CHANCES = /pilotos con chances/i;
   const MSG_API = /requieren conexi[oó]n a la API/i;
 
-  const CARDS = { drv: [], team: [], race: [] };
+  const CARDS = { drv: [], team: [] };
   const WAIT_TICKS = 3;
   const waitCount = { drv: 0, team: 0, circ: 0 };
 
@@ -89,27 +125,62 @@
         opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .25s ease,transform .25s ease}
       .pt-btn.show{opacity:1;transform:none;pointer-events:auto}
       .pt-btn:hover{filter:brightness(1.15)}
-      .parche-circ-ficha .m-title{font-size:clamp(28px,8vw,40px);line-height:1;word-break:break-word;margin:8px 0 18px}
-      .parche-circ-ficha .box{padding:14px}
-      .parche-circ-ficha .box h4{font-size:12px;margin-bottom:8px}
-      .parche-circ-ficha .line{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 0}
-      .parche-circ-ficha .line span{font-size:13px;color:var(--muted)}
-      .parche-circ-ficha .line strong{font-size:15px;white-space:normal;text-align:left;overflow-wrap:anywhere}
+
+      /* Trazados en calendario */
       .cal-track{display:flex;justify-content:center;align-items:center;margin:10px 0 2px;height:110px}
       .cal-track svg{width:100%;height:100%;max-width:180px;overflow:visible}
       .cal-track path{fill:none !important;stroke:var(--red);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
-      .up-track{display:flex;align-items:center;gap:12px;margin-top:8px}
-      .up-track .up-svg{width:72px;height:56px;flex-shrink:0}
-      .up-track .up-svg svg{width:100%;height:100%;overflow:visible}
-      .up-track .up-svg path{fill:none !important;stroke:var(--red);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
-      .up-track small{color:var(--muted);font-size:12px}
+
+      /* ===== Próximas carreras (Inicio) ===== */
+      .up{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 12px}
+      .up>span{min-width:0;overflow-wrap:anywhere;line-height:1.3}
+      .up>small{white-space:nowrap}
+      .up .up-track{grid-column:1/-1;display:flex;align-items:center;gap:14px;margin:2px 0 0;
+        padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid var(--line)}
+      .up .up-track .up-svg{width:88px;height:64px;flex-shrink:0;display:grid;place-items:center}
+      .up .up-track .up-svg svg{width:100%;height:100%;overflow:visible}
+      .up .up-track .up-svg path{fill:none !important;stroke:var(--red);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+      .up .up-track small{color:var(--muted);font-size:13px;line-height:1.35;min-width:0;overflow-wrap:anywhere}
+
+      /* ===== Campeonato: pequeños retoques generales ===== */
+      #v-standings .srow:nth-child(-n+3) .pos{color:var(--red)}
+
       @media (max-width:640px){
-        .modal .panel-m{padding:20px 16px;max-height:92vh}
-        .parche-circ-ficha .m-title{font-size:30px}
-        .parche-circ-ficha .x{top:12px;right:12px}
-        .parche-circ-ficha .line strong{font-size:14px}
+        /* Próximas carreras */
+        .up{grid-template-columns:1fr;padding:12px;font-size:14px;gap:6px}
+        .up>small{white-space:normal;font-size:13px}
+        .up .up-track{padding:10px;gap:12px}
+        .up .up-track .up-svg{width:96px;height:68px}
         .cal-track{height:90px}
-        .up-track .up-svg{width:60px;height:46px}
+
+        /* Tabla de posiciones */
+        #champTabs{display:grid !important;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px !important}
+        #champTabs .chip{padding:10px 6px;text-align:center;font-size:12px;letter-spacing:.06em;line-height:1.2}
+        #v-standings .sec-head p{font-size:14px;padding-left:12px}
+        #v-standings .two{gap:16px}
+        #v-standings .panel{padding:16px 12px;border-radius:18px}
+        #v-standings .panel h3{margin-bottom:8px;font-size:12px}
+        #v-standings .srow{grid-template-columns:26px minmax(0,1fr) auto;gap:10px;padding:10px 4px}
+        #v-standings .who{gap:5px}
+        #v-standings .who b{font-size:15px;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.2}
+        #v-standings .pts{font-size:15px;min-width:34px;text-align:right}
+        #v-standings .pos{font-size:13px}
+
+        /* Pilotos con chances */
+        #parcheChances.panel{padding:16px 12px}
+        #parcheChances .ct-card{padding:14px 12px 12px 16px}
+        #parcheChances .ct-row{gap:10px}
+        #parcheChances .ct-pos{font-size:22px;min-width:28px}
+        #parcheChances .ct-info h3{font-size:16px;white-space:normal;overflow:visible;text-overflow:clip}
+        #parcheChances .ct-pts b{font-size:20px}
+        #parcheChances .ct-meta{font-size:12px;flex-direction:column;gap:4px}
+        #parcheChances .ct-decided{padding:18px}
+        #parcheChances .ct-decided b{font-size:24px}
+      }
+      @media (max-width:380px){
+        #v-standings .srow{grid-template-columns:24px minmax(0,1fr) auto;gap:8px}
+        #v-standings .who b{font-size:14px}
+        .up .up-track .up-svg{width:80px;height:58px}
       }
     `;
     document.head.appendChild(st);
@@ -154,6 +225,8 @@
       place: r.place || r.circuit || '',
       circuit: r.circuit || '',
       circuitId: r.circuitId || null,
+      lat: r.lat,
+      lon: r.lon,
       flag: r.flag || '',
       sprint: !!r.sprint,
       done: !!r.done,
@@ -269,67 +342,118 @@
     if (b) location.reload();
   });
 
-  function renderCircuits() {
+  /* ---------- Circuitos vigentes ----------
+     Se usan las tarjetas y la ficha completas de app.js (las mismas que
+     "Historial de circuitos"). Solo se asegura que se rendericen si la
+     cuadrícula quedó vacía. */
+  function ensureCircuits() {
     const grid = $('#circGrid');
-    if (!grid || grid.querySelector('.circ')) return;
-    const races = getRaces();
-    CARDS.race = races;
-    grid.innerHTML = races.map((r, i) => `
-      <div class="glass circ parche-card" data-k="race" data-i="${i}">
-        <span class="eyebrow">Ronda ${pad(r.round)} · ${esc(r.flag)}</span>
-        <h3>${esc(r.name)}</h3>
-        <div class="muted" style="font-size:14px">${esc(r.place)}</div>
-        <div class="foot">
-          <span class="meta">${esc(r.date)}</span>
-          <span class="ficha">${r.done ? 'Finalizada' : (r.sprint ? 'Con Sprint' : 'Ver ficha')} <i>→</i></span>
-        </div>
-      </div>`).join('');
+    if (!grid || grid.children.length) return;
+    if (typeof a0_0x50272c !== 'function') return;
+    const d = LIVE();
+    if (!d.calendar || !d.calendar.length) return;
+    if (typeof a0_0x4722c6 !== 'undefined' && a0_0x4722c6.tab !== 'vig') return;
+    a0_0x50272c();
   }
 
-  function openCircuitVigente(circId) {
-    const races = getRaces().filter(r => r.circuitId === circId).sort((a, b) => a.round - b.round);
-    if (!races.length) return;
-    const first = races[0];
-    const next = races.find(r => !r.done);
-    const estado = next ? `Vigente · próxima ronda ${pad(next.round)}` : 'Vigente · temporada 2026 disputada';
-    openModal(`
-      <span class="eyebrow">Circuito · Vigente 2026</span>
-      <h3 class="display m-title">${esc(first.circuit || first.name)}</h3>
-      <div class="box">
-        <div class="line"><span>Lugar</span><strong>${esc(first.place || '—')}</strong></div>
-        <div class="line"><span>Estado</span><strong>${esc(estado)}</strong></div>
-      </div>
-      <div class="box" style="margin-top:18px">
-        <h4>🏁 Carreras 2026 en este circuito</h4>
-        ${races.map(r => `
-          <div class="line">
-            <span>Ronda ${pad(r.round)} · ${esc(r.name)}</span>
-            <strong>${esc(r.date)}${r.done ? ' · Finalizada' : ''}</strong>
-          </div>`).join('')}
-      </div>`, 'parche-circ-ficha');
+  /* ---------- Historial: trazados repetidos ----------
+     Si dos circuitos distintos terminan con exactamente el mismo dibujo,
+     solo se queda con él el que está más cerca de ese trazado; el otro
+     muestra "Trazado no disponible" en vez de uno falso. */
+  function coordsDe(id) {
+    const hist = (typeof a0_0x4722c6 !== 'undefined' && a0_0x4722c6.hist) || [];
+    let c = hist.find(x => x.id === id);
+    if (c && c.lat != null) return { lat: +c.lat, lon: +c.lon };
+    const cal = LIVE().calendar || [];
+    c = cal.find(x => x.circuitId === id);
+    if (c && c.lat != null) return { lat: +c.lat, lon: +c.lon };
+    return null;
   }
 
-  document.addEventListener('click', e => {
-    const c = e.target.closest('[data-circ]');
-    if (!c) return;
-    const id = c.dataset.circ;
-    if (!getRaces().some(r => r.circuitId === id)) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    openCircuitVigente(id);
-  }, true);
+  function dedupeTracks() {
+    const grid = $('#circGrid');
+    if (!grid || typeof a0_0x7fb4d2 !== 'function') return;
+    const cards = Array.from(grid.querySelectorAll('.circ[data-circ]'));
+    if (cards.length < 2) return;
 
-  function trackSvgFor(circuitId) {
-    if (!circuitId) return '';
-    const el = Array.from(document.querySelectorAll('#circGrid [data-circ]'))
-      .find(x => x.dataset.circ === circuitId);
-    const svg = el ? el.querySelector('svg') : null;
-    if (!svg) return '';
-    const copy = svg.cloneNode(true);
-    copy.removeAttribute('width');
-    copy.removeAttribute('height');
-    copy.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    return copy.outerHTML;
+    const groups = {};
+    cards.forEach(card => {
+      const svg = card.querySelector('svg');
+      if (!svg) return;
+      const k = Array.from(svg.querySelectorAll('path')).map(p => p.getAttribute('d')).join('|');
+      if (!k) return;
+      (groups[k] = groups[k] || []).push({ card, svg });
+    });
+
+    Object.keys(groups).forEach(k => {
+      const g = groups[k];
+      if (g.length < 2) return;
+      const meta = g.map(x => {
+        const id = x.card.dataset.circ;
+        const base = coordsDe(id);
+        if (!base) return null;
+        const pos = corregirPos({ circuitId: id, lat: base.lat, lon: base.lon });
+        const entry = a0_0x7fb4d2(pos.lat, pos.lon);
+        if (!entry) return null;
+        const kx = Math.cos(pos.lat * Math.PI / 180);
+        const dist = Math.hypot((entry.lon - pos.lon) * 111 * kx, (entry.lat - pos.lat) * 111);
+        return { x, dist };
+      });
+      if (meta.some(m => !m)) return;
+      meta.sort((a, b) => a.dist - b.dist);
+      meta.slice(1).forEach(m => {
+        const holder = m.x.svg.parentElement;
+        if (holder && !holder.classList.contains('circ')) {
+          holder.innerHTML = '<span class="trk-msg">Trazado no disponible</span>';
+        }
+      });
+    });
+  }
+
+  /* ---------- Trazados en calendario y "Próximas" ----------
+     Se calculan directo (sin copiar de las tarjetas de Circuitos), para que
+     siempre coincidan con el circuito real de cada carrera. */
+
+  const TRACK_CACHE = {};
+  const TRACK_PEND = {};
+
+  function cleanSvg(html) {
+    const t = document.createElement('template');
+    t.innerHTML = String(html || '').trim();
+    const s = t.content.firstElementChild;
+    if (!s || s.tagName.toLowerCase() !== 'svg') return '';
+    s.removeAttribute('width');
+    s.removeAttribute('height');
+    s.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    return s.outerHTML;
+  }
+
+  function trackEntryFor(race) {
+    const list = (typeof a0_0xcaf996 !== 'undefined') ? a0_0xcaf996 : [];
+    if (esVegasActual(race.circuitId)) return list.find(c => c.id === VEGAS_ID) || null;
+    if (esCaesarsId(race.circuitId)) return list.find(esCaesarsEntrada) || null;
+    if (race.lat == null || race.lon == null || typeof a0_0x7fb4d2 !== 'function') return null;
+    return a0_0x7fb4d2(race.lat, race.lon);
+  }
+
+  // Devuelve { key, svg } o null si todavía no está listo (se reintenta en el próximo ciclo).
+  function trackFor(race) {
+    if (!race || !race.circuitId) return null;
+    const entry = trackEntryFor(race);
+    if (!entry) return null;
+    const key = entry.id;
+    if (TRACK_CACHE[key]) return { key, svg: TRACK_CACHE[key] };
+
+    if (typeof a0_0x4ca195 !== 'undefined' && a0_0x4ca195[key] && typeof a0_0x2b37b3 === 'function') {
+      const svg = cleanSvg(a0_0x2b37b3(entry));
+      if (svg) { TRACK_CACHE[key] = svg; return { key, svg }; }
+    }
+
+    if (!TRACK_PEND[key] && typeof a0_0x1f6c35 === 'function') {
+      TRACK_PEND[key] = true;
+      a0_0x1f6c35([key]).catch(() => {});
+    }
+    return null;
   }
 
   function addTracksToCalendar() {
@@ -337,17 +461,20 @@
     if (!grid) return;
     const races = getRaces();
     grid.querySelectorAll('[data-race]').forEach(card => {
-      if (card.querySelector('.cal-track')) return;
       const race = races.find(r => r.id === card.dataset.race);
-      if (!race || !race.circuitId) return;
-      const svg = trackSvgFor(race.circuitId);
-      if (!svg) return;
-      const wrap = document.createElement('div');
-      wrap.className = 'cal-track';
-      wrap.innerHTML = svg;
-      const foot = card.querySelector('.foot');
-      if (foot) card.insertBefore(wrap, foot);
-      else card.appendChild(wrap);
+      const tr = trackFor(race);
+      if (!tr) return;
+      let wrap = card.querySelector('.cal-track');
+      if (wrap && wrap.dataset.tk === tr.key) return;
+      if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.className = 'cal-track';
+        const foot = card.querySelector('.foot');
+        if (foot) card.insertBefore(wrap, foot);
+        else card.appendChild(wrap);
+      }
+      wrap.dataset.tk = tr.key;
+      wrap.innerHTML = tr.svg;
     });
   }
 
@@ -356,17 +483,22 @@
     if (!list) return;
     const races = getRaces().filter(r => !r.done);
     list.querySelectorAll('[data-race]').forEach(item => {
-      if (item.querySelector('.up-track')) return;
       const race = races.find(r => r.id === item.dataset.race);
-      if (!race || !race.circuitId) return;
-      const svg = trackSvgFor(race.circuitId);
-      if (!svg) return;
-      const wrap = document.createElement('div');
-      wrap.className = 'up-track';
-      wrap.innerHTML = `<div class="up-svg">${svg}</div><small>${esc(race.circuit || race.place || '')}</small>`;
-      item.appendChild(wrap);
+      const tr = trackFor(race);
+      if (!tr) return;
+      let wrap = item.querySelector('.up-track');
+      if (wrap && wrap.dataset.tk === tr.key) return;
+      if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.className = 'up-track';
+        item.appendChild(wrap);
+      }
+      wrap.dataset.tk = tr.key;
+      wrap.innerHTML = `<div class="up-svg">${tr.svg}</div><small>${esc(race.circuit || race.place || '')}</small>`;
     });
   }
+
+  /* ---------- Campeonato ---------- */
 
   function ensureGridLayout(two) {
     if (two.dataset.parche === '1') return;
@@ -473,6 +605,8 @@
     box.innerHTML = head + `<div class="ct-list">${cards}</div>`;
   }
 
+  /* ---------- Modal y horarios ---------- */
+
   function openModal(html, extraClass) {
     const m = $('#modal'), b = $('#mBody');
     if (!m || !b) return;
@@ -573,22 +707,9 @@
           ${drv.map(d => `<div class="line"><span>${esc(d.name)}</span><strong>${d.pts} pts</strong></div>`).join('') || '<p class="muted">Sin pilotos cargados.</p>'}
         </div>`);
     }
-
-    if (k === 'race') {
-      const r = CARDS.race[i];
-      if (!r) return;
-      if (!r.done) { openHorarios(r); return; }
-      openModal(`
-        <span class="eyebrow">Ronda ${pad(r.round)} · ${esc(r.flag)}</span>
-        <h3 class="display m-title">${esc(r.name)}</h3>
-        <div class="box">
-          <div class="line"><span>Fechas</span><strong>${esc(r.date)}</strong></div>
-          <div class="line"><span>Lugar</span><strong>${esc(r.place || '—')}</strong></div>
-          <div class="line"><span>Formato</span><strong>${r.sprint ? 'Con Sprint' : 'Estándar'}</strong></div>
-          <div class="line"><span>Estado</span><strong>Finalizada</strong></div>
-        </div>`);
-    }
   });
+
+  /* ---------- Botón "subir" ---------- */
 
   let topBtn = null;
 
@@ -634,7 +755,8 @@
       quitarMensajesAPI();
       renderDrivers();
       renderTeams();
-      renderCircuits();
+      ensureCircuits();
+      dedupeTracks();
       renderContenders();
       addTracksToCalendar();
       addTracksToUpcoming();
