@@ -5,6 +5,8 @@
    - Vista previa de trazados en "Próximas" y calendario calculada directo
    - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
    - Celulares: sin saltos en tarjetas, "Próximas" y "Tabla de posiciones"
+   - Modal de horarios: el texto ya no se sale de la tarjeta en celulares
+   - Salón de la Fama de escuderías: campeonatos de constructores
    - Info: sección "Números de pilotos"
    ===================================================== */
 (function () {
@@ -152,6 +154,27 @@
         .circ:active,.race:active,.dcard:active{border-color:rgba(225,6,0,.5)}
       }
 
+      /* ===== Modal: nada se sale de la tarjeta (horarios, fichas, etc.) ===== */
+      #modal .panel-m{overflow-x:hidden}
+      #modal .line{flex-wrap:wrap;align-items:baseline;row-gap:2px}
+      #modal .line > span{flex:0 0 auto;max-width:100%}
+      #modal .line > strong{white-space:normal;overflow-wrap:anywhere;min-width:0;margin-left:auto;text-align:right}
+
+      /* ===== Salón de la Fama de escuderías ===== */
+      .hof-card{background:var(--card,rgba(18,18,28,.86));border:1px solid var(--line,rgba(255,255,255,.08));
+        border-radius:22px;padding:22px;min-width:0}
+      .hof-top{display:flex;align-items:baseline;gap:10px}
+      .hof-num{font-family:var(--f-disp,'Titillium Web',sans-serif);font-weight:900;font-style:italic;font-size:56px;
+        line-height:1;color:var(--red,#e10600);font-variant-numeric:tabular-nums}
+      .hof-lbl{font-family:var(--f-nav,'Barlow Condensed',sans-serif);font-size:13px;letter-spacing:.16em;
+        text-transform:uppercase;color:var(--muted,#8b8b99);font-weight:700}
+      .hof-name{font-family:'Titillium Web',sans-serif;font-size:22px;font-weight:700;line-height:1.15;margin-top:12px;
+        overflow-wrap:anywhere;color:var(--text,#f4f4f7)}
+      .hof-pais{color:var(--muted,#8b8b99);font-size:14px;margin-top:3px;font-weight:500}
+      .hof-yrs{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+      .hof-yr{font-weight:600;font-size:13px;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.05);
+        border:1px solid var(--line,rgba(255,255,255,.08));color:var(--text,#f4f4f7);font-variant-numeric:tabular-nums}
+
       /* Trazados en calendario */
       .cal-track{display:flex;justify-content:center;align-items:center;margin:10px 0 2px;height:110px}
       .cal-track svg{width:100%;height:100%;max-width:180px;overflow:visible}
@@ -270,6 +293,11 @@
         .num-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
         .num-faq summary{font-size:17px;padding:14px 44px 14px 16px}
         .num-faq .info-text{padding:0 16px 16px}
+
+        /* Salón de la Fama */
+        .hof-card{padding:18px}
+        .hof-num{font-size:48px}
+        .hof-name{font-size:20px}
       }
       @media (max-width:380px){
         #v-standings .srow{grid-template-columns:24px minmax(0,1fr) auto;gap:8px}
@@ -387,6 +415,105 @@
           <div class="dfoot"><span>${t.pts} pts</span><span>Ver ficha →</span></div>
         </article>`;
     }).join('');
+  }
+
+  /* ---------- Salón de la Fama de escuderías ----------
+     Campeonatos de CONSTRUCTORES (1958–2025). Se dibuja cada vez que
+     app.js cambia #teamGrid estando en la pestaña "Salón de la Fama". */
+
+  const HOF_CAMPEONES = [
+    [1958,'Vanwall'],[1959,'Cooper'],[1960,'Cooper'],[1961,'Ferrari'],[1962,'BRM'],
+    [1963,'Lotus'],[1964,'Ferrari'],[1965,'Lotus'],[1966,'Brabham'],[1967,'Brabham'],
+    [1968,'Lotus'],[1969,'Matra'],[1970,'Lotus'],[1971,'Tyrrell'],[1972,'Lotus'],
+    [1973,'Lotus'],[1974,'McLaren'],[1975,'Ferrari'],[1976,'Ferrari'],[1977,'Ferrari'],
+    [1978,'Lotus'],[1979,'Ferrari'],[1980,'Williams'],[1981,'Williams'],[1982,'Ferrari'],
+    [1983,'Ferrari'],[1984,'McLaren'],[1985,'McLaren'],[1986,'Williams'],[1987,'Williams'],
+    [1988,'McLaren'],[1989,'McLaren'],[1990,'McLaren'],[1991,'McLaren'],[1992,'Williams'],
+    [1993,'Williams'],[1994,'Williams'],[1995,'Benetton'],[1996,'Williams'],[1997,'Williams'],
+    [1998,'McLaren'],[1999,'Ferrari'],[2000,'Ferrari'],[2001,'Ferrari'],[2002,'Ferrari'],
+    [2003,'Ferrari'],[2004,'Ferrari'],[2005,'Renault'],[2006,'Renault'],[2007,'Ferrari'],
+    [2008,'Ferrari'],[2009,'Brawn GP'],[2010,'Red Bull'],[2011,'Red Bull'],[2012,'Red Bull'],
+    [2013,'Red Bull'],[2014,'Mercedes'],[2015,'Mercedes'],[2016,'Mercedes'],[2017,'Mercedes'],
+    [2018,'Mercedes'],[2019,'Mercedes'],[2020,'Mercedes'],[2021,'Mercedes'],[2022,'Red Bull'],
+    [2023,'Red Bull'],[2024,'McLaren'],[2025,'McLaren']
+  ];
+
+  const HOF_META = {
+    'Ferrari':  { label: 'Ferrari',          pais: 'Italia' },
+    'McLaren':  { label: 'McLaren',          pais: 'Reino Unido' },
+    'Williams': { label: 'Williams',         pais: 'Reino Unido' },
+    'Mercedes': { label: 'Mercedes',         pais: 'Alemania' },
+    'Lotus':    { label: 'Lotus',            pais: 'Reino Unido' },
+    'Red Bull': { label: 'Red Bull Racing',  pais: 'Austria' },
+    'Brabham':  { label: 'Brabham',          pais: 'Reino Unido' },
+    'Cooper':   { label: 'Cooper',           pais: 'Reino Unido' },
+    'Renault':  { label: 'Renault / Alpine', pais: 'Francia' },
+    'Benetton': { label: 'Benetton',         pais: 'Italia' },
+    'Brawn GP': { label: 'Brawn GP',         pais: 'Reino Unido' },
+    'BRM':      { label: 'BRM',              pais: 'Reino Unido' },
+    'Vanwall':  { label: 'Vanwall',          pais: 'Reino Unido' },
+    'Matra':    { label: 'Matra',            pais: 'Francia' },
+    'Tyrrell':  { label: 'Tyrrell',          pais: 'Reino Unido' }
+  };
+
+  function buildHof() {
+    const grupos = {};
+    HOF_CAMPEONES.forEach(([anio, eq]) => { (grupos[eq] = grupos[eq] || []).push(anio); });
+
+    const lista = Object.keys(grupos).map(eq => {
+      const anios = grupos[eq].slice().sort((a, b) => b - a);
+      return { eq, anios, n: anios.length, primero: Math.min.apply(null, anios) };
+    }).sort((a, b) => b.n - a.n || a.primero - b.primero);
+
+    const sub = lista.length + ' escuderías campeonas · ' + HOF_CAMPEONES.length +
+                ' campeonatos de constructores (1958–2025)';
+
+    const html = lista.map(e => {
+      const m = HOF_META[e.eq] || { label: e.eq, pais: '' };
+      return '<article class="hof-card">' +
+        '<div class="hof-top"><span class="hof-num">' + e.n + '</span>' +
+        '<span class="hof-lbl">' + (e.n === 1 ? 'título' : 'títulos') + '</span></div>' +
+        '<div class="hof-name">' + esc(m.label) + '</div>' +
+        '<div class="hof-pais">' + esc(m.pais) + '</div>' +
+        '<div class="hof-yrs">' + e.anios.map(y => '<span class="hof-yr">' + y + '</span>').join('') + '</div>' +
+        '</article>';
+    }).join('');
+
+    return { sub, html };
+  }
+
+  let hofBusy = false;
+
+  function ensureHof() {
+    if (hofBusy) return;
+    const grid = $('#teamGrid');
+    const tab = $('#teamTabs .chip.on');
+    if (!grid || !tab || tab.dataset.tt !== 'hof') return;
+    if (grid.querySelector('.hof-card')) return;
+
+    hofBusy = true;
+    try {
+      injectStyles();
+      const d = buildHof();
+      grid.innerHTML = d.html;
+      const status = $('#teamStatus');
+      if (status) status.textContent = d.sub;
+    } finally {
+      hofBusy = false;
+    }
+  }
+
+  function watchHof() {
+    const grid = $('#teamGrid');
+    if (grid && !grid.dataset.hofWatch) {
+      grid.dataset.hofWatch = '1';
+      new MutationObserver(ensureHof).observe(grid, { childList: true });
+    }
+    const tabs = $('#teamTabs');
+    if (tabs && !tabs.dataset.hofWatch) {
+      tabs.dataset.hofWatch = '1';
+      tabs.addEventListener('click', () => setTimeout(ensureHof, 0));
+    }
   }
 
   function quitarMensajesAPI() {
@@ -1045,6 +1172,7 @@
       quitarMensajesAPI();
       renderDrivers();
       renderTeams();
+      ensureHof();
       ensureCircuits();
       dedupeTracks();
       renderContenders();
@@ -1059,6 +1187,7 @@
 
   window.addEventListener('load', () => {
     ensureTopButton();
+    watchHof();
     tick();
     setInterval(tick, 2500);
     syncTop();
