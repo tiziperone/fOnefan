@@ -1,7 +1,7 @@
 /* =====================================================
    parche.js · fOnefan
    - Caché de la API Jolpi (historia más rápida desde la 2.ª carga)
-   - Trazado correcto de Las Vegas / Caesars Palace en todos los lugares
+   - Trazado correcto de Las Vegas (vigente) y Caesars Palace (histórico)
    - Vista previa de trazados en "Próximas" y calendario calculada directo
    - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
    - Mejoras para celulares: "Próximas carreras" y "Tabla de posiciones"
@@ -67,21 +67,31 @@
 
   /* ---------- Trazados de Las Vegas y Caesars Palace ----------
      El buscador de app.js elige la pista más cercana por coordenadas y, para
-     Las Vegas, caía en el viejo circuito de Caesars Palace. Se fuerzan las
-     coordenadas de cada uno para que cada circuito use su propio trazado. */
+     Las Vegas, caía en el viejo circuito de Caesars Palace.
+     - El circuito de Las Vegas que está en el calendario 2026 usa el trazado
+       actual del Strip (las-vegas-1).
+     - Los circuitos de Las Vegas que ya no están en el calendario usan el
+       trazado de Caesars Palace. */
 
   const VEGAS_ID = 'las-vegas-1';
   const VEGAS_ACTUAL = { lat: 36.175, lon: -115.1364 };   // entrada las-vegas-1
   const CAESARS = { lat: 36.1169, lon: -115.175 };         // entrada de Caesars Palace
 
-  const esVegasActual = id => /vegas/i.test(String(id || '')) && !/caesar/i.test(String(id || ''));
   const esCaesarsId = id => /caesar/i.test(String(id || ''));
+  const esVegasLike = id => /vegas/i.test(String(id || '')) && !esCaesarsId(id);
   const esCaesarsEntrada = c => c && Math.abs(c.lat - CAESARS.lat) < 0.001 && Math.abs(c.lon - CAESARS.lon) < 0.001;
+
+  function enCalendario(id) {
+    const cal = (typeof a0_0x484245 !== 'undefined' && a0_0x484245.calendar) || [];
+    return cal.some(r => r.circuitId === id);
+  }
 
   function corregirPos(c) {
     if (!c) return c;
-    if (esVegasActual(c.circuitId)) return Object.assign({}, c, VEGAS_ACTUAL);
     if (esCaesarsId(c.circuitId)) return Object.assign({}, c, CAESARS);
+    if (esVegasLike(c.circuitId)) {
+      return Object.assign({}, c, enCalendario(c.circuitId) ? VEGAS_ACTUAL : CAESARS);
+    }
     return c;
   }
 
@@ -357,9 +367,10 @@
   }
 
   /* ---------- Historial: trazados repetidos ----------
-     Si dos circuitos distintos terminan con exactamente el mismo dibujo,
-     solo se queda con él el que está más cerca de ese trazado; el otro
-     muestra "Trazado no disponible" en vez de uno falso. */
+     Si dos circuitos distintos terminan con exactamente el mismo dibujo, se
+     queda con él primero el que está en el calendario 2026, luego Caesars
+     Palace, y después el más cercano al trazado. Los otros muestran
+     "Trazado no disponible" en vez de uno falso. */
   function coordsDe(id) {
     const hist = (typeof a0_0x4722c6 !== 'undefined' && a0_0x4722c6.hist) || [];
     let c = hist.find(x => x.id === id);
@@ -397,10 +408,11 @@
         if (!entry) return null;
         const kx = Math.cos(pos.lat * Math.PI / 180);
         const dist = Math.hypot((entry.lon - pos.lon) * 111 * kx, (entry.lat - pos.lat) * 111);
-        return { x, dist };
+        const prio = enCalendario(id) ? 0 : (esCaesarsId(id) ? 1 : 2);
+        return { x, dist, prio };
       });
       if (meta.some(m => !m)) return;
-      meta.sort((a, b) => a.dist - b.dist);
+      meta.sort((a, b) => a.prio - b.prio || a.dist - b.dist);
       meta.slice(1).forEach(m => {
         const holder = m.x.svg.parentElement;
         if (holder && !holder.classList.contains('circ')) {
@@ -428,9 +440,10 @@
     return s.outerHTML;
   }
 
+  // Las carreras del calendario son siempre circuitos vigentes.
   function trackEntryFor(race) {
     const list = (typeof a0_0xcaf996 !== 'undefined') ? a0_0xcaf996 : [];
-    if (esVegasActual(race.circuitId)) return list.find(c => c.id === VEGAS_ID) || null;
+    if (esVegasLike(race.circuitId)) return list.find(c => c.id === VEGAS_ID) || null;
     if (esCaesarsId(race.circuitId)) return list.find(esCaesarsEntrada) || null;
     if (race.lat == null || race.lon == null || typeof a0_0x7fb4d2 !== 'function') return null;
     return a0_0x7fb4d2(race.lat, race.lon);
