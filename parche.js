@@ -7,7 +7,7 @@
    - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
    - Celulares: sin saltos en tarjetas, "Próximas" y "Tabla de posiciones"
    - Modal de horarios: el texto ya no se sale de la tarjeta en celulares
-   - Salón de la Fama de escuderías y de pilotos: render propio
+   - Salón de la Fama de escuderías y de pilotos: render al primer intento
    - Trazados contenidos dentro de su caja (sin encimarse con las tarjetas)
    - Info: sección "Números de pilotos"
    - Pilotos y escuderías: la grilla solo se redibuja si cambian los datos
@@ -200,7 +200,7 @@
       #modal .line > span{flex:0 0 auto;max-width:100%}
       #modal .line > strong{white-space:normal;overflow-wrap:anywhere;min-width:0;margin-left:auto;text-align:right}
 
-      /* ===== Salón de la Fama (escuderías y pilotos) ===== */
+      /* ===== Salón de la Fama de escuderías ===== */
       .hof-card{background:var(--card,rgba(18,18,28,.86));border:1px solid var(--line,rgba(255,255,255,.08));
         border-radius:22px;padding:22px;min-width:0}
       .hof-top{display:flex;align-items:baseline;gap:10px}
@@ -592,32 +592,9 @@
     }
   };
 
-  // Evita que app.js pinte el Salón de la Fama de pilotos con su versión propia
-  window.a0_0x5bdb86 = (function (original) {
-    return function () {
-      const tab = $('#drvTabs .chip.on');
-      if (tab && tab.dataset.dt === 'hof') return;
-      if (typeof original === 'function') return original.apply(this, arguments);
-    };
-  })(window.a0_0x5bdb86);
-
-  /* ---------- Salón de la Fama de pilotos (render propio) ---------- */
+  /* ---------- Salón de la Fama de pilotos: render al primer intento ---------- */
 
   let hofPilotosPendiente = false;
-
-  function buildHofPilotos(champs) {
-    const porPiloto = {};
-    champs.forEach(c => {
-      const p = (porPiloto[c.driverId] = porPiloto[c.driverId] || {
-        id: c.driverId, name: c.name, nat: c.nat, titles: [], team: c.team
-      });
-      p.titles.push(c.season);
-      p.team = c.team;
-    });
-    return Object.values(porPiloto)
-      .map(p => ({ ...p, n: p.titles.length, titles: p.titles.sort((a, b) => b - a) }))
-      .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
-  }
 
   function renderHofPilotos() {
     const tab = $('#drvTabs .chip.on');
@@ -628,17 +605,17 @@
     if (!grid) return;
 
     const champs = LIVE().champs || [];
-
-    if (!champs.length) {
+    if (!LIVE().champsDone && !champs.length) {
+      // Todavía cargando: mostrar aviso y reintentar en breve
       if (status) status.textContent = 'Cargando campeones…';
       if (!hofPilotosPendiente) {
         hofPilotosPendiente = true;
         cargarCampeonesPilotos()
-          .then(list => { LIVE().champs = list; LIVE().champsDone = true; })
-          .catch(err => {
-            console.warn('[fOnefan] campeones', err);
-            if (status) status.textContent = 'No se pudo cargar el Salón de la Fama. Tocá Recargar.';
+          .then(list => {
+            LIVE().champs = list;
+            LIVE().champsDone = true;
           })
+          .catch(() => {})
           .finally(() => { hofPilotosPendiente = false; tick(); });
       }
       return;
@@ -647,28 +624,20 @@
     if (grid.dataset.hofPil === '1' && grid.children.length) return;
     grid.dataset.hofPil = '1';
 
-    const lista = buildHofPilotos(champs);
-    grid.innerHTML = lista.map(p => `
-      <article class="hof-card">
-        <div class="hof-top">
-          <span class="hof-num">${p.n}</span>
-          <span class="hof-lbl">${p.n === 1 ? 'título' : 'títulos'}</span>
-        </div>
-        <div class="hof-name">${esc(p.name)}</div>
-        <div class="hof-pais">${esc(p.nat)}${p.team ? ' · ' + esc(p.team) : ''}</div>
-        <div class="hof-yrs">${p.titles.map(y => `<span class="hof-yr">${y}</span>`).join('')}</div>
-      </article>`).join('');
-
-    if (status) status.textContent = lista.length + ' campeones del mundo · temporadas 1950–2025';
+    // Llamamos al render original de app.js, ya con los datos listos
+    if (typeof a0_0x5bdb86 === 'function') {
+      try { a0_0x5bdb86(); } catch (e) { console.warn('[parche fOnefan] hof pilotos', e); }
+    }
   }
 
-  // Al cambiar de pestaña, resetear la marca y pintar de nuevo
+  // Al cambiar de pestaña, resetear la marca para que vuelva a pintar
   document.addEventListener('click', e => {
     const chip = e.target.closest && e.target.closest('#drvTabs .chip');
-    if (!chip) return;
-    const g = $('#drvGrid');
-    if (g) g.dataset.hofPil = '';
-    setTimeout(tick, 80);
+    if (chip) {
+      const g = $('#drvGrid');
+      if (g) g.dataset.hofPil = '';
+      setTimeout(tick, 50);
+    }
   });
 
   /* ---------- Salón de la Fama de escuderías ---------- */
@@ -1472,15 +1441,6 @@
     });
   }
 
-  function limpiarEstadoCarga() {
-    const drvStatus = $('#drvStatus');
-    const tab = $('#drvTabs .chip.on');
-    if (drvStatus && tab && tab.dataset.dt === 'hof' && /cargando/i.test(drvStatus.textContent || '')) {
-      // El texto de "cargando" lo deja app.js; lo reemplaza renderHofPilotos al terminar
-      if (LIVE().champsDone) drvStatus.textContent = '';
-    }
-  }
-
   function tick() {
     if (document.hidden) return;
     try {
@@ -1496,7 +1456,6 @@
       addTracksToCalendar();
       addTracksToUpcoming();
       renderHofPilotos();
-      limpiarEstadoCarga();
       checkHistoryLoad();
       checkMotores();
     } catch (err) {
