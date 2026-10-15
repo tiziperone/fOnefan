@@ -7,7 +7,7 @@
    - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
    - Celulares: sin saltos en tarjetas, "Próximas" y "Tabla de posiciones"
    - Modal de horarios: el texto ya no se sale de la tarjeta en celulares
-   - Salón de la Fama de escuderías: títulos de constructores
+   - Salón de la Fama de escuderías y de pilotos: render al primer intento
    - Trazados contenidos dentro de su caja (sin encimarse con las tarjetas)
    - Info: sección "Números de pilotos"
    - Pilotos y escuderías: la grilla solo se redibuja si cambian los datos
@@ -584,13 +584,61 @@
         careerStats(id).then(st => { careerMap[id] = st; }),
         a0_0x31cdae(id).catch(() => null)
       ]);
-          a0_0x4722c6.drv = { list: [], byId: careerMap, stats: careerMap, info: {} };
+      a0_0x4722c6.drv = { list: [], byId: careerMap, stats: careerMap, info: {} };
       if (a0_0x522712 === id) a0_0x3f0359('#mBody').innerHTML = a0_0x21906d(id);
     } catch (err) {
       console.warn('[fOnefan] carrera de', id, err);
       if (a0_0x522712 === id) a0_0x3f0359('#mBody').innerHTML = a0_0x21906d(id, true);
     }
   };
+
+  /* ---------- Salón de la Fama de pilotos: render al primer intento ---------- */
+
+  let hofPilotosPendiente = false;
+
+  function renderHofPilotos() {
+    const tab = $('#drvTabs .chip.on');
+    if (!tab || tab.dataset.dt !== 'hof') return;
+
+    const grid = $('#drvGrid');
+    const status = $('#drvStatus');
+    if (!grid) return;
+
+    const champs = LIVE().champs || [];
+    if (!LIVE().champsDone && !champs.length) {
+      // Todavía cargando: mostrar aviso y reintentar en breve
+      if (status) status.textContent = 'Cargando campeones…';
+      if (!hofPilotosPendiente) {
+        hofPilotosPendiente = true;
+        cargarCampeonesPilotos()
+          .then(list => {
+            LIVE().champs = list;
+            LIVE().champsDone = true;
+          })
+          .catch(() => {})
+          .finally(() => { hofPilotosPendiente = false; tick(); });
+      }
+      return;
+    }
+
+    if (grid.dataset.hofPil === '1' && grid.children.length) return;
+    grid.dataset.hofPil = '1';
+
+    // Llamamos al render original de app.js, ya con los datos listos
+    if (typeof a0_0x5bdb86 === 'function') {
+      try { a0_0x5bdb86(); } catch (e) { console.warn('[parche fOnefan] hof pilotos', e); }
+    }
+  }
+
+  // Al cambiar de pestaña, resetear la marca para que vuelva a pintar
+  document.addEventListener('click', e => {
+    const chip = e.target.closest && e.target.closest('#drvTabs .chip');
+    if (chip) {
+      const g = $('#drvGrid');
+      if (g) g.dataset.hofPil = '';
+      setTimeout(tick, 50);
+    }
+  });
 
   /* ---------- Salón de la Fama de escuderías ---------- */
 
@@ -1407,6 +1455,7 @@
       renderContenders();
       addTracksToCalendar();
       addTracksToUpcoming();
+      renderHofPilotos();
       checkHistoryLoad();
       checkMotores();
     } catch (err) {
