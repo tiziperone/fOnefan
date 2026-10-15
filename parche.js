@@ -4,7 +4,8 @@
    - Trazado correcto de Las Vegas (vigente) y Caesars Palace (histórico)
    - Vista previa de trazados en "Próximas" y calendario calculada directo
    - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
-   - Mejoras para celulares: "Próximas carreras" y "Tabla de posiciones"
+   - Celulares: sin saltos en tarjetas, "Próximas" y "Tabla de posiciones"
+   - Info: sección "Números de pilotos"
    ===================================================== */
 (function () {
   'use strict';
@@ -66,8 +67,6 @@
   };
 
   /* ---------- Trazados de Las Vegas y Caesars Palace ----------
-     El buscador de app.js elige la pista más cercana por coordenadas y, para
-     Las Vegas, caía en el viejo circuito de Caesars Palace.
      - El circuito de Las Vegas que está en el calendario 2026 usa el trazado
        actual del Strip (las-vegas-1).
      - Los circuitos de Las Vegas que ya no están en el calendario usan el
@@ -136,6 +135,23 @@
       .pt-btn.show{opacity:1;transform:none;pointer-events:auto}
       .pt-btn:hover{filter:brightness(1.15)}
 
+      /* ===== Circuitos: grilla estable ===== */
+      .circs{grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr))}
+      #circGrid{overflow-anchor:none}
+      .circ{-webkit-tap-highlight-color:transparent;touch-action:manipulation;contain:layout paint}
+
+      /* ===== Táctil: sin saltos al tocar o desplazar ===== */
+      @media (hover:none),(pointer:coarse){
+        .race:hover,.circ:hover,.dcard:hover,.hcard:hover,.dc:hover,.info-card:hover,.tyre-card:hover,
+        .flag-card:hover,.term-card:hover,.part-card:hover,.ct-card:hover{transform:none !important}
+        .circ,.race,.dcard,.hcard,.dc{transition:border-color .2s ease}
+        .circ:hover .ficha{background:rgba(225,6,0,.12);border-color:rgba(225,6,0,.35)}
+        .circ:hover .ficha i{transform:none}
+        .circ:hover .trk path,.circ:hover path{stroke:#8a8a9c}
+        .dcard:hover .helmet-img,.dcard:hover .team-logo,.dcard:hover .helmet,.dcard:hover .car-front{transform:none}
+        .circ:active,.race:active,.dcard:active{border-color:rgba(225,6,0,.5)}
+      }
+
       /* Trazados en calendario */
       .cal-track{display:flex;justify-content:center;align-items:center;margin:10px 0 2px;height:110px}
       .cal-track svg{width:100%;height:100%;max-width:180px;overflow:visible}
@@ -154,6 +170,68 @@
 
       /* ===== Campeonato: pequeños retoques generales ===== */
       #v-standings .srow:nth-child(-n+3) .pos{color:var(--red)}
+
+      /* ===== Info · Números de pilotos ===== */
+      .info-grid--numkeys,.info-grid--numsteps,.info-grid--numgrid,.info-grid--numfaq{grid-template-columns:1fr}
+
+      .num-keys-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:14px}
+      .num-key{border:1px solid var(--line);border-radius:16px;padding:16px;background:rgba(0,0,0,.3);display:grid;gap:6px;align-content:start}
+      .num-key b{font-family:var(--f-disp);font-weight:900;font-style:italic;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+      .num-key span{font-family:var(--f-nav);font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:800}
+      .num-key p{font-size:14px;line-height:1.55;color:#c4c4d0;margin:0}
+      .num-key.k-gold{border-color:rgba(255,209,102,.4)}
+      .num-key.k-gold b,.num-key.k-gold span{color:#ffd166}
+      .num-key.k-red{border-color:rgba(225,6,0,.45)}
+      .num-key.k-red b,.num-key.k-red span{color:var(--red)}
+      .num-key.k-dark b{color:#8b8b99;text-decoration:line-through;text-decoration-thickness:3px}
+      .num-key.k-dark span{color:#8b8b99}
+
+      .num-steps-list{list-style:none;counter-reset:ns;display:grid;gap:14px;margin:16px 0 0;padding:0}
+      .num-steps-list li{counter-increment:ns;display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;align-items:start}
+      .num-steps-list li::before{content:counter(ns);width:36px;height:36px;border-radius:50%;background:var(--red);color:#fff;
+        display:grid;place-items:center;font-family:var(--f-disp);font-weight:900;font-size:16px}
+      .num-steps-list strong{display:block;font-size:16px;margin-bottom:2px}
+      .num-steps-list span{font-size:14.5px;line-height:1.6;color:#c4c4d0}
+
+      .num-card{padding:20px}
+      .num-legend{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+      .num-f{appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);
+        background:rgba(255,255,255,.04);color:#d8d8e2;padding:8px 14px;border-radius:999px;
+        font-family:var(--f-nav);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+      .num-f.on{border-color:var(--red);background:rgba(225,6,0,.15);color:#fff}
+      .num-f i{width:10px;height:10px;border-radius:50%;display:inline-block}
+      .num-f b{font-family:'Orbitron',sans-serif;font-size:12px}
+      .num-detail{min-height:52px;margin:12px 0;padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.35);
+        border:1px solid var(--line);font-size:14.5px;line-height:1.5;color:#d6d6e0}
+      .num-detail[data-ns="use"]{border-color:rgba(225,6,0,.55)}
+      .num-detail[data-ns="champ"]{border-color:rgba(255,209,102,.6)}
+      .num-detail[data-ns="res"]{border-color:rgba(60,120,255,.55)}
+
+      .num-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px}
+      .num-cell{appearance:none;cursor:pointer;display:grid;gap:2px;justify-items:center;padding:8px 0 6px;border-radius:10px;
+        border:1px solid var(--line);background:rgba(255,255,255,.03);color:#c0c0cb;
+        font-family:'Orbitron',sans-serif;transition:opacity .2s ease,border-color .2s ease;-webkit-tap-highlight-color:transparent}
+      .num-cell b{font-size:15px;font-variant-numeric:tabular-nums}
+      .num-cell small{font-family:var(--f-nav);font-size:10px;letter-spacing:.08em;min-height:12px;font-weight:700}
+      .num-cell[data-ns="use"]{background:rgba(225,6,0,.16);border-color:rgba(225,6,0,.55);color:#fff}
+      .num-cell[data-ns="champ"]{background:rgba(255,209,102,.16);border-color:rgba(255,209,102,.6);color:#ffd166}
+      .num-cell[data-ns="res"]{background:rgba(60,120,255,.14);border-color:rgba(60,120,255,.5);color:#8fb4ff}
+      .num-cell[data-ns="ret"]{background:repeating-linear-gradient(45deg,rgba(255,255,255,.07) 0 4px,transparent 4px 8px);color:#6f6f7d}
+      .num-cell[data-ns="ret"] b{text-decoration:line-through}
+      .num-cell.sel{outline:2px solid #fff;outline-offset:1px}
+      .num-grid[data-f="use"] .num-cell:not([data-ns="use"]):not([data-ns="champ"]),
+      .num-grid[data-f="res"] .num-cell:not([data-ns="res"]),
+      .num-grid[data-f="free"] .num-cell:not([data-ns="free"]),
+      .num-grid[data-f="ret"] .num-cell:not([data-ns="ret"]){opacity:.18}
+      .num-note{font-size:12.5px;color:#8b8b99;margin-top:12px;line-height:1.55}
+
+      .info-card.num-faq{padding:0}
+      .num-faq summary{list-style:none;cursor:pointer;padding:16px 48px 16px 20px;position:relative;
+        font-family:var(--f-disp);font-weight:900;font-style:italic;font-size:19px;line-height:1.2}
+      .num-faq summary::-webkit-details-marker{display:none}
+      .num-faq summary::after{content:"+";position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:26px;color:var(--red);font-style:normal}
+      .num-faq[open] summary::after{content:"\\2013"}
+      .num-faq .info-text{margin:0;padding:0 20px 18px}
 
       @media (max-width:640px){
         /* Próximas carreras */
@@ -186,6 +264,12 @@
         #parcheChances .ct-meta{font-size:12px;flex-direction:column;gap:4px}
         #parcheChances .ct-decided{padding:18px}
         #parcheChances .ct-decided b{font-size:24px}
+
+        /* Info · Números */
+        .num-card{padding:16px 12px}
+        .num-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+        .num-faq summary{font-size:17px;padding:14px 44px 14px 16px}
+        .num-faq .info-text{padding:0 16px 16px}
       }
       @media (max-width:380px){
         #v-standings .srow{grid-template-columns:24px minmax(0,1fr) auto;gap:8px}
@@ -353,9 +437,8 @@
   });
 
   /* ---------- Circuitos vigentes ----------
-     Se usan las tarjetas y la ficha completas de app.js (las mismas que
-     "Historial de circuitos"). Solo se asegura que se rendericen si la
-     cuadrícula quedó vacía. */
+     Se usan las tarjetas y la ficha completas de app.js. Solo se asegura que
+     se rendericen si la cuadrícula quedó vacía. */
   function ensureCircuits() {
     const grid = $('#circGrid');
     if (!grid || grid.children.length) return;
@@ -370,7 +453,7 @@
      Si dos circuitos distintos terminan con exactamente el mismo dibujo, se
      queda con él primero el que está en el calendario 2026, luego Caesars
      Palace, y después el más cercano al trazado. Los otros muestran
-     "Trazado no disponible" en vez de uno falso. */
+     "Trazado no disponible". Solo corre cuando cambió algo en la grilla. */
   function coordsDe(id) {
     const hist = (typeof a0_0x4722c6 !== 'undefined' && a0_0x4722c6.hist) || [];
     let c = hist.find(x => x.id === id);
@@ -381,9 +464,16 @@
     return null;
   }
 
+  let dedupeSig = '';
+
   function dedupeTracks() {
     const grid = $('#circGrid');
     if (!grid || typeof a0_0x7fb4d2 !== 'function') return;
+
+    const sig = grid.children.length + ':' + grid.querySelectorAll('svg').length;
+    if (sig === dedupeSig) return;
+    dedupeSig = sig;
+
     const cards = Array.from(grid.querySelectorAll('.circ[data-circ]'));
     if (cards.length < 2) return;
 
@@ -422,9 +512,7 @@
     });
   }
 
-  /* ---------- Trazados en calendario y "Próximas" ----------
-     Se calculan directo (sin copiar de las tarjetas de Circuitos), para que
-     siempre coincidan con el circuito real de cada carrera. */
+  /* ---------- Trazados en calendario y "Próximas" ---------- */
 
   const TRACK_CACHE = {};
   const TRACK_PEND = {};
@@ -722,6 +810,194 @@
     }
   });
 
+  /* ---------- Info · Números de pilotos ---------- */
+
+  // Números en uso en la temporada 2026: número → [piloto, código, escudería]
+  const NUM_USO = {
+    1:  ['Lando Norris', 'NOR', 'McLaren'],
+    3:  ['Max Verstappen', 'VER', 'Red Bull'],
+    5:  ['Gabriel Bortoleto', 'BOR', 'Audi'],
+    6:  ['Isack Hadjar', 'HAD', 'Red Bull'],
+    10: ['Pierre Gasly', 'GAS', 'Alpine'],
+    11: ['Sergio Pérez', 'PER', 'Cadillac'],
+    12: ['Kimi Antonelli', 'ANT', 'Mercedes'],
+    14: ['Fernando Alonso', 'ALO', 'Aston Martin'],
+    16: ['Charles Leclerc', 'LEC', 'Ferrari'],
+    18: ['Lance Stroll', 'STR', 'Aston Martin'],
+    23: ['Alexander Albon', 'ALB', 'Williams'],
+    27: ['Nico Hülkenberg', 'HUL', 'Audi'],
+    30: ['Liam Lawson', 'LAW', 'Racing Bulls'],
+    31: ['Esteban Ocon', 'OCO', 'Haas'],
+    41: ['Arvid Lindblad', 'LIN', 'Racing Bulls'],
+    43: ['Franco Colapinto', 'COL', 'Alpine'],
+    44: ['Lewis Hamilton', 'HAM', 'Ferrari'],
+    55: ['Carlos Sainz', 'SAI', 'Williams'],
+    63: ['George Russell', 'RUS', 'Mercedes'],
+    77: ['Valtteri Bottas', 'BOT', 'Cadillac'],
+    81: ['Oscar Piastri', 'PIA', 'McLaren'],
+    87: ['Oliver Bearman', 'BEA', 'Haas']
+  };
+
+  // Reservados: sin piloto activo, pero congelados por el reglamento
+  const NUM_RES = {
+    4:  'Reservado: es el número permanente de Lando Norris, que este año corre con el 1 como campeón.',
+    2:  'Reservado: lo usó Logan Sargeant por última vez en 2024. Sigue congelado por el reglamento.',
+    7:  'Reservado: lo usó Jack Doohan por última vez en 2025. Sigue congelado por el reglamento.',
+    20: 'Reservado: lo usó Kevin Magnussen por última vez en 2024. Sigue congelado por el reglamento.',
+    22: 'Reservado: lo usó Yuki Tsunoda por última vez en 2025. Sigue congelado por el reglamento.',
+    24: 'Reservado: lo usó Zhou Guanyu por última vez en 2024. Sigue congelado por el reglamento.'
+  };
+
+  function numGridHTML() {
+    let nUse = 0, nRes = 0, nFree = 0;
+    const cells = [];
+    for (let n = 1; n <= 99; n++) {
+      let s = 'free', code = '·', info;
+      const u = NUM_USO[n];
+      if (n === 1) {
+        s = 'champ'; code = u ? u[1] : 'CAM'; nUse++;
+        info = '#1 · Lando Norris · McLaren. Número reservado para el campeón del mundo.';
+      } else if (n === 17) {
+        s = 'ret'; code = '✕';
+        info = '#17 · Retirado para siempre en homenaje a Jules Bianchi.';
+      } else if (u) {
+        s = 'use'; code = u[1]; nUse++;
+        info = '#' + n + ' · ' + u[0] + ' · ' + u[2];
+      } else if (NUM_RES[n]) {
+        s = 'res'; code = 'RES'; nRes++;
+        info = '#' + n + ' · ' + NUM_RES[n];
+      } else {
+        nFree++;
+        info = '#' + n + ' · Libre: ningún piloto lo usa ni lo tiene reservado. Un piloto nuevo podría elegirlo.';
+      }
+      cells.push(
+        '<button type="button" class="num-cell" data-ns="' + s + '" data-nn="' + n + '" data-info="' + escI(info) +
+        '" aria-label="' + escI(info) + '"><b>' + n + '</b><small>' + escI(code) + '</small></button>'
+      );
+    }
+    return {
+      counts: { use: nUse, res: nRes, free: nFree, ret: 1 },
+      html: cells.join('')
+    };
+  }
+
+  function addNumbersSection() {
+    if (typeof INFO_SECTIONS === 'undefined' || typeof INFO_RENDER === 'undefined' || typeof escI !== 'function') return;
+    if (INFO_SECTIONS.some(s => s.id === 'numeros')) return;
+
+    INFO_RENDER.numkeys = it => `
+      <article class="info-card glass">
+        <h4>${escI(it.title)}</h4>
+        <div class="num-keys-grid">
+          <div class="num-key k-gold"><b>1</b><span>Campeón</span>
+            <p>Está reservado para el campeón del mundo, que puede usarlo la temporada siguiente. Es opcional: Hamilton, por ejemplo, cuando fue campeón prefirió mantener el 44.</p></div>
+          <div class="num-key k-red"><b>2–99</b><span>Libre elección</span>
+            <p>Cada piloto elige uno para toda su carrera, siempre que ningún otro piloto lo tenga.</p></div>
+          <div class="num-key k-dark"><b>17</b><span>Retirado</span>
+            <p>Nadie puede llevarlo desde 2015, en homenaje a Jules Bianchi.</p></div>
+        </div>
+      </article>`;
+
+    INFO_RENDER.numsteps = it => `
+      <article class="info-card glass">
+        <h4>${escI(it.title)}</h4>
+        <ol class="num-steps-list">
+          ${it.steps.map(s => `<li><div><strong>${escI(s[0])}</strong><span>${escI(s[1])}</span></div></li>`).join('')}
+        </ol>
+      </article>`;
+
+    INFO_RENDER.numgrid = it => {
+      const g = numGridHTML();
+      return `
+        <article class="info-card glass num-card">
+          <h4>${escI(it.title)}</h4>
+          <div class="num-legend">
+            <button type="button" class="num-f" data-nf="use"><i style="background:#e10600"></i>En uso <b>${g.counts.use}</b></button>
+            <button type="button" class="num-f" data-nf="res"><i style="background:#5b8cff"></i>Reservados <b>${g.counts.res}</b></button>
+            <button type="button" class="num-f" data-nf="free"><i style="background:#8b8b99"></i>Libres <b>${g.counts.free}</b></button>
+            <button type="button" class="num-f" data-nf="ret"><i style="background:#3a3a46"></i>Retirado <b>${g.counts.ret}</b></button>
+          </div>
+          <div class="num-detail" data-ns="none">Tocá un número para ver quién lo usa. Tocá un filtro para resaltar un grupo.</div>
+          <div class="num-grid" data-f="all">${g.html}</div>
+          <p class="num-note">Datos de la temporada 2026. Los números de pilotos que se fueron hace poco pueden estar reservados. La lista oficial es la de inscritos de la FIA.</p>
+        </article>`;
+    };
+
+    INFO_RENDER.numfaq = it => `
+      <details class="info-card glass num-faq">
+        <summary>${escI(it.title)}</summary>
+        <p class="info-text">${escI(it.t)}</p>
+      </details>`;
+
+    const steps = [
+      ['Elegir', 'Al llegar a la F1, el piloto propone el número que quiere, entre 2 y 99. Muchos eligen uno ligado a su historia: un título de karting, un ídolo o una fecha.'],
+      ['Revisar que esté disponible', 'No puede estar en uso, ni reservado por un piloto que se fue hace menos de dos temporadas, ni ser el 17.'],
+      ['Plan B si está ocupado', 'Si el número elegido ya lo tiene otro piloto, hay que optar por otro.'],
+      ['Confirmación', 'La FIA publica el número en la lista oficial de inscritos de la temporada. Desde ahí es del piloto para toda su carrera.']
+    ];
+
+    const sec = {
+      id: 'numeros', icon: '🔢', title: 'Números de pilotos',
+      intro: 'Cada piloto lleva un número en el auto y en el casco. Acá te contamos cómo se elige, cuáles están en uso o libres y qué pasa con el número cuando un piloto se retira.',
+      items: [
+        { type: 'card', icon: '🔢', title: 'Para qué sirven',
+          t: 'Cada número identifica al piloto en pista y en los tiempos. Tiene que verse claramente desde el frente del auto y en el casco. Desde 2014 es permanente: lo acompaña toda su carrera, sin importar la escudería. Antes de 2014 los números dependían de la posición del equipo en el campeonato anterior.' },
+        { type: 'numkeys', title: 'Los tres números clave',
+          t: 'El 1 es del campeón del mundo, del 2 al 99 se elige libremente y el 17 está retirado desde 2015 en homenaje a Jules Bianchi.' },
+        { type: 'numsteps', title: 'Cómo se asigna un número', steps,
+          t: steps.map(s => s[0] + '. ' + s[1]).join(' ') },
+        { type: 'numgrid', title: 'Mapa de números 2026',
+          t: 'Mapa del 1 al 99 con los números en uso, reservados, libres y el retirado. Tocá un número para ver quién lo usa.' },
+
+        { type: 'numfaq', title: '¿Se puede elegir cualquier número?',
+          t: 'Sí, se elige con libertad y no hace falta ningún motivo especial. Las reglas son pocas: de 2 a 99, no puede ser el 17, ningún otro piloto puede tenerlo ni tenerlo reservado, y el 1 queda para el campeón.' },
+        { type: 'numfaq', title: '¿Qué pasa si el número que quiero ya está tomado?',
+          t: 'Hay que elegir otro. Cada número pertenece a un solo piloto. Así le pasó a Charles Leclerc: quería el 7, que era de Kimi Räikkönen, y terminó eligiendo el 16.' },
+        { type: 'numfaq', title: '¿Qué pasa con el número cuando un piloto se retira?',
+          t: 'Queda reservado a su nombre. Si pasan dos temporadas completas seguidas sin que corra, se libera y cualquier piloto puede elegirlo. Por eso, para elegir en 2026 no se podían usar números usados por última vez en 2024 o 2025.' },
+        { type: 'numfaq', title: '¿Y si un piloto se va un tiempo y vuelve?',
+          t: 'Si vuelve dentro de ese plazo, recupera su número. Alonso retomó el 14 en 2021 tras dos años fuera, y en 2026 Bottas volvió con el 77 y Pérez con el 11.' },
+        { type: 'numfaq', title: '¿Se puede cambiar de número?',
+          t: 'En general no: el número es para toda la carrera. La excepción es el campeón, que puede correr con el 1. Verstappen es un caso especial: dejó el 33 y para 2026 eligió el 3, que lo tenia Ricciardo (piloto que se retiró en 2024), Ricciardo y la FIA dieron su visto bueno para permitirle usar el número.' },
+        { type: 'numfaq', title: '¿Qué pasa con el número 1?',
+          t: 'Es para el campeón del mundo, y usarlo es opcional. Si lo usa, su número permanente queda reservado y lo recupera si ya no es campeón. En 2026 lo lleva Lando Norris, que deja el 4 en reserva.' },
+        { type: 'numfaq', title: '¿Por qué no existe el 17?',
+          t: 'Jules Bianchi corrió con el 17 y murió en 2015 por las heridas de un accidente en el GP de Japón 2014. La FIA retiró el número en su homenaje y desde entonces nadie puede usarlo.' },
+        { type: 'numfaq', title: '¿Qué número lleva un piloto suplente?',
+          t: 'Si reemplaza a un titular en una carrera, recibe un número temporal asignado por el equipo. No es su número permanente y no le quita ninguno a otro piloto.' },
+
+      ]
+    };
+
+    let i = INFO_SECTIONS.findIndex(s => s.id === 'motoristas');
+    if (i < 0) i = INFO_SECTIONS.findIndex(s => s.id === 'graficas');
+    INFO_SECTIONS.splice(i >= 0 ? i + 1 : INFO_SECTIONS.length, 0, sec);
+  }
+
+  try { addNumbersSection(); } catch (err) { console.warn('[parche fOnefan] números', err); }
+
+  // Mapa de números: detalle al tocar y filtros
+  document.addEventListener('click', e => {
+    const cell = e.target.closest('.num-cell');
+    if (cell) {
+      const box = cell.closest('.num-card');
+      if (!box) return;
+      const d = box.querySelector('.num-detail');
+      if (d) { d.textContent = cell.dataset.info || ''; d.dataset.ns = cell.dataset.ns; }
+      box.querySelectorAll('.num-cell.sel').forEach(x => x.classList.remove('sel'));
+      cell.classList.add('sel');
+      return;
+    }
+    const f = e.target.closest('[data-nf]');
+    if (f) {
+      const box = f.closest('.num-card');
+      const g = box && box.querySelector('.num-grid');
+      if (!g) return;
+      g.dataset.f = g.dataset.f === f.dataset.nf ? 'all' : f.dataset.nf;
+      box.querySelectorAll('[data-nf]').forEach(b => b.classList.toggle('on', g.dataset.f === b.dataset.nf));
+    }
+  });
+
   /* ---------- Botón "subir" ---------- */
 
   let topBtn = null;
@@ -764,6 +1040,7 @@
   }
 
   function tick() {
+    if (document.hidden) return;
     try {
       quitarMensajesAPI();
       renderDrivers();
