@@ -1,5 +1,5 @@
 // Cambiá el número cada vez que quieras forzar una limpieza total de la caché
-const CACHE = 'fonefan-v3';
+const CACHE = 'fonefan-v4';
 
 // Se instala y toma control de inmediato, sin esperar a cerrar la app
 self.addEventListener('install', () => self.skipWaiting());
