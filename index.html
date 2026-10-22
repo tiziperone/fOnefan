@@ -521,7 +521,28 @@ img{max-width:100%}
       <h3 class="display" style="font-size: clamp(40px, 5vw, 56px); margin-bottom: 12px;">Volante de F1</h3>
       <p class="muted" style="max-width: 600px; margin: 0 auto; font-size: 16px;">Casi un ordenador en las manos del piloto, capaz de ajustar la potencia, los frenos y la estrategia a más de 300 km/h.</p>
 
-      <img src="Fotos/Volante.webp" alt="Volante de F1" class="volante-img">
+      <div style="margin-top: 18px;">
+  <span class="chip on" style="pointer-events:none; background:rgba(225,6,0,.15); color:#fff; border-color:var(--red);">✨ Gira el volante para explorarlo</span>
+</div>
+
+<div class="glass mono-viewer volante-viewer">
+  <model-viewer id="volanteModel"
+    src="Modelos3D/VolanteClaudio.glb"
+    alt="Volante de F1 en 3D"
+    camera-controls
+    auto-rotate
+    camera-orbit="20deg 75deg 75%"
+    min-camera-orbit="auto auto 20%"
+    camera-target="auto auto auto"
+    field-of-view="28deg"
+    shadow-intensity="0.9"
+    shadow-softness="0.8"
+    exposure="1.05"
+    environment-image="neutral"
+    touch-action="pan-y"
+    interaction-prompt="none">
+  </model-viewer>
+</div>
 
       <div class="volante-grid">
   <article class="part-card">
