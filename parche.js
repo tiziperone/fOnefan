@@ -1330,7 +1330,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
           </div>
           <div class="num-detail" data-ns="none">Tocá un número para ver quién lo usa. Tocá un filtro para resaltar un grupo.</div>
           <div class="num-grid" data-f="all">${g.html}</div>
-          <p class="num-note">Datos de la temporada 2026. Los números de pilotos que se fueron hace poco pueden estar reservados. La lista oficial es la de inscritos de la FIA.</p>
+          <p class="num-note">Datos de la temporada 2026. Los números de pilotos que se fueron hace poco pueden estar reservados.</p>
         </article>`;
     };
 

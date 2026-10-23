@@ -1019,8 +1019,6 @@ if ('serviceWorker' in navigator) {
         t: 'Los neumáticos siguen siendo Pirelli, la tabla de puntos (25, 18, 15…) no cambió y la clasificación sigue en tres tandas: Q1, Q2 y Q3.' }
     ]
   });
-
-  INFO.sec = 'temporada2026';
 })();
 </script>
 
@@ -1950,6 +1948,52 @@ window.addEventListener('load', function () {
   if (!F) return;
   F.innerHTML = '<p class="pie-linea">fOnefan • Plataforma de información sobre Fórmula 1</p>';
 });
+</script>
+<script>
+/* =====================================================
+   INFO · ¿QUÉ ES LA FÓRMULA 1? (primera sección de Info)
+   ===================================================== */
+(function () {
+  if (typeof INFO_SECTIONS === 'undefined') return;
+  if (INFO_SECTIONS.some(s => s.id === 'que-es-f1')) return;
+
+  /* Quita la tarjeta "FIA" que se agregó antes dentro del Glosario, para no duplicarla */
+  const glosario = INFO_SECTIONS.find(s => s.id === 'glosario' || /glosario/i.test(s.title || ''));
+  if (glosario && Array.isArray(glosario.items)) {
+    glosario.items = glosario.items.filter(i => i.term !== 'FIA');
+  }
+
+  const seccion = {
+    id: 'que-es-f1',
+    icon: '🏁',
+    title: '¿Qué es la Fórmula 1?',
+    intro: 'Una mirada general para entender de qué se trata la Fórmula 1, por qué genera tanta pasión y qué la hace distinta de otros deportes.',
+    items: [
+      { type: 'card', icon: '🏎️', title: '¿Qué es?',
+        t: 'La Fórmula 1 es la máxima categoría de automovilismo en el mundo. Los autos son monoplaza, de un solo asiento y con ruedas descubiertas, que compiten en circuitos de todo el planeta. Cada escudería busca tener el auto más rápido, eficiente y confiable, y los pilotos buscan aprovecharlo al máximo.' },
+      { type: 'card', icon: '📅', title: 'Origen',
+        t: 'El primer campeonato mundial de pilotos se disputó en 1950. Desde entonces, la categoría se fue transformando en un deporte global, con carreras en Europa, América, Asia, Oceanía y Medio Oriente.' },
+
+      { type: 'card', icon: '🧠', title: 'Tecnología al límite',
+        t: 'Cada auto es un laboratorio sobre ruedas. Los equipos desarrollan aerodinámica, motores híbridos, materiales livianos y sistemas de frenado que se usan en el resto de la industria. Muchas innovaciones que hoy vemos en autos de calle nacieron en la F1.' },
+
+      { type: 'card', icon: '🤝', title: 'Equipo y piloto',
+        t: 'Un piloto gana gracias a un equipo enorme: ingenieros, mecánicos, estrategas y analistas de datos que trabajan en la fábrica y en pista. El talento del piloto es clave, pero el resultado depende de la combinación entre persona, auto y estrategia.' },
+
+      { type: 'card', icon: '🌍', title: 'Un espectáculo global',
+        t: 'La F1 se corre en países de todos los continentes y tiene audiencias millonarias en televisión y redes sociales. Cada gran premio combina competencia deportiva, espectáculo, cultura local y una fuerte identidad de marca para equipos y patrocinadores.' },
+
+      { type: 'card', icon: '⚡', title: '¿Qué la hace especial?',
+        t: 'La mezcla de velocidad, riesgo, estrategia y rivalidades personales es lo que hace a la F1 tan atrapante. Una carrera puede cambiar en una vuelta por un error, una parada en boxes o un cambio de clima, y eso hace que nunca se sepa del todo quién va a ganar.' },
+      
+      { type: 'card', icon: '🛡️', title: 'Qué es la FIA',
+        t: 'La Fédération Internationale de l\'Automobile (Federación Internacional del Automóvil) es el organismo que regula el automovilismo deportivo a nivel mundial. Fue fundada en París en 1904, ciudad donde tiene su sede. Es la que organiza los campeonatos del mundo, como la Fórmula 1, y define sus reglas.' },
+      ]
+  };
+
+  INFO_SECTIONS.unshift(seccion);
+  INFO.sec = 'que-es-f1';
+})();
 </script>
 <script src="parche.js?v=20261015_18"></script>
 </body>
