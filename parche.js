@@ -6,7 +6,7 @@
    - Vista previa de trazados en "Próximas" y calendario calculada directo
    - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
    - Celulares: sin saltos en tarjetas, "Próximas" y "Tabla de posiciones"
-   - Modal de horarios: el texto ya no se sale de la tarjeta en celulares
+   - Modal de horarios: horarios + top 3 de prácticas y clasificación (carreras no disputadas)
    - Pilotos: "Pilotos actuales" y "Salón de la Fama" los maneja este parche
    - Trazados contenidos dentro de su caja (sin encimarse con las tarjetas)
    - Info: sección "Números de pilotos"
@@ -198,6 +198,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
       #modal .line{flex-wrap:wrap;align-items:baseline;row-gap:2px}
       #modal .line > span{flex:0 0 auto;max-width:100%}
       #modal .line > strong{white-space:normal;overflow-wrap:anywhere;min-width:0;margin-left:auto;text-align:right}
+      #modal .panel-m{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 
       /* ===== Salón de la Fama (escuderías y pilotos) ===== */
       .hof-card{background:var(--card,rgba(18,18,28,.86));border:1px solid var(--line,rgba(255,255,255,.08));
@@ -293,6 +294,10 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
       .num-faq[open] summary::after{content:"–"}
       .num-faq .info-text{margin:0;padding:0 20px 18px}
 
+      /* ===== Top 3 de prácticas y clasificación en el modal ===== */
+      .parche-top-list{display:grid;gap:2px}
+      .parche-top-list .line span{font-weight:600}
+
       @media (max-width:640px){
         .up{padding:10px 14px;gap:10px}
         .up .up-track .up-svg{width:36px;height:26px}
@@ -338,6 +343,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
         #v-standings .who b{font-size:14px}
       }
     `;
+    
     document.head.appendChild(st);
   }
 
@@ -808,6 +814,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     grid.dataset.hofOk = '1';
     grid.dataset.key = '';
     if (status) status.textContent = d.sub;
+    
   }
 
   function setChipsHof() {
@@ -1182,6 +1189,135 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     }).join('');
   }
 
+  /* ---------- Top 3 de prácticas (OpenF1) y clasificación (jolpi) ---------- */
+
+  const OF1_BASE = 'https://api.openf1.org/v1/';
+  const topCache = {};
+  let of1Caido = false;
+  let sesionesCache = null;
+  let sesionesCacheAt = 0;
+  const SESIONES_TTL = 30 * 60 * 1000; // 30 minutos
+
+  // Si OpenF1 falla (CORS, red, 429), no se vuelve a intentar en esta sesión
+  let of1PausaHasta = 0;
+
+async function of1(path) {
+  if (Date.now() < of1PausaHasta) throw new Error('OpenF1 en pausa');
+  const r = await fetch(OF1_BASE + path);
+  if (r.status === 429) {
+    of1PausaHasta = Date.now() + 60 * 1000; // pausa de 1 minuto
+    throw new Error('HTTP 429');
+  }
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.json();
+}
+
+  // Lista de sesiones 2026: se pide una vez cada 30 minutos, no en cada apertura
+  async function sesionesOF1() {
+    const ahora = Date.now();
+    if (sesionesCache && ahora - sesionesCacheAt < SESIONES_TTL) return sesionesCache;
+    const datos = await of1('sessions?year=2026');
+    sesionesCache = datos;
+    sesionesCacheAt = ahora;
+    return datos;
+  }
+
+  function etiquetaSesionTop(name) {
+    const n = String(name || '').toLowerCase();
+    if (n.includes('practice 1')) return 'Práctica 1';
+    if (n.includes('practice 2')) return 'Práctica 2';
+    if (n.includes('practice 3')) return 'Práctica 3';
+    return name;
+  }
+
+  function fmtTiempo(v) {
+    if (v == null || isNaN(v)) return '—';
+    const m = Math.floor(v / 60);
+    return m + ':' + (v - m * 60).toFixed(3).padStart(6, '0');
+  }
+
+  async function topPractica(session) {
+  const key = session.session_key;
+  if (topCache[key]) return topCache[key];
+  try {
+    const guardado = JSON.parse(localStorage.getItem('fo-top:' + key) || 'null');
+    if (guardado && guardado.length) { topCache[key] = guardado; return guardado; }
+  } catch (e) {}
+  const [res, drv] = await Promise.all([
+    of1('session_result?session_key=' + key),
+    of1('drivers?session_key=' + key)
+  ]);
+  const info = {};
+  drv.forEach(d => { info[d.driver_number] = d; });
+  const top = res
+    .filter(x => +x.position > 0 && !x.dnf && !x.dns && !x.dsq)
+    .sort((a, b) => a.position - b.position)
+    .slice(0, 3)
+    .map(x => {
+      const d = info[x.driver_number] || {};
+      const dur = Array.isArray(x.duration) ? x.duration.filter(v => v != null).pop() : x.duration;
+      return { pos: +x.position, name: d.full_name || d.last_name || '—', time: fmtTiempo(dur) };
+    });
+  if (top.length) {
+    topCache[key] = top;
+    try { localStorage.setItem('fo-top:' + key, JSON.stringify(top)); } catch (e) {}
+  }
+  return top;
+}
+
+  function tarjetaTop(titulo, filas) {
+    return `
+      <div class="box" style="margin-top:18px">
+        <h4>🏁 ${esc(titulo)} · Top 3</h4>
+        <div class="parche-top-list">
+          ${filas.map(f => `<div class="line"><span>P${f.pos} · ${esc(f.name)}</span><strong>${esc(f.time)}</strong></div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  async function bloqueTops(race) {
+    const now = Date.now();
+    const partes = [];
+
+    // 1) Prácticas (OpenF1): si falla, se omiten sin frenar lo demás
+    try {
+      const whens = (race.sessions || []).map(s => Date.parse(s.when)).filter(t => !isNaN(t));
+      if (whens.length) {
+        const desde = Math.min(...whens) - 86400000;
+        const hasta = Math.max(...whens) + 86400000;
+        const todas = await sesionesOF1();
+        const practicas = todas
+          .filter(s => {
+            const inicio = Date.parse(s.date_start);
+            if (isNaN(inicio) || inicio < desde || inicio > hasta) return false;
+            const fin = Date.parse(s.date_end) || inicio + 7200000;
+            return /practice/i.test(s.session_name) && fin < now;
+          })
+          .sort((a, b) => Date.parse(a.date_start) - Date.parse(b.date_start));
+
+        for (const s of practicas) {
+          const top = await topPractica(s);
+          if (top.length) partes.push(tarjetaTop(etiquetaSesionTop(s.session_name), top));
+        }
+      }
+    } catch (e) {
+      console.warn('[fOnefan] prácticas no disponibles:', e.message);
+    }
+
+    // 2) Clasificación (jolpi, igual que la tarjeta de Singapur)
+    try {
+      const data = await a0_0x5632f4(race.round);
+      if (data && data.quali && data.quali.length) {
+        const quali = data.quali.slice(0, 3).map(q => ({ pos: q.pos, name: q.name, time: q.time }));
+        partes.push(tarjetaTop('Clasificación', quali));
+      }
+    } catch (e) {
+      console.warn('[fOnefan] clasificación no disponible:', e.message);
+    }
+
+    return partes.join('');
+  }
+
   function openHorarios(race) {
     const b = $('#mBody');
     const m = $('#modal');
@@ -1198,11 +1334,19 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
         <div class="line"><span>Lugar</span><strong>${esc(race.place || '—')}</strong></div>
         <div class="line"><span>Formato</span><strong>${race.sprint ? 'Con Sprint' : 'Estándar'}</strong></div>
         <div class="line"><span>Estado</span><strong>Por correr</strong></div>
-      </div>`;
+      </div>
+      <div id="parcheTops"></div>`;
     const panel = m.querySelector('.panel-m');
     if (panel) panel.scrollTop = 0;
     m.classList.add('open');
     document.body.style.overflow = 'hidden';
+
+    bloqueTops(race)
+      .then(html => {
+        const cont = document.getElementById('parcheTops');
+        if (cont && cont.isConnected) cont.innerHTML = html;
+      })
+      .catch(err => console.warn('[fOnefan] top de sesiones', err));
   }
 
   document.addEventListener('click', e => {

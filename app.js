@@ -3068,7 +3068,7 @@ const a0_0x4277a5 = {
     }, {
       'type': a0_0x5cc2ed(0x16c),
       'term': 'Rebufo\x20(slipstream)',
-      't': a0_0x5cc2ed(0x128)
+      't': 'Aire que deja un coche detrás de él. Permite al de atrás ir más rápido. Tambien conocido como "Remolque": Estrategia de equipo donde un coche líder le regala su rebufo a su compañero para ayudarlo a ir mas rápido en recta (clave en clasificación)'
     }, {
       'type': a0_0x5cc2ed(0x16c),
       'term': a0_0x5cc2ed(0x27f),
