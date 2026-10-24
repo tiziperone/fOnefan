@@ -2100,39 +2100,45 @@ async function a0_0x50f42b(_0x5d6804) {
   }
 }
 async function a0_0x5632f4(_0x4a2fc3) {
-  const _0x197287 = a0_0x5cc2ed;
-  if (a0_0x484245[_0x197287(0x214)][_0x4a2fc3]) return a0_0x484245[_0x197287(0x214)][_0x4a2fc3];
-  const [_0x759ffe, _0x28634a, _0x312808, _0x23ea6f, _0x18f961] = await Promise[_0x197287(0x454)]([a0_0x182c22('/' + a0_0x30d883 + '/' + _0x4a2fc3 + '/results.json'), a0_0x182c22('/' + a0_0x30d883 + '/' + _0x4a2fc3 + _0x197287(0x208)), a0_0x182c22('/' + a0_0x30d883 + '/' + _0x4a2fc3 + _0x197287(0x3db)), a0_0x182c22('/' + a0_0x30d883 + '/' + _0x4a2fc3 + '/driverStandings.json'), a0_0x182c22('/' + a0_0x30d883 + '/' + _0x4a2fc3 + _0x197287(0xe5))]), _0x473da8 = (_0x5d3989, _0x3d72fb) => _0x5d3989[_0x197287(0x49d)] === _0x197287(0x157) ? _0x3d72fb(_0x5d3989[_0x197287(0x4ef)]) : [], _0x39db71 = {
-    'race': _0x473da8(_0x759ffe, _0x5e56f8 => (_0x5e56f8[_0x197287(0x1d1)][_0x197287(0x448)][_0x197287(0xe7)][0x0]?.[_0x197287(0x37c)] || [])[_0x197287(0x5b0)](_0x4be225 => ({
-      'pos': _0x4be225[_0x197287(0x493)],
-      'name': a0_0x505882(_0x4be225[_0x197287(0x3ad)]),
-      'team': _0x4be225[_0x197287(0x3c1)][_0x197287(0x5f5)],
-      'pts': _0x4be225['points'],
-      'time': _0x4be225[_0x197287(0x287)]?.[_0x197287(0x443)] || _0x4be225[_0x197287(0x49d)]
-    }))),
-    'quali': _0x473da8(_0x28634a, _0x219ff9 => (_0x219ff9[_0x197287(0x1d1)]['RaceTable'][_0x197287(0xe7)][0x0]?.[_0x197287(0x45a)] || [])[_0x197287(0x345)](0x0, 0x3)[_0x197287(0x5b0)](_0x48be9b => ({
-      'pos': _0x48be9b[_0x197287(0x493)],
-      'name': a0_0x505882(_0x48be9b[_0x197287(0x3ad)]),
-      'time': _0x48be9b['Q3'] || _0x48be9b['Q2'] || _0x48be9b['Q1'] || '—'
-    }))),
-    'sprint': _0x473da8(_0x312808, _0xee6f60 => (_0xee6f60[_0x197287(0x1d1)]['RaceTable'][_0x197287(0xe7)][0x0]?.[_0x197287(0x372)] || [])['slice'](0x0, 0x3)[_0x197287(0x5b0)](_0x388ca8 => ({
-      'pos': _0x388ca8['position'],
-      'name': a0_0x505882(_0x388ca8['Driver']),
-      'pts': _0x388ca8[_0x197287(0x39a)]
-    }))),
-    'drivers': _0x473da8(_0x23ea6f, _0x44a84f => (_0x44a84f[_0x197287(0x1d1)][_0x197287(0x40a)][_0x197287(0x469)][0x0]?.[_0x197287(0x44d)] || [])['map'](_0x5d8572 => ({
-      'pos': _0x5d8572[_0x197287(0x493)],
-      'name': a0_0x505882(_0x5d8572[_0x197287(0x3ad)]),
-      'pts': _0x5d8572[_0x197287(0x39a)]
-    }))),
-    'teams': _0x473da8(_0x18f961, _0x462d83 => (_0x462d83['MRData'][_0x197287(0x40a)][_0x197287(0x469)][0x0]?.[_0x197287(0x499)] || [])[_0x197287(0x5b0)](_0x4ccc0f => ({
-      'pos': _0x4ccc0f[_0x197287(0x493)],
-      'name': _0x4ccc0f[_0x197287(0x3c1)][_0x197287(0x5f5)],
-      'pts': _0x4ccc0f['points']
-    })))
+  if (a0_0x484245.calendar_cache_dummy) return; // no-op, evita colisión de nombres
+  if (a0_0x484245['_res'] && a0_0x484245['_res'][_0x4a2fc3]) return a0_0x484245['_res'][_0x4a2fc3];
+  const [race, quali, sprint, drivers, teams, fastest] = await Promise.all([
+    a0_0x182c22('/' + a0_0x30d883 + '/' + _0x4a2fc3 + '/results.json'),
+    a0_0x182c22('/' + a0_0x30d883 + '/' + _0x4a2fc3 + '/qualifying.json'),
+    a0_0x182c22('/' + a0_0x30d883 + '/' + _0x4a2fc3 + '/sprint.json'),
+    a0_0x182c22('/' + a0_0x30d883 + '/' + _0x4a2fc3 + '/driverStandings.json'),
+    a0_0x182c22('/' + a0_0x30d883 + '/' + _0x4a2fc3 + '/constructorStandings.json'),
+    a0_0x182c22('/' + a0_0x30d883 + '/' + _0x4a2fc3 + '/fastest/1/results.json').catch(() => null)
+  ]);
+  const _0x473da8 = (_0x5d3989, _0x3d72fb) => _0x5d3989.status === 200 ? _0x3d72fb(_0x5d3989.value) : [];
+  const out = {
+    race: (race.MRData.RaceTable.Races[0]?.Results || []).map(r => ({
+      pos: r.position,
+      name: a0_0x505882(r.Driver),
+      team: r.Constructor.name,
+      pts: r.points,
+      time: r.Time?.time || r.status
+    })),
+    quali: (quali.MRData.RaceTable.Races[0]?.QualifyingResults || []).slice(0, 3).map(q => ({
+      pos: q.position,
+      name: a0_0x505882(q.Driver),
+      time: q.Q3 || q.Q2 || q.Q1 || '—'
+    })),
+    sprint: (sprint.MRData.RaceTable.Races[0]?.SprintResults || []).slice(0, 3).map(s => ({
+      pos: s.position,
+      name: a0_0x505882(s.Driver),
+      pts: s.points
+    })),
+    fastest: (() => {
+      const r = fastest?.MRData?.RaceTable?.Races?.[0]?.Results?.[0];
+      if (!r || !r.FastestLap) return null;
+      return { name: a0_0x505882(r.Driver), team: r.Constructor.name, time: r.FastestLap.Time?.time || '—' };
+    })(),
+    drivers: (drivers.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || []).map(d => ({ pos: d.position, name: a0_0x505882(d.Driver), pts: d.points })),
+    teams: (teams.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || []).map(t => ({ pos: t.position, name: t.Constructor.name, pts: t.points }))
   };
-  if (_0x39db71[_0x197287(0x322)]['length']) a0_0x484245[_0x197287(0x214)][_0x4a2fc3] = _0x39db71;
-  return _0x39db71;
+  if (out.race.length) a0_0x484245['_res'] = { ...(a0_0x484245['_res'] || {}), [_0x4a2fc3]: out };
+  return out;
 }
 
 function a0_0x5ec2f5(_0x9acbe9, _0xbd2bc9) {
