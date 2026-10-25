@@ -1953,4 +1953,12 @@ async function of1(path) {
     setInterval(tick, 2500);
     syncTop();
   });
+
+  /* Quita la tarjeta "Undercut y overcut" de la sección Neumáticos */
+(function () {
+  if (typeof INFO_SECTIONS === 'undefined') return;
+  const sec = INFO_SECTIONS.find(s => /neum[aá]tic/i.test(s.title || ''));
+  if (!sec) return;
+  sec.items = sec.items.filter(it => !(it.type === 'card' && /undercut/i.test(it.title || '')));
+})();
 })();
