@@ -1,7 +1,4 @@
-// ================= DATOS DRIVERWIN · TEMPORADA 2026 =================
-// Respaldo sin conexión: lo usa app.js solo si la API no responde.
-// Los cascos se buscan en Fotos/Casco<Nombre>.webp usando el id del piloto.
-// Última actualización de respaldo: GP de Singapur 2026 (11/10/2026).
+// DATOS DRIVERWIN · TEMPORADA 2026 
 
 const PTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 const SPR = [8, 7, 6, 5, 4, 3, 2, 1];
@@ -20,9 +17,7 @@ const TEAMS = [
   { id: 'cadillac', name: 'Cadillac',         color: '#C9C9D1' }
 ];
 
-// Puntos de respaldo. Confirmados tras el GP de Singapur 2026:
-// Antonelli 340, Russell 238, Hamilton 229, Verstappen 221, Leclerc 215.
-// El resto quedó con valores anteriores: la página lo reemplaza con los datos en vivo.
+
 const DRIVERS = [
   { id: 'antonelli', name: 'Andrea Kimi Antonelli', team: 'mercedes', basePts: 340 },
   { id: 'russell',   name: 'George Russell',        team: 'mercedes', basePts: 238 },

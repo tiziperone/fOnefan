@@ -1,23 +1,9 @@
-/* =====================================================
-   parche.js · fOnefan
-   - Caché de la API histórica (solo respuestas válidas)
-   - Datos bajo demanda: solo lo que se muestra
-   - Trazado correcto de Las Vegas (vigente) y Caesars Palace (histórico)
-   - Vista previa de trazados en "Próximas" y calendario calculada directo
-   - Circuitos vigentes: usa las tarjetas y la ficha completas de app.js
-   - Celulares: sin saltos en tarjetas, "Próximas" y "Tabla de posiciones"
-   - Modal de horarios: horarios, resultados de sesiones terminadas (Top 3) y clasificación
-   - Ficha de carreras finalizadas: vuelta rápida (piloto, escudería y tiempo)
-   - Carrera en curso destacada en Calendario e Inicio (próximas y hero)
-   - Pilotos: "Pilotos actuales" y "Salón de la Fama" los maneja este parche
-   - Trazados contenidos dentro de su caja (sin encimarse con las tarjetas)
-   - Info: sección "Números de pilotos"
-   ===================================================== */
+/* parche.js · fOnefan*/
 (function () {
   'use strict';
 const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norris","nat":"British","teamId":"mclaren","team":"McLaren","points":423},{"season":2024,"driverId":"max_verstappen","name":"Max Verstappen","nat":"Dutch","teamId":"red_bull","team":"Red Bull","points":437},{"season":2023,"driverId":"max_verstappen","name":"Max Verstappen","nat":"Dutch","teamId":"red_bull","team":"Red Bull","points":575},{"season":2022,"driverId":"max_verstappen","name":"Max Verstappen","nat":"Dutch","teamId":"red_bull","team":"Red Bull","points":454},{"season":2021,"driverId":"max_verstappen","name":"Max Verstappen","nat":"Dutch","teamId":"red_bull","team":"Red Bull","points":395.5},{"season":2020,"driverId":"hamilton","name":"Lewis Hamilton","nat":"British","teamId":"mercedes","team":"Mercedes","points":347},{"season":2019,"driverId":"hamilton","name":"Lewis Hamilton","nat":"British","teamId":"mercedes","team":"Mercedes","points":413},{"season":2018,"driverId":"hamilton","name":"Lewis Hamilton","nat":"British","teamId":"mercedes","team":"Mercedes","points":408},{"season":2017,"driverId":"hamilton","name":"Lewis Hamilton","nat":"British","teamId":"mercedes","team":"Mercedes","points":363},{"season":2016,"driverId":"rosberg","name":"Nico Rosberg","nat":"German","teamId":"mercedes","team":"Mercedes","points":385},{"season":2015,"driverId":"hamilton","name":"Lewis Hamilton","nat":"British","teamId":"mercedes","team":"Mercedes","points":381},{"season":2014,"driverId":"hamilton","name":"Lewis Hamilton","nat":"British","teamId":"mercedes","team":"Mercedes","points":384},{"season":2013,"driverId":"vettel","name":"Sebastian Vettel","nat":"German","teamId":"red_bull","team":"Red Bull","points":397},{"season":2012,"driverId":"vettel","name":"Sebastian Vettel","nat":"German","teamId":"red_bull","team":"Red Bull","points":281},{"season":2011,"driverId":"vettel","name":"Sebastian Vettel","nat":"German","teamId":"red_bull","team":"Red Bull","points":392},{"season":2010,"driverId":"vettel","name":"Sebastian Vettel","nat":"German","teamId":"red_bull","team":"Red Bull","points":256},{"season":2009,"driverId":"button","name":"Jenson Button","nat":"British","teamId":"brawn","team":"Brawn","points":95},{"season":2008,"driverId":"hamilton","name":"Lewis Hamilton","nat":"British","teamId":"mclaren","team":"McLaren","points":98},{"season":2007,"driverId":"raikkonen","name":"Kimi Räikkönen","nat":"Finnish","teamId":"ferrari","team":"Ferrari","points":110},{"season":2006,"driverId":"alonso","name":"Fernando Alonso","nat":"Spanish","teamId":"renault","team":"Renault","points":134},{"season":2005,"driverId":"alonso","name":"Fernando Alonso","nat":"Spanish","teamId":"renault","team":"Renault","points":133},{"season":2004,"driverId":"michael_schumacher","name":"Michael Schumacher","nat":"German","teamId":"ferrari","team":"Ferrari","points":148},{"season":2003,"driverId":"michael_schumacher","name":"Michael Schumacher","nat":"German","teamId":"ferrari","team":"Ferrari","points":93},{"season":2002,"driverId":"michael_schumacher","name":"Michael Schumacher","nat":"German","teamId":"ferrari","team":"Ferrari","points":144},{"season":2001,"driverId":"michael_schumacher","name":"Michael Schumacher","nat":"German","teamId":"ferrari","team":"Ferrari","points":123},{"season":2000,"driverId":"michael_schumacher","name":"Michael Schumacher","nat":"German","teamId":"ferrari","team":"Ferrari","points":108},{"season":1999,"driverId":"hakkinen","name":"Mika Häkkinen","nat":"Finnish","teamId":"mclaren","team":"McLaren","points":76},{"season":1998,"driverId":"hakkinen","name":"Mika Häkkinen","nat":"Finnish","teamId":"mclaren","team":"McLaren","points":100},{"season":1997,"driverId":"villeneuve","name":"Jacques Villeneuve","nat":"Canadian","teamId":"williams","team":"Williams","points":81},{"season":1996,"driverId":"damon_hill","name":"Damon Hill","nat":"British","teamId":"williams","team":"Williams","points":97},{"season":1995,"driverId":"michael_schumacher","name":"Michael Schumacher","nat":"German","teamId":"benetton","team":"Benetton","points":102},{"season":1994,"driverId":"michael_schumacher","name":"Michael Schumacher","nat":"German","teamId":"benetton","team":"Benetton","points":92},{"season":1993,"driverId":"prost","name":"Alain Prost","nat":"French","teamId":"williams","team":"Williams","points":99},{"season":1992,"driverId":"mansell","name":"Nigel Mansell","nat":"British","teamId":"williams","team":"Williams","points":108},{"season":1991,"driverId":"senna","name":"Ayrton Senna","nat":"Brazilian","teamId":"mclaren","team":"McLaren","points":96},{"season":1990,"driverId":"senna","name":"Ayrton Senna","nat":"Brazilian","teamId":"mclaren","team":"McLaren","points":78},{"season":1989,"driverId":"prost","name":"Alain Prost","nat":"French","teamId":"mclaren","team":"McLaren","points":76},{"season":1988,"driverId":"senna","name":"Ayrton Senna","nat":"Brazilian","teamId":"mclaren","team":"McLaren","points":90},{"season":1987,"driverId":"piquet","name":"Nelson Piquet","nat":"Brazilian","teamId":"williams","team":"Williams","points":73},{"season":1986,"driverId":"prost","name":"Alain Prost","nat":"French","teamId":"mclaren","team":"McLaren","points":72},{"season":1985,"driverId":"prost","name":"Alain Prost","nat":"French","teamId":"mclaren","team":"McLaren","points":73},{"season":1984,"driverId":"lauda","name":"Niki Lauda","nat":"Austrian","teamId":"mclaren","team":"McLaren","points":72},{"season":1983,"driverId":"piquet","name":"Nelson Piquet","nat":"Brazilian","teamId":"brabham","team":"Brabham","points":59},{"season":1982,"driverId":"keke_rosberg","name":"Keke Rosberg","nat":"Finnish","teamId":"williams","team":"Williams","points":44},{"season":1981,"driverId":"piquet","name":"Nelson Piquet","nat":"Brazilian","teamId":"brabham","team":"Brabham","points":50},{"season":1980,"driverId":"jones","name":"Alan Jones","nat":"Australian","teamId":"williams","team":"Williams","points":67},{"season":1979,"driverId":"scheckter","name":"Jody Scheckter","nat":"South African","teamId":"ferrari","team":"Ferrari","points":51},{"season":1978,"driverId":"mario_andretti","name":"Mario Andretti","nat":"American","teamId":"team_lotus","team":"Team Lotus","points":64},{"season":1977,"driverId":"lauda","name":"Niki Lauda","nat":"Austrian","teamId":"ferrari","team":"Ferrari","points":70},{"season":1976,"driverId":"hunt","name":"James Hunt","nat":"British","teamId":"mclaren","team":"McLaren","points":69},{"season":1975,"driverId":"lauda","name":"Niki Lauda","nat":"Austrian","teamId":"ferrari","team":"Ferrari","points":64.5},{"season":1974,"driverId":"emerson_fittipaldi","name":"Emerson Fittipaldi","nat":"Brazilian","teamId":"mclaren","team":"McLaren","points":55},{"season":1973,"driverId":"stewart","name":"Jackie Stewart","nat":"British","teamId":"tyrrell","team":"Tyrrell","points":71},{"season":1972,"driverId":"emerson_fittipaldi","name":"Emerson Fittipaldi","nat":"Brazilian","teamId":"team_lotus","team":"Team Lotus","points":61},{"season":1971,"driverId":"stewart","name":"Jackie Stewart","nat":"British","teamId":"tyrrell","team":"Tyrrell","points":62},{"season":1970,"driverId":"rindt","name":"Jochen Rindt","nat":"Austrian","teamId":"team_lotus","team":"Team Lotus","points":45},{"season":1969,"driverId":"stewart","name":"Jackie Stewart","nat":"British","teamId":"matra-ford","team":"Matra-Ford","points":63},{"season":1968,"driverId":"hill","name":"Graham Hill","nat":"British","teamId":"lotus-ford","team":"Lotus-Ford","points":48},{"season":1967,"driverId":"hulme","name":"Denny Hulme","nat":"New Zealander","teamId":"brabham-repco","team":"Brabham-Repco","points":51},{"season":1966,"driverId":"jack_brabham","name":"Jack Brabham","nat":"Australian","teamId":"brabham-repco","team":"Brabham-Repco","points":42},{"season":1965,"driverId":"clark","name":"Jim Clark","nat":"British","teamId":"lotus-climax","team":"Lotus-Climax","points":54},{"season":1964,"driverId":"surtees","name":"John Surtees","nat":"British","teamId":"ferrari","team":"Ferrari","points":40},{"season":1963,"driverId":"clark","name":"Jim Clark","nat":"British","teamId":"lotus-climax","team":"Lotus-Climax","points":54},{"season":1962,"driverId":"hill","name":"Graham Hill","nat":"British","teamId":"brm","team":"BRM","points":42},{"season":1961,"driverId":"phil_hill","name":"Phil Hill","nat":"American","teamId":"ferrari","team":"Ferrari","points":34},{"season":1960,"driverId":"jack_brabham","name":"Jack Brabham","nat":"Australian","teamId":"cooper-climax","team":"Cooper-Climax","points":43},{"season":1959,"driverId":"jack_brabham","name":"Jack Brabham","nat":"Australian","teamId":"cooper-climax","team":"Cooper-Climax","points":31},{"season":1958,"driverId":"hawthorn","name":"Mike Hawthorn","nat":"British","teamId":"ferrari","team":"Ferrari","points":42},{"season":1957,"driverId":"fangio","name":"Juan Fangio","nat":"Argentine","teamId":"maserati","team":"Maserati","points":40},{"season":1956,"driverId":"fangio","name":"Juan Fangio","nat":"Argentine","teamId":"ferrari","team":"Ferrari","points":30},{"season":1955,"driverId":"fangio","name":"Juan Fangio","nat":"Argentine","teamId":"mercedes","team":"Mercedes","points":40},{"season":1954,"driverId":"fangio","name":"Juan Fangio","nat":"Argentine","teamId":"mercedes","team":"Maserati / Mercedes","points":42},{"season":1953,"driverId":"ascari","name":"Alberto Ascari","nat":"Italian","teamId":"ferrari","team":"Ferrari","points":34.5},{"season":1952,"driverId":"ascari","name":"Alberto Ascari","nat":"Italian","teamId":"ferrari","team":"Ferrari","points":36},{"season":1951,"driverId":"fangio","name":"Juan Fangio","nat":"Argentine","teamId":"alfa","team":"Alfa Romeo","points":31},{"season":1950,"driverId":"farina","name":"Nino Farina","nat":"Italian","teamId":"alfa","team":"Alfa Romeo","points":30}];
 
-  /* ---------- Caché de la API histórica (solo respuestas válidas) ---------- */
+  /*Caché de la API histórica*/
 
   const CACHE_PREFIX = 'fo-api:';
   const DAY = 24 * 60 * 60 * 1000;
@@ -105,8 +91,6 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     });
   };
 
-  /* ---------- Trazados de Las Vegas y Caesars Palace ---------- */
-
   const VEGAS_ID = 'las-vegas-1';
   const VEGAS_ACTUAL = { lat: 36.175, lon: -115.1364 };
   const CAESARS = { lat: 36.1169, lon: -115.175 };
@@ -142,7 +126,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     };
   }
 
-  /* ---------- Utilidades ---------- */
+  /*Utilidades*/
 
   const $ = (s, r = document) => r.querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -465,7 +449,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     ? `<img class="${cls}" src="${esc(src)}" alt="" loading="lazy" onerror="this.style.display='none'">`
     : '';
 
-  /* ---------- Pilotos actuales ---------- */
+  /*Pilotos actuales*/
 
   function renderDrivers() {
     const grid = $('#drvGrid');
@@ -524,13 +508,11 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     }).join('');
   }
 
-  /* ---------- Datos bajo demanda: solo lo que se muestra ---------- */
-
   const sleepP = ms => new Promise(r => setTimeout(r, ms));
   const careerMap = {};
   const CARRERA_TTL = 12 * 60 * 60 * 1000;
 
-  // Pedido a la API con reintentos suaves ante 429
+  // Pedido a la API 
   async function jol(path) {
     for (let i = 0; i < 4; i++) {
       try { return await a0_0x182c22(path, 1); }
@@ -595,7 +577,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     return st;
   }
 
-  // Campeones de todas las temporadas: una sola llamada
+  // Campeones de todas las temporadas
   async function cargarCampeonesPilotos() {
     const j = await jol('/driverStandings/1.json?limit=100');
     const listas = j.MRData.StandingsTable.StandingsLists || [];
@@ -617,7 +599,6 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     }).sort((a, b) => b.season - a.season);
   }
 
-  // Reemplaza la precarga de toda la historia que hacía app.js al iniciar.
   window.a0_0x521c52 = async function () {
     if (HOF_PILOTOS_FIJO && HOF_PILOTOS_FIJO.length) {
       a0_0x484245.champs = HOF_PILOTOS_FIJO;
@@ -630,10 +611,8 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     return champs;
   };
 
-  // Ya no se precarga el historial al abrir la pestaña Pilotos
   window.a0_0x536bd9 = function () {};
 
-  // Render de progreso de app.js para el Salón: no se usa
   window.a0_0xdd43dd = function () {};
 
   // Ficha de piloto: pide solo a ese piloto
@@ -658,24 +637,21 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     }
   };
 
-  // app.js no debe pintar la grilla de pilotos: lo hace este parche
   window.a0_0x5bdb86 = function () {};
 
-  /* ---------- Salón de la Fama de pilotos ---------- */
+  /*Salón de la Fama de pilotos */
 
   let champsPromesa = null;
 
   function asegurarCampeones() {
   if (LIVE().champs && LIVE().champs.length) return Promise.resolve(LIVE().champs);
 
-  // Dato fijo incluido en el archivo: no se consulta la API
   if (HOF_PILOTOS_FIJO && HOF_PILOTOS_FIJO.length) {
     LIVE().champs = HOF_PILOTOS_FIJO;
     LIVE().champsDone = true;
     return Promise.resolve(HOF_PILOTOS_FIJO);
   }
 
-  // Respaldo: consulta única a la API
   if (!champsPromesa) {
     champsPromesa = cargarCampeonesPilotos()
       .then(list => {
@@ -742,7 +718,6 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
       grid.innerHTML = '<p class="parche-loading">Cargando campeones…</p>';
       asegurarCampeones()
         .then(list => {
-          // Solo pinta si seguimos en el Salón
           const t = $('#drvTabs .chip.on');
           if (t && t.dataset.dt === 'hof') pintarHofPilotos(list);
         })
@@ -757,9 +732,6 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     }
   }
 
-  /* ---------- Cambio de pestaña de pilotos (único responsable) ---------- */
-
-  // Interceptamos el clic antes que app.js: así no hay dos códigos pintando la misma grilla
   function setDrvTab(dt) {
     document.querySelectorAll('#drvTabs .chip').forEach(c => {
       c.classList.toggle('on', c.dataset.dt === dt);
@@ -788,7 +760,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     setDrvTab(chip.dataset.dt);
   }, true);
 
-  /* ---------- Salón de la Fama de escuderías ---------- */
+  /* Salón de la Fama de escuderías*/
 
   const HOF_CAMPEONES = [
     [1958,'Vanwall'],[1959,'Cooper'],[1960,'Cooper'],[1961,'Ferrari'],[1962,'BRM'],
@@ -892,7 +864,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     }, true);
   }
 
-  /* ---------- Mensajes y avisos ---------- */
+  /*Mensajes y avisos*/
 
   function quitarMensajesAPI() {
     document.querySelectorAll('#drvStatus, #teamStatus, #drvTable, #teamTable, #drvGrid, #teamGrid, #circGrid').forEach(el => {
@@ -941,7 +913,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     if (b) location.reload();
   });
 
-  /* ---------- Circuitos ---------- */
+  /*Circuitos*/
 
   function ensureCircuits() {
     const grid = $('#circGrid');
@@ -1022,7 +994,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     });
   }
 
-  /* ---------- Trazados en calendario y "Próximas" ---------- */
+  /*Trazados en calendario y "Próximas"*/
 
   const TRACK_CACHE = {};
   const TRACK_PEND = {};
@@ -1107,10 +1079,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     });
   }
 
-  /* ---------- Carrera en curso (fin de semana activo) ---------- */
-
-  // Un fin de semana está en curso si ya empezó la primera sesión y todavía no
-  // terminó la última (con 3 h de margen para la carrera).
+  /*Carrera en curso (fin de semana activo)*/
   function rangoFinDeSemana(race) {
     const ses = (race.sessions || [])
       .map(s => Date.parse(s.when))
@@ -1181,16 +1150,12 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     }
   }
 
-  /* ---------- Vuelta rápida en la ficha de carreras finalizadas ---------- */
-
+  /*Vuelta rápida en la ficha de carreras finalizadas*/
   const FL_MEM = {};
   const FL_PEND = {};
   const FL_KEY = round => 'fo-vl:' + round;
-  let flRaceActiva = null;   // carrera finalizada que tiene la ficha abierta
-  let flObserver = null;     // vigila #mBody para re-insertar el bloque
-
-  // Devuelve { name, team, time } si hay dato, { none: true } si la API confirma que no hay,
-  // o null si hubo error de red (se reintenta al abrir la ficha de nuevo).
+  let flRaceActiva = null;   
+  let flObserver = null;     
   function getFastestLap(round) {
     if (FL_MEM[round]) return Promise.resolve(FL_MEM[round]);
 
@@ -1249,12 +1214,10 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
       </div>`;
   }
 
-  // Inserta el bloque si la ficha corresponde a la carrera activa y todavía no lo tiene.
   function insertarFastestSiFalta() {
     const body = $('#mBody');
     if (!body || flRaceActiva == null) return;
     if (body.querySelector('.fl-box')) return;
-    // Esperamos a que app.js termine de pintar: la ficha tiene la sección de resultados
     if (!body.querySelector('.line')) return;
     const info = FL_MEM[flRaceActiva];
     if (!info) return;
@@ -1269,7 +1232,6 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     if (!flObserver) {
       flObserver = new MutationObserver(() => {
         if (flRaceActiva == null) return;
-        // Evita bucles: el propio cambio dispara el observer
         flObserver.disconnect();
         try { insertarFastestSiFalta(); } finally {
           flObserver.observe(body, { childList: true, subtree: false });
@@ -1279,7 +1241,6 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     flObserver.observe(body, { childList: true, subtree: false });
   }
 
-  // Al abrir una carrera finalizada: se guarda cuál es, se pide su vuelta rápida y se vigila la ficha.
   document.addEventListener('click', e => {
     const c = e.target.closest('[data-race]');
     if (!c) return;
@@ -1293,12 +1254,11 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     });
   }, true);
 
-  // Al cerrar la ficha con el botón ✕ o #mClose, se deja de agregar el bloque
   document.addEventListener('click', e => {
     if (e.target.closest('.x, #mClose')) flRaceActiva = null;
   });
 
-  /* ---------- Campeonato ---------- */
+  /*Campeonato*/
 
   function ensureGridLayout(two) {
     if (two.dataset.parche === '1') return;
@@ -1405,7 +1365,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     box.innerHTML = head + `<div class="ct-list">${cards}</div>`;
   }
 
-  /* ---------- Modal y horarios ---------- */
+  /*Modal y horarios*/
 
   const fmtDia = d => {
     const s = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ_AR }).format(d);
@@ -1434,29 +1394,27 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     }).join('');
   }
 
-  /* ---------- Top 3 de sesiones terminadas (OpenF1) y clasificación (jolpi) ---------- */
+  /*Top 3 de sesiones terminadas y clasificación*/
 
   const OF1_BASE = 'https://api.openf1.org/v1/';
   const topCache = {};
   let sesionesCache = null;
   let sesionesCacheAt = 0;
-  const SESIONES_TTL = 30 * 60 * 1000; // 30 minutos
+  const SESIONES_TTL = 30 * 60 * 1000; 
 
-  // Si OpenF1 falla (CORS, red, 429), no se vuelve a intentar en esta sesión
   let of1PausaHasta = 0;
 
 async function of1(path) {
   if (Date.now() < of1PausaHasta) throw new Error('OpenF1 en pausa');
   const r = await fetch(OF1_BASE + path);
   if (r.status === 429) {
-    of1PausaHasta = Date.now() + 60 * 1000; // pausa de 1 minuto
+    of1PausaHasta = Date.now() + 60 * 1000;
     throw new Error('HTTP 429');
   }
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return await r.json();
 }
 
-  // Lista de sesiones 2026: se pide una vez cada 30 minutos, no en cada apertura
   async function sesionesOF1() {
     const ahora = Date.now();
     if (sesionesCache && ahora - sesionesCacheAt < SESIONES_TTL) return sesionesCache;
@@ -1522,12 +1480,9 @@ async function of1(path) {
       </div>`;
   }
 
-  // Sesiones de esta carrera que ya terminaron (OpenF1), más la clasificación de jolpi si hay.
   async function bloqueResultados(race) {
     const now = Date.now();
     const partes = [];
-
-    // 1) Sesiones terminadas (OpenF1): si falla, se omiten sin frenar lo demás
     try {
       const whens = (race.sessions || []).map(s => Date.parse(s.when)).filter(t => !isNaN(t));
       if (whens.length) {
@@ -1551,8 +1506,6 @@ async function of1(path) {
     } catch (e) {
       console.warn('[fOnefan] sesiones no disponibles:', e.message);
     }
-
-    // 2) Clasificación (jolpi) si todavía no está en la lista de sesiones
     try {
       const data = await a0_0x5632f4(race.round);
       if (data && data.quali && data.quali.length && !partes.some(p => /Clasificación ·/.test(p) || />Clasificación</.test(p))) {
@@ -1606,7 +1559,6 @@ async function of1(path) {
     openHorarios(race);
   });
 
-  // Escuderías: se abren desde acá. Pilotos: app.js los maneja con data-drv.
   document.addEventListener('click', e => {
     const c = e.target.closest('.parche-card[data-team-name]');
     if (!c) return;
@@ -1616,7 +1568,7 @@ async function of1(path) {
     }
   });
 
-  /* ---------- Info · Números de pilotos ---------- */
+  /*Números de pilotos*/
 
   const NUM_USO = {
     1:  ['Lando Norris', 'NOR', 'McLaren'],
@@ -1800,7 +1752,6 @@ async function of1(path) {
     }
   });
 
-  /* ---------- Corrección de contención de trazados ---------- */
   function injectTrackFix() {
     if ($('#parcheTrackFix')) return;
     const st = document.createElement('style');
@@ -1881,7 +1832,7 @@ async function of1(path) {
     document.head.appendChild(st);
   }
 
-  /* ---------- Botón "subir" ---------- */
+  /*Botón "subir"*/
 
   let topBtn = null;
 
@@ -1954,7 +1905,7 @@ async function of1(path) {
     syncTop();
   });
 
-  /* Quita la tarjeta "Undercut y overcut" de la sección Neumáticos */
+  
 (function () {
   if (typeof INFO_SECTIONS === 'undefined') return;
   const sec = INFO_SECTIONS.find(s => /neum[aá]tic/i.test(s.title || ''));

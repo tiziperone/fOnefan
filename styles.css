@@ -434,7 +434,7 @@ img{max-width:100%}
 .part-card h4{font-size:17px;color:var(--red);margin-bottom:10px}
 .part-card p{font-size:14.5px;color:#c0c0cb;line-height:1.65}
 
-/* Tarjetas de partes del monoplaza: todo centrado */
+/* Tarjetas de partes del monoplaza */
 #v-monoplaza .parts-grid .part-card{
   text-align:center !important;
   display:flex;
@@ -451,7 +451,7 @@ img{max-width:100%}
   margin-left:auto;
   margin-right:auto;
 }
-/* Tarjetas del volante: todo centrado */
+/* Tarjetas del volante*/
 #v-monoplaza .volante-grid .part-card{
   text-align:center !important;
   display:flex;

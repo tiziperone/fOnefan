@@ -1,7 +1,5 @@
-// Cambiá el número cada vez que quieras forzar una limpieza total de la caché
 const CACHE = 'fonefan-v4';
 
-// Se instala y toma control de inmediato, sin esperar a cerrar la app
 self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', e => {
@@ -12,12 +10,10 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Red primero (sin caché HTTP); si no hay conexión, usa la copia guardada
 self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
 
-  // Solo guardamos archivos de tu propio sitio. Las APIs de F1 y las fuentes van directo a la red.
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
 
   e.respondWith(
