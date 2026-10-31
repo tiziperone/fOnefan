@@ -512,7 +512,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
   const careerMap = {};
   const CARRERA_TTL = 12 * 60 * 60 * 1000;
 
-  // Pedido a la API 
+  // Pedido a la API
   async function jol(path) {
     for (let i = 0; i < 4; i++) {
       try { return await a0_0x182c22(path, 1); }
@@ -644,28 +644,28 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
   let champsPromesa = null;
 
   function asegurarCampeones() {
-  if (LIVE().champs && LIVE().champs.length) return Promise.resolve(LIVE().champs);
+    if (LIVE().champs && LIVE().champs.length) return Promise.resolve(LIVE().champs);
 
-  if (HOF_PILOTOS_FIJO && HOF_PILOTOS_FIJO.length) {
-    LIVE().champs = HOF_PILOTOS_FIJO;
-    LIVE().champsDone = true;
-    return Promise.resolve(HOF_PILOTOS_FIJO);
-  }
+    if (HOF_PILOTOS_FIJO && HOF_PILOTOS_FIJO.length) {
+      LIVE().champs = HOF_PILOTOS_FIJO;
+      LIVE().champsDone = true;
+      return Promise.resolve(HOF_PILOTOS_FIJO);
+    }
 
-  if (!champsPromesa) {
-    champsPromesa = cargarCampeonesPilotos()
-      .then(list => {
-        LIVE().champs = list;
-        LIVE().champsDone = true;
-        return list;
-      })
-      .catch(err => {
-        champsPromesa = null;
-        throw err;
-      });
+    if (!champsPromesa) {
+      champsPromesa = cargarCampeonesPilotos()
+        .then(list => {
+          LIVE().champs = list;
+          LIVE().champsDone = true;
+          return list;
+        })
+        .catch(err => {
+          champsPromesa = null;
+          throw err;
+        });
+    }
+    return champsPromesa;
   }
-  return champsPromesa;
-}
 
   function buildHofPilotos(champs) {
     const porPiloto = {};
@@ -760,7 +760,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     setDrvTab(chip.dataset.dt);
   }, true);
 
-  /* Salón de la Fama de escuderías*/
+  /* Salón de la Fama de escuderías */
 
   const HOF_CAMPEONES = [
     [1958,'Vanwall'],[1959,'Cooper'],[1960,'Cooper'],[1961,'Ferrari'],[1962,'BRM'],
@@ -840,7 +840,6 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     grid.dataset.hofOk = '1';
     grid.dataset.key = '';
     if (status) status.textContent = d.sub;
-
   }
 
   function setChipsHof() {
@@ -864,7 +863,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     }, true);
   }
 
-  /*Mensajes y avisos*/
+  /* Mensajes y avisos */
 
   function quitarMensajesAPI() {
     document.querySelectorAll('#drvStatus, #teamStatus, #drvTable, #teamTable, #drvGrid, #teamGrid, #circGrid').forEach(el => {
@@ -913,7 +912,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     if (b) location.reload();
   });
 
-  /*Circuitos*/
+  /* Circuitos */
 
   function ensureCircuits() {
     const grid = $('#circGrid');
@@ -994,7 +993,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     });
   }
 
-  /*Trazados en calendario y "Próximas"*/
+  /* Trazados en calendario y "Próximas" */
 
   const TRACK_CACHE = {};
   const TRACK_PEND = {};
@@ -1079,7 +1078,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     });
   }
 
-  /*Carrera en curso (fin de semana activo)*/
+  /* Carrera en curso (fin de semana activo) */
   function rangoFinDeSemana(race) {
     const ses = (race.sessions || [])
       .map(s => Date.parse(s.when))
@@ -1101,7 +1100,6 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
   function marcarCarreraEnCurso() {
     const races = getRaces();
 
-    // Calendario: tarjeta completa + etiqueta
     const grid = document.getElementById('calGrid');
     if (grid) {
       grid.querySelectorAll('[data-race]').forEach(card => {
@@ -1122,7 +1120,6 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
       });
     }
 
-    // Inicio: "Próximas carreras"
     const up = document.getElementById('upList');
     if (up) {
       up.querySelectorAll('[data-race]').forEach(item => {
@@ -1141,7 +1138,6 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
       });
     }
 
-    // Inicio: hero con el próximo Gran Premio
     const hero = document.querySelector('.hero-r');
     if (hero) {
       const next = races.find(r => !r.done);
@@ -1150,12 +1146,13 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     }
   }
 
-  /*Vuelta rápida en la ficha de carreras finalizadas*/
+  /* Vuelta rápida en la ficha de carreras finalizadas */
   const FL_MEM = {};
   const FL_PEND = {};
   const FL_KEY = round => 'fo-vl:' + round;
-  let flRaceActiva = null;   
-  let flObserver = null;     
+  let flRaceActiva = null;
+  let flObserver = null;
+
   function getFastestLap(round) {
     if (FL_MEM[round]) return Promise.resolve(FL_MEM[round]);
 
@@ -1258,7 +1255,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     if (e.target.closest('.x, #mClose')) flRaceActiva = null;
   });
 
-  /*Campeonato*/
+  /* Campeonato */
 
   function ensureGridLayout(two) {
     if (two.dataset.parche === '1') return;
@@ -1365,7 +1362,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     box.innerHTML = head + `<div class="ct-list">${cards}</div>`;
   }
 
-  /*Modal y horarios*/
+  /* Modal y horarios */
 
   const fmtDia = d => {
     const s = new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ_AR }).format(d);
@@ -1394,34 +1391,39 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
     }).join('');
   }
 
-  /*Top 3 de sesiones terminadas y clasificación*/
+  /* Top 3 de sesiones terminadas y clasificación */
 
   const OF1_BASE = 'https://api.openf1.org/v1/';
   const topCache = {};
   let sesionesCache = null;
   let sesionesCacheAt = 0;
-  const SESIONES_TTL = 30 * 60 * 1000; 
+  const SESIONES_TTL = 30 * 60 * 1000;
 
   let of1PausaHasta = 0;
 
-async function of1(path) {
-  if (Date.now() < of1PausaHasta) throw new Error('OpenF1 en pausa');
-  const r = await fetch(OF1_BASE + path);
-  if (r.status === 429) {
-    of1PausaHasta = Date.now() + 60 * 1000;
-    throw new Error('HTTP 429');
+  async function of1(path) {
+    if (Date.now() < of1PausaHasta) throw new Error('OpenF1 en pausa');
+    const r = await fetch(OF1_BASE + path);
+    if (r.status === 429) {
+      of1PausaHasta = Date.now() + 60 * 1000;
+      throw new Error('HTTP 429');
+    }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
   }
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return await r.json();
-}
 
   async function sesionesOF1() {
     const ahora = Date.now();
     if (sesionesCache && ahora - sesionesCacheAt < SESIONES_TTL) return sesionesCache;
-    const datos = await of1('sessions?year=2026');
-    sesionesCache = datos;
-    sesionesCacheAt = ahora;
-    return datos;
+    try {
+      const datos = await of1('sessions?year=2026');
+      sesionesCache = datos;
+      sesionesCacheAt = ahora;
+      return datos;
+    } catch (e) {
+      if (sesionesCache) return sesionesCache; // conserva la última lista buena
+      throw e;
+    }
   }
 
   function etiquetaSesionTop(name) {
@@ -1483,32 +1485,40 @@ async function of1(path) {
   async function bloqueResultados(race) {
     const now = Date.now();
     const partes = [];
-    try {
-      const whens = (race.sessions || []).map(s => Date.parse(s.when)).filter(t => !isNaN(t));
-      if (whens.length) {
-        const desde = Math.min(...whens) - 86400000;
-        const hasta = Math.max(...whens) + 86400000;
-        const todas = await sesionesOF1();
-        const terminadas = todas
-          .filter(s => {
-            const inicio = Date.parse(s.date_start);
-            if (isNaN(inicio) || inicio < desde || inicio > hasta) return false;
-            const fin = Date.parse(s.date_end) || inicio + 7200000;
-            return fin < now;
-          })
-          .sort((a, b) => Date.parse(a.date_start) - Date.parse(b.date_start));
+    const whens = (race.sessions || []).map(s => Date.parse(s.when)).filter(t => !isNaN(t));
 
-        for (const s of terminadas) {
+    if (whens.length) {
+      const desde = Math.min(...whens) - 2 * 86400000;
+      const hasta = Math.max(...whens) + 2 * 86400000;
+      let todas = [];
+      try {
+        todas = await sesionesOF1();
+      } catch (e) {
+        console.warn('[fOnefan] lista de sesiones no disponible:', e.message);
+      }
+
+      const terminadas = todas
+        .filter(s => {
+          const inicio = Date.parse(s.date_start);
+          if (isNaN(inicio) || inicio < desde || inicio > hasta) return false;
+          const fin = Date.parse(s.date_end) || inicio + 2 * 3600000;
+          return fin < now;
+        })
+        .sort((a, b) => Date.parse(a.date_start) - Date.parse(b.date_start));
+
+      for (const s of terminadas) {
+        try {
           const top = await topSesion(s);
           if (top.length) partes.push(tarjetaTop(etiquetaSesionTop(s.session_name), top));
+        } catch (e) {
+          console.warn('[fOnefan] sesión', s.session_name, 'no disponible:', e.message);
         }
       }
-    } catch (e) {
-      console.warn('[fOnefan] sesiones no disponibles:', e.message);
     }
+
     try {
       const data = await a0_0x5632f4(race.round);
-      if (data && data.quali && data.quali.length && !partes.some(p => /Clasificación ·/.test(p) || />Clasificación</.test(p))) {
+      if (data && data.quali && data.quali.length) {
         const quali = data.quali.slice(0, 3).map(q => ({ pos: q.pos, name: q.name, time: q.time }));
         partes.push(tarjetaTop('Clasificación', quali));
       }
@@ -1568,7 +1578,7 @@ async function of1(path) {
     }
   });
 
-  /*Números de pilotos*/
+  /* Números de pilotos */
 
   const NUM_USO = {
     1:  ['Lando Norris', 'NOR', 'McLaren'],
@@ -1805,7 +1815,7 @@ async function of1(path) {
       }
       #upList .up .up-track small{display:none}
 
-      /* Calendario: misma idea, caja fija dentro de la tarjeta */
+      /* Calendario: caja fija dentro de la tarjeta */
       #calGrid .cal-track{
         position:relative;
         height:100px;
@@ -1833,7 +1843,7 @@ async function of1(path) {
     document.head.appendChild(st);
   }
 
-  /*Botón "subir"*/
+  /* Botón "subir" */
 
   let topBtn = null;
 
@@ -1906,11 +1916,10 @@ async function of1(path) {
     syncTop();
   });
 
-  
-(function () {
-  if (typeof INFO_SECTIONS === 'undefined') return;
-  const sec = INFO_SECTIONS.find(s => /neum[aá]tic/i.test(s.title || ''));
-  if (!sec) return;
-  sec.items = sec.items.filter(it => !(it.type === 'card' && /undercut/i.test(it.title || '')));
-})();
+  (function () {
+    if (typeof INFO_SECTIONS === 'undefined') return;
+    const sec = INFO_SECTIONS.find(s => /neum[aá]tic/i.test(s.title || ''));
+    if (!sec) return;
+    sec.items = sec.items.filter(it => !(it.type === 'card' && /undercut/i.test(it.title || '')));
+  })();
 })();
