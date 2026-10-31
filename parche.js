@@ -1588,6 +1588,7 @@ async function of1(path) {
     41: ['Arvid Lindblad', 'LIN', 'Racing Bulls'],
     43: ['Franco Colapinto', 'COL', 'Alpine'],
     44: ['Lewis Hamilton', 'HAM', 'Ferrari'],
+    50: ['Ryo Hirakawa (suplente, GP de México)', 'HIR', 'Haas'],
     55: ['Carlos Sainz', 'SAI', 'Williams'],
     63: ['George Russell', 'RUS', 'Mercedes'],
     77: ['Valtteri Bottas', 'BOT', 'Cadillac'],
