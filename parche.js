@@ -510,7 +510,8 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
 
   const sleepP = ms => new Promise(r => setTimeout(r, ms));
   const careerMap = {};
-  const CARRERA_TTL = 12 * 60 * 60 * 1000;
+  const CARRERA_TTL = 15 * 60 * 1000;
+  const CARRERA_KEY = 'fo-carrera-v2:';
 
   // Pedido a la API
   async function jol(path) {
@@ -521,8 +522,8 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
   }
 
   // Estadísticas de carrera de UN piloto (solo cuando se abre su ficha)
-  async function careerStats(id) {
-    const k = 'fo-carrera:' + id;
+      async function careerStats(id) {
+    const k = CARRERA_KEY + id;
     try {
       const raw = JSON.parse(localStorage.getItem(k) || 'null');
       if (raw && Date.now() < raw.exp && raw.st) return raw.st;
