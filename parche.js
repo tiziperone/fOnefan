@@ -1485,6 +1485,7 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
   async function bloqueResultados(race) {
     const now = Date.now();
     const partes = [];
+    let hayClasificacion = false;
     const whens = (race.sessions || []).map(s => Date.parse(s.when)).filter(t => !isNaN(t));
 
     if (whens.length) {
@@ -1509,21 +1510,27 @@ const HOF_PILOTOS_FIJO = [{"season":2025,"driverId":"norris","name":"Lando Norri
       for (const s of terminadas) {
         try {
           const top = await topSesion(s);
-          if (top.length) partes.push(tarjetaTop(etiquetaSesionTop(s.session_name), top));
+          if (!top.length) continue;
+          const titulo = etiquetaSesionTop(s.session_name);
+          if (titulo === 'Clasificación') hayClasificacion = true;
+          partes.push(tarjetaTop(titulo, top));
         } catch (e) {
           console.warn('[fOnefan] sesión', s.session_name, 'no disponible:', e.message);
         }
       }
     }
 
-    try {
-      const data = await a0_0x5632f4(race.round);
-      if (data && data.quali && data.quali.length) {
-        const quali = data.quali.slice(0, 3).map(q => ({ pos: q.pos, name: q.name, time: q.time }));
-        partes.push(tarjetaTop('Clasificación', quali));
+    // Respaldo: solo si OpenF1 no trajo la clasificación
+    if (!hayClasificacion) {
+      try {
+        const data = await a0_0x5632f4(race.round);
+        if (data && data.quali && data.quali.length) {
+          const quali = data.quali.slice(0, 3).map(q => ({ pos: q.pos, name: q.name, time: q.time }));
+          partes.push(tarjetaTop('Clasificación', quali));
+        }
+      } catch (e) {
+        console.warn('[fOnefan] clasificación no disponible:', e.message);
       }
-    } catch (e) {
-      console.warn('[fOnefan] clasificación no disponible:', e.message);
     }
 
     if (!partes.length) return '';
