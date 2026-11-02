@@ -1,4 +1,4 @@
-const CACHE = 'fonefan-v4';
+const CACHE = 'fonefan-v7';
 
 self.addEventListener('install', () => self.skipWaiting());
 
