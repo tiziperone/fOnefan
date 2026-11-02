@@ -613,7 +613,9 @@
     if (!grid || !tab || tab.dataset.dt !== 'act') return;
 
     const teams = getTeams();
-    const list = getDrivers().sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+    const list = getDrivers()
+  .filter(d => helmSrc(d) || !/hirakawa/i.test(d.name))
+  .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
     CARDS.drv = list;
 
     const key = JSON.stringify(list.map(d => [d.id, d.pts, d.teamName, titulosDe(d.id)]));
