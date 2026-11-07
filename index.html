@@ -334,6 +334,7 @@ img{max-width:100%}
         <p class="lead">Calendario, campeonato, circuitos y escuderías en un solo lugar. Todo lo que necesitas para seguir cada vuelta.</p>
         <div class="cta">
           <button class="btn" data-view="standings" data-jump="cal">Ver calendario</button>
+          <button class="btn" id="btnAvisos">🔔 Activar avisos</button>
           <button class="btn" data-view="info">Aprende todo sobre F1</button>
           <a href="https://cafecito.app/fonefan" target="_blank" rel="noopener noreferrer" class="btn btn-collab">
             🏎️ Ayúdame a mantener la página :)
@@ -1985,6 +1986,39 @@ window.addEventListener('load', function () {
       menu.classList.remove('open');
       btn.setAttribute('aria-expanded', 'false');
     }
+  });
+})();
+</script>
+<script>
+(function () {
+  const btn = document.getElementById('btnAvisos');
+  if (!btn) return;
+
+  // Fuera de la app no hay notificaciones: ocultamos el botón
+  if (!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform())) {
+    btn.style.display = 'none';
+    return;
+  }
+
+  const { PushNotifications } = Capacitor.Plugins;
+
+  btn.addEventListener('click', async () => {
+    const permiso = await PushNotifications.requestPermissions();
+    if (permiso.receive !== 'granted') {
+      alert('Para recibir avisos, permití las notificaciones en Ajustes.');
+      return;
+    }
+    await PushNotifications.register();
+  });
+
+  PushNotifications.addListener('registration', t => {
+    console.log('Token FCM:', t.value);
+    // Acá lo enviaremos al servidor en el próximo paso
+    alert('Avisos activados: te avisamos 30 minutos antes de cada sesión.');
+  });
+
+  PushNotifications.addListener('registrationError', err => {
+    alert('No se pudieron activar los avisos: ' + err.error);
   });
 })();
 </script>
