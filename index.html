@@ -63,6 +63,38 @@
 
 <link rel="stylesheet" href="styles.css?v=20261021_2">
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+<!-- OneSignal Web Push SDK v16 -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "3a9e0d3c-243e-4fc3-acb0-55ac800cb444",
+      allowLocalhostAsSecureOrigin: true
+    });
+
+    const actualizarBoton = (suscrito) => {
+      const btn = document.getElementById('btnAvisos');
+      if (!btn) return;
+      btn.style.display = 'inline-flex';
+      if (suscrito) {
+        btn.innerHTML = '🔔 Avisos activados';
+        btn.style.borderColor = '#22c55e';
+        btn.style.background = 'rgba(34, 197, 94, 0.15)';
+      } else {
+        btn.innerHTML = '🔔 Activar avisos';
+        btn.style.borderColor = '';
+        btn.style.background = '';
+      }
+    };
+
+    actualizarBoton(OneSignal.User.PushSubscription.optedIn);
+
+    OneSignal.User.PushSubscription.addEventListener('change', (event) => {
+      actualizarBoton(event.current.optedIn);
+    });
+  });
+</script>
 
 <style>
 /*TIPOGRAFÍA*/
@@ -254,14 +286,31 @@ img{max-width:100%}
 }
 
 /*HERO*/
-.hero .cta{flex-wrap:nowrap;align-items:stretch}
-.hero .cta .btn{white-space:nowrap;padding:12px 18px;letter-spacing:.08em;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:14px}
-@media (max-width:1100px){
-  .hero .cta{flex-wrap:wrap}
+/*HERO*/
+.hero .cta{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, max-content));
+  gap:12px;
+  align-items:stretch;
+}
+.hero .cta .btn{
+  white-space:nowrap;
+  padding:12px 18px;
+  letter-spacing:.08em;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  font-size:14px;
 }
 @media (max-width:640px){
-  .hero .cta{flex-wrap:wrap}
-  .hero .cta .btn{flex:1 1 140px;white-space:normal;text-align:center}
+  .hero .cta{
+    grid-template-columns:1fr;
+  }
+  .hero .cta .btn{
+    white-space:normal;
+    text-align:center;
+  }
 }
 
 /*CAMPEONATO*/
@@ -333,13 +382,13 @@ img{max-width:100%}
         <h1 class="display"><span class="grad-word"><span class="gw" style="--i:0">Bienvenido</span><br><span class="gw" style="--i:1">al</span> <span class="gw" style="--i:2">gran</span> <span class="gw" style="--i:3">show</span></span></h1>
         <p class="lead">Calendario, campeonato, circuitos y escuderías en un solo lugar. Todo lo que necesitas para seguir cada vuelta.</p>
         <div class="cta">
-          <button class="btn" data-view="standings" data-jump="cal">Ver calendario</button>
-          <button class="btn" id="btnAvisos">🔔 Activar avisos</button>
-          <button class="btn" data-view="info">Aprende todo sobre F1</button>
-          <a href="https://cafecito.app/fonefan" target="_blank" rel="noopener noreferrer" class="btn btn-collab">
-            🏎️ Ayúdame a mantener la página :)
-          </a>
-        </div>
+  <button class="btn" data-view="standings" data-jump="cal">Ver calendario</button>
+  <button class="btn" data-view="info">Aprende todo sobre F1</button>
+  <button class="btn" id="btnAvisos">🔔 Activar avisos</button>
+  <a href="https://cafecito.app/fonefan" target="_blank" rel="noopener noreferrer" class="btn btn-collab">
+    🏎️ Ayúdame a mantener la página :)
+  </a>
+</div>
       </div>
       <div class="hero-r">
         <span class="pill" id="heroPill">Próximo Gran Premio</span>
@@ -1994,31 +2043,23 @@ window.addEventListener('load', function () {
   const btn = document.getElementById('btnAvisos');
   if (!btn) return;
 
-  // Fuera de la app no hay notificaciones: ocultamos el botón
-  if (!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform())) {
-    btn.style.display = 'none';
-    return;
-  }
+  btn.addEventListener('click', () => {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function(OneSignal) {
+      const suscrito = OneSignal.User.PushSubscription.optedIn;
 
-  const { PushNotifications } = Capacitor.Plugins;
-
-  btn.addEventListener('click', async () => {
-    const permiso = await PushNotifications.requestPermissions();
-    if (permiso.receive !== 'granted') {
-      alert('Para recibir avisos, permití las notificaciones en Ajustes.');
-      return;
-    }
-    await PushNotifications.register();
-  });
-
-  PushNotifications.addListener('registration', t => {
-    console.log('Token FCM:', t.value);
-    // Acá lo enviaremos al servidor en el próximo paso
-    alert('Avisos activados: te avisamos 30 minutos antes de cada sesión.');
-  });
-
-  PushNotifications.addListener('registrationError', err => {
-    alert('No se pudieron activar los avisos: ' + err.error);
+      if (!suscrito) {
+        if (Notification.permission === 'default') {
+          await OneSignal.Notifications.requestPermission();
+        } else if (Notification.permission === 'granted') {
+          await OneSignal.User.PushSubscription.optIn();
+        } else {
+          alert('Tenés las notificaciones bloqueadas en este navegador. Habilitalas desde el ícono del candado o configuración del sitio.');
+        }
+      } else {
+        await OneSignal.User.PushSubscription.optOut();
+      }
+    });
   });
 })();
 </script>
