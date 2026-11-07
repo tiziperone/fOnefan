@@ -1,5 +1,7 @@
-const CACHE = 'fonefan-v8';
 importScripts('OneSignalSDKWorker.js');
+
+const CACHE = 'fonefan-v9';
+
 self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', e => {
@@ -14,7 +16,14 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
 
-  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (
+    req.method !== 'GET' ||
+    url.origin !== self.location.origin ||
+    url.pathname.includes('OneSignal') ||
+    url.pathname.endsWith('sw.js')
+  ) {
+    return;
+  }
 
   e.respondWith(
     fetch(new Request(req, { cache: 'no-cache' }))
