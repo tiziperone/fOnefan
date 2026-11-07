@@ -63,38 +63,24 @@
 
 <link rel="stylesheet" href="styles.css?v=20261107_2">
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
 <!-- OneSignal Web Push SDK v16 -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
+  window.OneSignalReady = false;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-  appId: "3a9e0d3c-243e-4fc3-acb0-55ac800cb444",
-  allowLocalhostAsSecureOrigin: true,
-  serviceWorkerParam: { scope: "/" },
-  serviceWorkerPath: "sw.js"
-});
-
-    const actualizarBoton = (suscrito) => {
-      const btn = document.getElementById('btnAvisos');
-      if (!btn) return;
-      btn.style.display = 'inline-flex';
-      if (suscrito) {
-        btn.innerHTML = '🔔 Avisos activados';
-        btn.style.borderColor = '#22c55e';
-        btn.style.background = 'rgba(34, 197, 94, 0.15)';
-      } else {
-        btn.innerHTML = '🔔 Activar avisos';
-        btn.style.borderColor = '';
-        btn.style.background = '';
-      }
-    };
-
-    actualizarBoton(OneSignal.User.PushSubscription.optedIn);
-
-    OneSignal.User.PushSubscription.addEventListener('change', (event) => {
-      actualizarBoton(event.current.optedIn);
-    });
+    try {
+      await OneSignal.init({
+        appId: "3a9e0d3c-243e-4fc3-acb0-55ac800cb444",
+        allowLocalhostAsSecureOrigin: true,
+        serviceWorkerParam: { scope: "/" },
+        serviceWorkerPath: "sw.js"
+      });
+      window.OneSignalReady = true;
+    } catch (e) {
+      console.warn('[OneSignal init bloqueado]', e);
+    }
   });
 </script>
 
@@ -288,7 +274,6 @@ img{max-width:100%}
 }
 
 /*HERO*/
-/*HERO*/
 .hero .cta{
   display:grid;
   grid-template-columns:repeat(2, minmax(0, max-content));
@@ -330,7 +315,6 @@ img{max-width:100%}
   }
   #v-standings #parcheChances{margin:0}
 }
-
 </style>
 </head>
 <body>
@@ -358,18 +342,18 @@ img{max-width:100%}
       fOnefan
     </div>
     <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false">
-  <span></span><span></span><span></span>
-</button>
-<div class="tabs" id="tabsMenu">
-  <button class="tab active" data-view="home">Inicio</button>
-  <button class="tab" data-view="standings">Campeonato</button>
-  <button class="tab" data-view="circuits">Circuitos</button>
-  <button class="tab" data-view="pilotos">Pilotos</button>
-  <button class="tab" data-view="escuderias">Escuderías</button>
-  <button class="tab" data-view="monoplaza">Monoplaza</button>
-  <button class="tab" data-view="records">Récords</button>
-  <button class="tab" data-view="info">Info</button>
-</div>
+      <span></span><span></span><span></span>
+    </button>
+    <div class="tabs" id="tabsMenu">
+      <button class="tab active" data-view="home">Inicio</button>
+      <button class="tab" data-view="standings">Campeonato</button>
+      <button class="tab" data-view="circuits">Circuitos</button>
+      <button class="tab" data-view="pilotos">Pilotos</button>
+      <button class="tab" data-view="escuderias">Escuderías</button>
+      <button class="tab" data-view="monoplaza">Monoplaza</button>
+      <button class="tab" data-view="records">Récords</button>
+      <button class="tab" data-view="info">Info</button>
+    </div>
   </nav>
 </header>
 
@@ -384,13 +368,13 @@ img{max-width:100%}
         <h1 class="display"><span class="grad-word"><span class="gw" style="--i:0">Bienvenido</span><br><span class="gw" style="--i:1">al</span> <span class="gw" style="--i:2">gran</span> <span class="gw" style="--i:3">show</span></span></h1>
         <p class="lead">Calendario, campeonato, circuitos y escuderías en un solo lugar. Todo lo que necesitas para seguir cada vuelta.</p>
         <div class="cta">
-  <button class="btn" data-view="standings" data-jump="cal">Ver calendario</button>
-  <button class="btn" data-view="info">Aprende todo sobre F1</button>
-  <button class="btn btn-sec" id="btnAvisos">🔔 Activar avisos</button>
-  <a href="https://cafecito.app/fonefan" target="_blank" rel="noopener noreferrer" class="btn btn-sec btn-collab">
-    🏎️ Ayúdame a mantener la página :)
-  </a>
-</div>
+          <button class="btn" data-view="standings" data-jump="cal">Ver calendario</button>
+          <button class="btn" data-view="info">Aprende todo sobre F1</button>
+          <button class="btn btn-sec" id="btnAvisos">🔔 Activar avisos</button>
+          <a href="https://cafecito.app/fonefan" target="_blank" rel="noopener noreferrer" class="btn btn-sec btn-collab">
+            🏎️ Ayúdame a mantener la página :)
+          </a>
+        </div>
       </div>
       <div class="hero-r">
         <span class="pill" id="heroPill">Próximo Gran Premio</span>
@@ -466,7 +450,6 @@ img{max-width:100%}
     </div>
     <div class="chips" id="drvTabs">
       <button class="chip on" data-dt="act">Pilotos actuales</button>
-      <!-- <button class="chip" data-dt="hist">A lo largo de la historia</button> -->
       <button class="chip" data-dt="hof">Salón de la Fama</button>
     </div>
     <div class="drv-tools" id="drvTools" style="display:none">
@@ -484,7 +467,6 @@ img{max-width:100%}
     </div>
     <div class="chips" id="teamTabs">
       <button class="chip on" data-tt="act">Escuderías actuales</button>
-      <!-- <button class="chip" data-tt="hist">A lo largo de la historia</button> -->
       <button class="chip" data-tt="hof">Salón de la Fama</button>
     </div>
     <div class="drv-tools" id="teamTools" style="display:none">
@@ -526,47 +508,47 @@ img{max-width:100%}
 
     <h3 class="display" style="font-size: 30px; margin-top: 45px; margin-bottom: 15px;">Partes del Auto</h3>
     <div class="parts-grid">
-  <article class="part-card">
-    <h4>Alerón delantero activo y nariz</h4>
-    <p>El alerón delantero tiene un flap móvil que se ajusta junto con el alerón trasero según la zona del circuito. La nariz canaliza el aire hacia el fondo del auto y hacia los laterales.</p>
-  </article>
-  <article class="part-card">
-    <h4>Suelo y difusor</h4>
-    <p>El fondo del monoplaza genera parte de la carga aerodinámica que pega el auto al asfalto. En 2026 el efecto suelo es menor que en temporadas anteriores, con un diseño más simple que reduce la pérdida de carga al seguir a otro auto. El difusor trasero ayuda a extraer el aire de la parte inferior.</p>
-  </article>
-  <article class="part-card">
-    <h4>Pontones y toma de aire</h4>
-    <p>La toma de aire superior alimenta el motor de combustión. Los pontones laterales dirigen el aire hacia los radiadores y la unidad de potencia para mantenerlos a temperatura de trabajo.</p>
-  </article>
-  <article class="part-card">
-    <h4>Alerón trasero activo</h4>
-    <p>En 2026 no hay DRS. El alerón trasero cambia entre el modo recta, con perfil más plano y menos resistencia para ganar velocidad punta, y el modo curva, con más carga para dar agarre en las esquinas.</p>
-  </article>
-  <article class="part-card">
-    <h4>Unidad de potencia 50 / 50</h4>
-    <p>Combina un motor V6 turbo de 1,6 litros con un MGU-K que aporta hasta 350 kW. Desde 2026 la parte eléctrica aporta casi la mitad de la potencia total, y el MGU-H fue eliminado. El combustible es 100 % sostenible.</p>
-  </article>
-  <article class="part-card">
-    <h4>Batería (Energy Store)</h4>
-    <p>Almacena la energía que se recupera al frenar y la entrega al MGU-K cuando el piloto la necesita. Es clave para el reparto 50 / 50 entre electricidad y combustión.</p>
-  </article>
-  <article class="part-card">
-    <h4>Monocasco de fibra de carbono</h4>
-    <p>Es la célula de supervivencia del piloto. Es una estructura muy rígida y liviana que aloja al conductor, y a la que se fijan el motor, la suspensión y la caja de cambios.</p>
-  </article>
-  <article class="part-card">
-    <h4>Frenos de carbono</h4>
-    <p>Los discos y pastillas de carbono soportan temperaturas muy altas y frenan con gran potencia. Trabajan junto con el sistema de recuperación de energía para convertir la desaceleración en carga de batería.</p>
-  </article>
-  <article class="part-card">
-    <h4>Halo y seguridad</h4>
-    <p>Estructura de titanio que protege la cabeza del piloto de grandes impactos y escombros. Está diseñada para soportar cargas de varias toneladas en las pruebas de homologación.</p>
-  </article>
-  <article class="part-card">
-    <h4>Neumáticos Pirelli</h4>
-    <p>Son el único contacto con la pista. Tienen desgaste controlado (blando, medio, duro, intermedio o lluvia) y dictan gran parte de la estrategia de cada carrera.</p>
-  </article>
-</div>
+      <article class="part-card">
+        <h4>Alerón delantero activo y nariz</h4>
+        <p>El alerón delantero tiene un flap móvil que se ajusta junto con el alerón trasero según la zona del circuito. La nariz canaliza el aire hacia el fondo del auto y hacia los laterales.</p>
+      </article>
+      <article class="part-card">
+        <h4>Suelo y difusor</h4>
+        <p>El fondo del monoplaza genera parte de la carga aerodinámica que pega el auto al asfalto. En 2026 el efecto suelo es menor que en temporadas anteriores, con un diseño más simple que reduce la pérdida de carga al seguir a otro auto. El difusor trasero ayuda a extraer el aire de la parte inferior.</p>
+      </article>
+      <article class="part-card">
+        <h4>Pontones y toma de aire</h4>
+        <p>La toma de aire superior alimenta el motor de combustión. Los pontones laterales dirigen el aire hacia los radiadores y la unidad de potencia para mantenerlos a temperatura de trabajo.</p>
+      </article>
+      <article class="part-card">
+        <h4>Alerón trasero activo</h4>
+        <p>En 2026 no hay DRS. El alerón trasero cambia entre el modo recta, con perfil más plano y menos resistencia para ganar velocidad punta, y el modo curva, con más carga para dar agarre en las esquinas.</p>
+      </article>
+      <article class="part-card">
+        <h4>Unidad de potencia 50 / 50</h4>
+        <p>Combina un motor V6 turbo de 1,6 litros con un MGU-K que aporta hasta 350 kW. Desde 2026 la parte eléctrica aporta casi la mitad de la potencia total, y el MGU-H fue eliminado. El combustible es 100 % sostenible.</p>
+      </article>
+      <article class="part-card">
+        <h4>Batería (Energy Store)</h4>
+        <p>Almacena la energía que se recupera al frenar y la entrega al MGU-K cuando el piloto la necesita. Es clave para el reparto 50 / 50 entre electricidad y combustión.</p>
+      </article>
+      <article class="part-card">
+        <h4>Monocasco de fibra de carbono</h4>
+        <p>Es la célula de supervivencia del piloto. Es una estructura muy rígida y liviana que aloja al conductor, y a la que se fijan el motor, la suspensión y la caja de cambios.</p>
+      </article>
+      <article class="part-card">
+        <h4>Frenos de carbono</h4>
+        <p>Los discos y pastillas de carbono soportan temperaturas muy altas y frenan con gran potencia. Trabajan junto con el sistema de recuperación de energía para convertir la desaceleración en carga de batería.</p>
+      </article>
+      <article class="part-card">
+        <h4>Halo y seguridad</h4>
+        <p>Estructura de titanio que protege la cabeza del piloto de grandes impactos y escombros. Está diseñada para soportar cargas de varias toneladas en las pruebas de homologación.</p>
+      </article>
+      <article class="part-card">
+        <h4>Neumáticos Pirelli</h4>
+        <p>Son el único contacto con la pista. Tienen desgaste controlado (blando, medio, duro, intermedio o lluvia) y dictan gran parte de la estrategia de cada carrera.</p>
+      </article>
+    </div>
 
     <div class="volante-section">
       <span class="eyebrow">El centro de mando</span>
@@ -574,58 +556,58 @@ img{max-width:100%}
       <p class="muted" style="max-width: 600px; margin: 0 auto; font-size: 16px;">Casi un ordenador en las manos del piloto, capaz de ajustar la potencia, los frenos y la estrategia a más de 300 km/h.</p>
 
       <div style="margin-top: 18px;">
-  <span class="chip on" style="pointer-events:none; background:rgba(225,6,0,.15); color:#fff; border-color:var(--red);">✨ Gira el volante para explorarlo</span>
-</div>
+        <span class="chip on" style="pointer-events:none; background:rgba(225,6,0,.15); color:#fff; border-color:var(--red);">✨ Gira el volante para explorarlo</span>
+      </div>
 
-<div class="glass mono-viewer volante-viewer">
-  <model-viewer id="volanteModel"
-    src="Modelos3D/VolanteClaudio.glb"
-    alt="Volante de F1 en 3D"
-    camera-controls
-    auto-rotate
-    camera-orbit="20deg 75deg 75%"
-    min-camera-orbit="auto auto 20%"
-    camera-target="auto auto auto"
-    field-of-view="28deg"
-    shadow-intensity="0.9"
-    shadow-softness="0.8"
-    exposure="1.05"
-    environment-image="neutral"
-    touch-action="pan-y"
-    interaction-prompt="none">
-  </model-viewer>
-</div>
+      <div class="glass mono-viewer volante-viewer">
+        <model-viewer id="volanteModel"
+          src="Modelos3D/VolanteClaudio.glb"
+          alt="Volante de F1 en 3D"
+          camera-controls
+          auto-rotate
+          camera-orbit="20deg 75deg 75%"
+          min-camera-orbit="auto auto 20%"
+          camera-target="auto auto auto"
+          field-of-view="28deg"
+          shadow-intensity="0.9"
+          shadow-softness="0.8"
+          exposure="1.05"
+          environment-image="neutral"
+          touch-action="pan-y"
+          interaction-prompt="none">
+        </model-viewer>
+      </div>
 
       <div class="volante-grid">
-  <article class="part-card">
-    <h4>Pantalla (Dash) y leds</h4>
-    <p>La pantalla muestra en tiempo real la marcha, el delta contra la vuelta de referencia, el estado de carga de la batería y el modo de energía activo. Los leds superiores indican el régimen del motor y las banderas.</p>
-  </article>
-  <article class="part-card">
-    <h4>Manual Override (sobregiro)</h4>
-    <p>Es el sistema que reemplaza al DRS en 2026. Cuando el piloto está a menos de 1 segundo del auto de adelante, puede activarlo para recibir energía eléctrica extra y atacar. Su uso depende de la distancia con el rival y de la zona de la pista.</p>
-  </article>
-  <article class="part-card">
-    <h4>Boost</h4>
-    <p>Es un aporte extra de potencia eléctrica que el piloto puede usar en cualquier momento para ganar velocidad o defender posición, con un límite de velocidad de unos 337 km/h. Compite con el Manual Override por la misma energía de la batería.</p>
-  </article>
-  <article class="part-card">
-    <h4>Modos de motor y recarga</h4>
-    <p>Una perilla selecciona cómo se reparte la energía: modos de ataque para dar máxima potencia, modo clasificación para la vuelta rápida y modo recarga (Harvest), que recupera batería mientras se frena o se levanta el pie del acelerador.</p>
-  </article>
-  <article class="part-card">
-    <h4>Balance de frenos (BBAL)</h4>
-    <p>Define qué porcentaje de la fuerza de frenado va a las ruedas delanteras y cuál a las traseras. Los pilotos lo ajustan curva a curva para frenar fuerte sin bloquear los neumáticos.</p>
-  </article>
-  <article class="part-card">
-    <h4>Diferencial</h4>
-    <p>Controla cuánto se permite que giren por separado las dos ruedas traseras. Con más bloqueo el auto es más estable al acelerar a la salida de una curva, y con menos bloqueo entra más fácil a la curva.</p>
-  </article>
-  <article class="part-card">
-    <h4>Botones de pit, neutral y radio</h4>
-    <p>El botón PIT activa el limitador de velocidad en el carril de boxes. El botón N (neutral) desengrana la caja cuando el auto queda detenido o en un trompo. El botón Talk permite hablar por radio con el ingeniero en el muro de boxes.</p>
-  </article>
-</div>
+        <article class="part-card">
+          <h4>Pantalla (Dash) y leds</h4>
+          <p>La pantalla muestra en tiempo real la marcha, el delta contra la vuelta de referencia, el estado de carga de la batería y el modo de energía activo. Los leds superiores indican el régimen del motor y las banderas.</p>
+        </article>
+        <article class="part-card">
+          <h4>Manual Override (sobregiro)</h4>
+          <p>Es el sistema que reemplaza al DRS en 2026. Cuando el piloto está a menos de 1 segundo del auto de adelante, puede activarlo para recibir energía eléctrica extra y atacar. Su uso depende de la distancia con el rival y de la zona de la pista.</p>
+        </article>
+        <article class="part-card">
+          <h4>Boost</h4>
+          <p>Es un aporte extra de potencia eléctrica que el piloto puede usar en cualquier momento para ganar velocidad o defender posición, con un límite de velocidad de unos 337 km/h. Compite con el Manual Override por la misma energía de la batería.</p>
+        </article>
+        <article class="part-card">
+          <h4>Modos de motor y recarga</h4>
+          <p>Una perilla selecciona cómo se reparte la energía: modos de ataque para dar máxima potencia, modo clasificación para la vuelta rápida y modo recarga (Harvest), que recupera batería mientras se frena o se levanta el pie del acelerador.</p>
+        </article>
+        <article class="part-card">
+          <h4>Balance de frenos (BBAL)</h4>
+          <p>Define qué porcentaje de la fuerza de frenado va a las ruedas delanteras y cuál a las traseras. Los pilotos lo ajustan curva a curva para frenar fuerte sin bloquear los neumáticos.</p>
+        </article>
+        <article class="part-card">
+          <h4>Diferencial</h4>
+          <p>Controla cuánto se permite que giren por separado las dos ruedas traseras. Con más bloqueo el auto es más estable al acelerar a la salida de una curva, y con menos bloqueo entra más fácil a la curva.</p>
+        </article>
+        <article class="part-card">
+          <h4>Botones de pit, neutral y radio</h4>
+          <p>El botón PIT activa el limitador de velocidad en el carril de boxes. El botón N (neutral) desengrana la caja cuando el auto queda detenido o en un trompo. El botón Talk permite hablar por radio con el ingeniero en el muro de boxes.</p>
+        </article>
+      </div>
     </div>
   </section>
 
@@ -1224,8 +1206,8 @@ if ('serviceWorker' in navigator) {
     { type: 'term', term: 'Aire sucio',
       t: 'Es el aire turbulento que deja el auto de adelante. El auto que lo sigue pierde carga aerodinámica, le cuesta mantener las curvas y se calientan más los neumáticos. Por eso es difícil seguir de cerca a otro auto, y adelantar exige salir del aire sucio en el momento justo.' },
     { type: 'term', term: 'Livery',
-      t: 'Es el diseño de pintura del monoplaza: colores, franjas, logos de patrocinadores e identidad de la escudería. Además de estética, representa a la marca, muestra a los patrocinadores y se ve bien en pantalla. Cada equipo la diseña y la aprueba antes de la temporada, la FIA revisa que no tape elementos de seguridad ni los números del piloto. Puede cambiar por nuevos patrocinadores, cambios de reglamento o temporada, carreras especiales (como Mónaco o Las Vegas) y homenajes a aniversarios o pilotos históricos. Como la pintura suma peso, los equipos calculan cada detalle para respetar el peso mínimo.' },
-    ];
+      t: 'Es el diseño de pintura del monoplaza: colores, franjas, logos de patrocinadores e identidad de la escudería. Además de estética, representa a la marca, muestra a los patrocinadores y se ve bien en pantalla. Cada equipo la diseña y la aprueba antes de la temporada, la FIA revisa que no tape elementos de seguridad ni los números del piloto. Puede cambiar por nuevos patrocinadores, cambios de reglamento o temporada, carreras especiales (como Mónaco o Las Vegas) y homenajes a aniversarios o pilotos históricos. Como la pintura suma peso, los equipos calculan cada detalle para respetar el peso mínimo.' }
+  ];
 
   let sec = INFO_SECTIONS.find(s => s.id === 'glosario' || /glosario/i.test(s.title || ''));
   if (!sec) {
@@ -1973,13 +1955,13 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <script>
-
 window.addEventListener('load', function () {
   var F = document.getElementById('pieFinal');
   if (!F) return;
   F.innerHTML = '<p class="pie-linea">fOnefan • Plataforma de información sobre Fórmula 1</p>';
 });
 </script>
+
 <script>
 /*¿QUÉ ES LA FÓRMULA 1? (primera sección de Info)*/
 (function () {
@@ -2000,30 +1982,28 @@ window.addEventListener('load', function () {
         t: 'La Fórmula 1 es la máxima categoría de automovilismo en el mundo. Los autos son monoplaza, de un solo asiento y con ruedas descubiertas, que compiten en circuitos de todo el planeta. Cada escudería busca tener el auto más rápido, eficiente y confiable, y los pilotos buscan aprovecharlo al máximo.' },
       { type: 'card', icon: '📅', title: 'Origen',
         t: 'El primer campeonato mundial de pilotos se disputó en 1950. Desde entonces, la categoría se fue transformando en un deporte global, con carreras en Europa, América, Asia, Oceanía y Medio Oriente.' },
-
       { type: 'card', icon: '🧠', title: 'Tecnología al límite',
         t: 'Cada auto es un laboratorio sobre ruedas. Los equipos desarrollan aerodinámica, motores híbridos, materiales livianos y sistemas de frenado que se usan en el resto de la industria. Muchas innovaciones que hoy vemos en autos de calle nacieron en la F1.' },
-
       { type: 'card', icon: '🤝', title: 'Equipo y piloto',
         t: 'Un piloto gana gracias a un equipo enorme: ingenieros, mecánicos, estrategas y analistas de datos que trabajan en la fábrica y en pista. El talento del piloto es clave, pero el resultado depende de la combinación entre persona, auto y estrategia.' },
-
       { type: 'card', icon: '🌍', title: 'Un espectáculo global',
         t: 'La F1 se corre en países de todos los continentes y tiene audiencias millonarias en televisión y redes sociales. Cada gran premio combina competencia deportiva, espectáculo, cultura local y una fuerte identidad de marca para equipos y patrocinadores.' },
-
       { type: 'card', icon: '⚡', title: '¿Qué la hace especial?',
         t: 'La mezcla de velocidad, riesgo, estrategia y rivalidades personales es lo que hace a la F1 tan atrapante. Una carrera puede cambiar en una vuelta por un error, una parada en boxes o un cambio de clima, y eso hace que nunca se sepa del todo quién va a ganar.' },
-      
       { type: 'card', icon: '🛡️', title: 'Qué es la FIA',
-        t: 'La Fédération Internationale de l\'Automobile (Federación Internacional del Automóvil) es el organismo que regula el automovilismo deportivo a nivel mundial. Fue fundada en París en 1904, ciudad donde tiene su sede. Es la que organiza los campeonatos del mundo, como la Fórmula 1, y define sus reglas.' },
-      ]
+        t: 'La Fédération Internationale de l\'Automobile (Federación Internacional del Automóvil) es el organismo que regula el automovilismo deportivo a nivel mundial. Fue fundada en París en 1904, ciudad donde tiene su sede. Es la que organiza los campeonatos del mundo, como la Fórmula 1, y define sus reglas.' }
+    ]
   };
 
   INFO_SECTIONS.unshift(seccion);
   INFO.sec = 'que-es-f1';
 })();
 </script>
+
 <script src="parche.js?v=20261015_35"></script>
+
 <script>
+/* Menú móvil */
 (function () {
   const btn = document.getElementById('menuToggle');
   const menu = document.getElementById('tabsMenu');
@@ -2041,6 +2021,70 @@ window.addEventListener('load', function () {
 
   menu.addEventListener('click', e => {
     if (e.target.closest('.tab')) setOpen(false);
+  });
+})();
+
+/* Control del botón de notificaciones OneSignal */
+(function () {
+  const btn = document.getElementById('btnAvisos');
+  if (!btn) return;
+
+  const pintarEstado = (activo) => {
+    btn.disabled = false;
+    if (activo) {
+      btn.innerHTML = '🔔 Avisos activados';
+      btn.style.borderColor = '#22c55e';
+      btn.style.background = 'rgba(34, 197, 94, 0.15)';
+    } else {
+      btn.innerHTML = '🔔 Activar avisos';
+      btn.style.borderColor = '';
+      btn.style.background = '';
+    }
+  };
+
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(function(OneSignal) {
+    pintarEstado(Boolean(OneSignal.User?.PushSubscription?.optedIn));
+    OneSignal.User.PushSubscription.addEventListener('change', (e) => {
+      pintarEstado(Boolean(e.current?.optedIn));
+    });
+  });
+
+  btn.addEventListener('click', () => {
+    if (typeof Notification === 'undefined') {
+      alert('Tu navegador no admite notificaciones push. Si estás en iPhone, agregá fOnefan a la pantalla de inicio y abrila desde ahí.');
+      return;
+    }
+
+    if (Notification.permission === 'denied') {
+      alert('Tenés las notificaciones bloqueadas. Tocá el ícono del candado en la barra de direcciones y permití las notificaciones.');
+      return;
+    }
+
+    if (!window.OneSignalReady) {
+      alert('Tu navegador bloqueó el servicio de avisos (Prevención de rastreo / AdBlock). Desactivá el bloqueo para fonefan.com.ar desde el ícono del candado/escudo en la barra de direcciones y recargá.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Cargando...';
+
+    window.OneSignalDeferred.push(async function(OneSignal) {
+      try {
+        const suscrito = Boolean(OneSignal.User?.PushSubscription?.optedIn);
+        if (!suscrito) {
+          await OneSignal.Notifications.requestPermission();
+          await OneSignal.User.PushSubscription.optIn();
+        } else {
+          await OneSignal.User.PushSubscription.optOut();
+        }
+        pintarEstado(Boolean(OneSignal.User?.PushSubscription?.optedIn));
+      } catch (err) {
+        console.error('[fOnefan Push]', err);
+        alert('No se pudo activar: ' + (err.message || err));
+        pintarEstado(false);
+      }
+    });
   });
 })();
 </script>
