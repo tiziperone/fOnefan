@@ -37,7 +37,7 @@ async function run() {
     const diffMin = (start - now) / (1000 * 60);
     const key = String(s.session_key);
 
-if (diffMin >= 25 && diffMin <= 45 && !notified.includes(key)) {
+if (diffMin >= 10 && diffMin <= 45 && !notified.includes(key)) {
     const sesion = SESSION_NAMES[s.session_name] || s.session_name;
     const gp = s.country_name || s.location || 'Fórmula 1';
     const mins = Math.round(diffMin);
