@@ -1,5 +1,5 @@
 const CACHE = 'fonefan-v7';
-
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDKWorker.js');
 self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', e => {

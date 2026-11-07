@@ -37,39 +37,39 @@ async function run() {
     const diffMin = (start - now) / (1000 * 60);
     const key = String(s.session_key);
 
-    if (diffMin >= 15 && diffMin <= 38 && !notified.includes(key)) {
-      const sesion = SESSION_NAMES[s.session_name] || s.session_name;
-      const gp = s.country_name || s.location || 'Fórmula 1';
-      const mins = Math.round(diffMin);
+if (diffMin >= 25 && diffMin <= 45 && !notified.includes(key)) {
+    const sesion = SESSION_NAMES[s.session_name] || s.session_name;
+    const gp = s.country_name || s.location || 'Fórmula 1';
+    const mins = Math.round(diffMin);
 
-      const pushRes = await fetch('https://api.onesignal.com/notifications', {
+    const pushRes = await fetch('https://api.onesignal.com/notifications', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Key ${API_KEY}`
+        'Content-Type': 'application/json',
+        'Authorization': `Key ${API_KEY}`
         },
         body: JSON.stringify({
-          app_id: APP_ID,
-          included_segments: ['Total Subscriptions'],
-          headings: {
+        app_id: APP_ID,
+        included_segments: ['Total Subscriptions'],
+        headings: {
             es: `🏎️ ${sesion} comienza en ${mins} minutos`,
             en: `🏎️ ${s.session_name} starts in ${mins} minutes`
-          },
-          contents: {
+        },
+        contents: {
             es: `GP de ${gp} · Aprovechá a preparar el mate que enseguida comienza el show.`,
             en: `${gp} GP is starting soon!`
-          },
-          url: 'https://fonefan.com.ar'
+        },
+        url: 'https://fonefan.com.ar'
         })
-      });
+    });
 
-      const pushData = await pushRes.json();
-      console.log(`Enviado [${gp} - ${sesion}]:`, pushData);
+    const pushData = await pushRes.json();
+    console.log(`Enviado [${gp} - ${sesion}]:`, pushData);
 
-      if (pushRes.ok) {
+    if (pushRes.ok) {
         notified.push(key);
         updated = true;
-      }
+    }
     }
   }
 

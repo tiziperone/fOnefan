@@ -70,7 +70,8 @@
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "3a9e0d3c-243e-4fc3-acb0-55ac800cb444",
-      allowLocalhostAsSecureOrigin: true
+      allowLocalhostAsSecureOrigin: true,
+      serviceWorkerPath: 'sw.js'
     });
 
     const actualizarBoton = (suscrito) => {
