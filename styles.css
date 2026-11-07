@@ -570,7 +570,37 @@ img{max-width:100%}
 
 /* Barra de navegación en computadora: logo a la izquierda, menú a la derecha */
 .nav{justify-content:space-between;gap:24px}
-
+/* Botones de portada en celular */
+.hero .cta{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:10px;
+  width:100%;
+  max-width:520px;
+}
+.hero .cta .btn{
+  width:100%;
+  padding:12px 10px;
+  font-size:13px;
+  letter-spacing:.06em;
+  white-space:normal;
+  text-align:center;
+  line-height:1.2;
+}
+.hero .cta .btn-sec{
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--line);
+  font-size:12px;
+  padding:10px 8px;
+}
+.hero .cta .btn-sec:hover{
+  background:rgba(255,255,255,.12);
+}
+/* El botón de avisos ocupa las dos columnas si el ancho es chico */
+@media (max-width:640px){
+  .hero .cta{ grid-template-columns:1fr 1fr; }
+  .hero .cta .btn-collab{ grid-column:1 / -1; }
+}
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
 }
