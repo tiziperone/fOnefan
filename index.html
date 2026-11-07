@@ -61,7 +61,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800;1,900&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Titillium+Web:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css?v=20261021_2">
+<link rel="stylesheet" href="styles.css?v=20261107_2">
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 <!-- OneSignal Web Push SDK v16 -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -2025,41 +2025,20 @@ window.addEventListener('load', function () {
 (function () {
   const btn = document.getElementById('menuToggle');
   const menu = document.getElementById('tabsMenu');
+  if (!btn || !menu) return;
+
+  const setOpen = abierto => {
+    menu.classList.toggle('open', abierto);
+    btn.setAttribute('aria-expanded', String(abierto));
+    btn.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú');
+  };
+
   btn.addEventListener('click', () => {
-    const abierto = menu.classList.toggle('open');
-    btn.setAttribute('aria-expanded', abierto);
+    setOpen(!menu.classList.contains('open'));
   });
-  // Al tocar una opción, se cierra el menú en el celular
+
   menu.addEventListener('click', e => {
-    if (e.target.closest('.tab')) {
-      menu.classList.remove('open');
-      btn.setAttribute('aria-expanded', 'false');
-    }
-  });
-})();
-</script>
-<script>
-(function () {
-  const btn = document.getElementById('btnAvisos');
-  if (!btn) return;
-
-  btn.addEventListener('click', () => {
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async function(OneSignal) {
-      const suscrito = OneSignal.User.PushSubscription.optedIn;
-
-      if (!suscrito) {
-        if (Notification.permission === 'default') {
-          await OneSignal.Notifications.requestPermission();
-        } else if (Notification.permission === 'granted') {
-          await OneSignal.User.PushSubscription.optIn();
-        } else {
-          alert('Tenés las notificaciones bloqueadas en este navegador. Habilitalas desde el ícono del candado o configuración del sitio.');
-        }
-      } else {
-        await OneSignal.User.PushSubscription.optOut();
-      }
-    });
+    if (e.target.closest('.tab')) setOpen(false);
   });
 })();
 </script>
