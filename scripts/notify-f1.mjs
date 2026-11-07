@@ -5,9 +5,9 @@ const API_KEY = process.env.ONESIGNAL_API_KEY;
 const STATE_FILE = 'scripts/notified-sessions.json';
 
 const SESSION_NAMES = {
-  'Practice 1': 'Práctica Libre 1',
-  'Practice 2': 'Práctica Libre 2',
-  'Practice 3': 'Práctica Libre 3',
+  'Practice 1': 'Práctica 1',
+  'Practice 2': 'Práctica 2',
+  'Practice 3': 'Práctica 3',
   'Sprint Qualifying': 'Clasificación Sprint',
   'Sprint': 'Carrera Sprint',
   'Qualifying': 'Clasificación',
@@ -37,9 +37,8 @@ async function run() {
     const diffMin = (start - now) / (1000 * 60);
     const key = String(s.session_key);
 
-    // Ventana de aviso: entre 15 y 38 minutos antes del inicio
     if (diffMin >= 15 && diffMin <= 38 && !notified.includes(key)) {
-      const nombreSesion = SESSION_NAMES[s.session_name] || s.session_name;
+      const sesion = SESSION_NAMES[s.session_name] || s.session_name;
       const gp = s.country_name || s.location || 'Fórmula 1';
       const mins = Math.round(diffMin);
 
@@ -53,19 +52,19 @@ async function run() {
           app_id: APP_ID,
           included_segments: ['Total Subscriptions'],
           headings: {
-            es: `🏎️ ¡${nombreSesion} en ${mins} min!`,
-            en: `🏎️ ${s.session_name} starts in ${mins} min!`
+            es: `🏎️ ${sesion} comienza en ${mins} minutos`,
+            en: `🏎️ ${s.session_name} starts in ${mins} minutes`
           },
           contents: {
-            es: `GP de ${gp} (${s.circuit_short_name}) está por comenzar. ¡Entrá a fOnefan para seguirla!`,
-            en: `${gp} GP (${s.circuit_short_name}) is about to start.`
+            es: `GP de ${gp} · Aprovechá a preparar el mate que enseguida comienza el show.`,
+            en: `${gp} GP is starting soon!`
           },
           url: 'https://fonefan.com.ar'
         })
       });
 
       const pushData = await pushRes.json();
-      console.log(`Enviado [${gp} - ${nombreSesion}]:`, pushData);
+      console.log(`Enviado [${gp} - ${sesion}]:`, pushData);
 
       if (pushRes.ok) {
         notified.push(key);
