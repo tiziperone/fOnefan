@@ -306,16 +306,19 @@ img{max-width:100%}
       </svg>
       fOnefan
     </div>
-    <div class="tabs">
-      <button class="tab active" data-view="home">Inicio</button>
-      <button class="tab" data-view="standings">Campeonato</button>
-      <button class="tab" data-view="circuits">Circuitos</button>
-      <button class="tab" data-view="pilotos">Pilotos</button>
-      <button class="tab" data-view="escuderias">Escuderías</button>
-      <button class="tab" data-view="monoplaza">Monoplaza</button>
-      <button class="tab" data-view="records">Récords</button>
-      <button class="tab" data-view="info">Info</button>
-    </div>
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+<div class="tabs" id="tabsMenu">
+  <button class="tab active" data-view="home">Inicio</button>
+  <button class="tab" data-view="standings">Campeonato</button>
+  <button class="tab" data-view="circuits">Circuitos</button>
+  <button class="tab" data-view="pilotos">Pilotos</button>
+  <button class="tab" data-view="escuderias">Escuderías</button>
+  <button class="tab" data-view="monoplaza">Monoplaza</button>
+  <button class="tab" data-view="records">Récords</button>
+  <button class="tab" data-view="info">Info</button>
+</div>
   </nav>
 </header>
 
@@ -1968,5 +1971,22 @@ window.addEventListener('load', function () {
 })();
 </script>
 <script src="parche.js?v=20261015_35"></script>
+<script>
+(function () {
+  const btn = document.getElementById('menuToggle');
+  const menu = document.getElementById('tabsMenu');
+  btn.addEventListener('click', () => {
+    const abierto = menu.classList.toggle('open');
+    btn.setAttribute('aria-expanded', abierto);
+  });
+  // Al tocar una opción, se cierra el menú en el celular
+  menu.addEventListener('click', e => {
+    if (e.target.closest('.tab')) {
+      menu.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+})();
+</script>
 </body>
 </html>
