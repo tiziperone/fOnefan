@@ -15,8 +15,8 @@ const SESSION_NAMES = {
   'Race': 'Carrera'
 };
 
-function fmtArg(iso) {
-  return new Date(iso).toLocaleString('es-AR', {
+function fmtArg(ms) {
+  return new Date(ms).toLocaleString('es-AR', {
     timeZone: 'America/Argentina/Buenos_Aires',
     day: '2-digit',
     month: '2-digit',
@@ -30,46 +30,34 @@ async function run() {
   if (!API_KEY) throw new Error('Falta ONESIGNAL_API_KEY');
 
   const now = Date.now();
-  console.log('Hora actual ejecución:', fmtArg(now));
+  console.log('Ejecución:', fmtArg(now));
 
   const year = new Date().getUTCFullYear();
   const res = await fetch(`https://api.openf1.org/v1/sessions?year=${year}`);
   if (!res.ok) throw new Error(`Error OpenF1: ${res.status}`);
   const sessions = await res.json();
 
-  let notified = [];
+  let scheduled = [];
   if (fs.existsSync(STATE_FILE)) {
-    notified = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    scheduled = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
   }
 
   let updated = false;
 
-  const futuras = sessions
-    .map(s => ({ ...s, diffMin: (Date.parse(s.date_start) - now) / 60000 }))
-    .filter(s => !isNaN(s.diffMin) && s.diffMin > 0)
-    .sort((a, b) => a.diffMin - b.diffMin);
-
-  if (futuras.length) {
-    const prox = futuras[0];
-    console.log(
-      `Próxima sesión: ${prox.country_name} - ${prox.session_name} | Inicio: ${fmtArg(prox.date_start)} | Faltan ${Math.round(prox.diffMin)} min`
-    );
-  } else {
-    console.log('No hay sesiones futuras registradas en OpenF1.');
-  }
-
   for (const s of sessions) {
-    const start = Date.parse(s.date_start);
-    if (isNaN(start)) continue;
+    const startMs = Date.parse(s.date_start);
+    if (isNaN(startMs)) continue;
 
-    const diffMin = (start - now) / 60000;
+    // Hora exacta del envío: 30 minutos antes del inicio de la sesión
+    const sendAtMs = startMs - 30 * 60 * 1000;
+    const hoursUntilSend = (sendAtMs - now) / (1000 * 60 * 60);
     const key = String(s.session_key);
 
-    // Ventana de 5 a 60 minutos antes del inicio (absorbe retrasos de cron de GitHub)
-    if (diffMin >= 5 && diffMin <= 60 && !notified.includes(key)) {
+    // Programar todas las sesiones cuya alerta caiga entre 1 minuto y 72 horas a futuro
+    if (hoursUntilSend > 0.02 && hoursUntilSend <= 72 && !scheduled.includes(key)) {
       const sesion = SESSION_NAMES[s.session_name] || s.session_name;
       const gp = s.country_name || s.location || 'Fórmula 1';
-      const mins = Math.round(diffMin);
+      const sendAfterISO = new Date(sendAtMs).toISOString();
 
       const pushRes = await fetch('https://api.onesignal.com/notifications', {
         method: 'POST',
@@ -80,9 +68,10 @@ async function run() {
         body: JSON.stringify({
           app_id: APP_ID,
           included_segments: ['Total Subscriptions'],
+          send_after: sendAfterISO,
           headings: {
-            es: `🏎️ ${sesion} comienza en ${mins} minutos`,
-            en: `🏎️ ${s.session_name} starts in ${mins} minutes`
+            es: `🏎️ ${sesion} comienza en 30 minutos`,
+            en: `🏎️ ${s.session_name} starts in 30 minutes`
           },
           contents: {
             es: `GP de ${gp} · Aprovechá a preparar el mate que enseguida comienza el show.`,
@@ -93,21 +82,24 @@ async function run() {
       });
 
       const pushData = await pushRes.json();
-      console.log(`Enviado [${gp} - ${sesion}] (HTTP ${pushRes.status}):`, JSON.stringify(pushData));
+      console.log(
+        `Programado [${gp} - ${sesion}] para ${fmtArg(sendAtMs)} (HTTP ${pushRes.status}):`,
+        JSON.stringify(pushData)
+      );
 
       if (!pushRes.ok || pushData.errors) {
-        throw new Error(`OneSignal rechazó el envío: ${JSON.stringify(pushData)}`);
+        throw new Error(`OneSignal rechazó la programación: ${JSON.stringify(pushData)}`);
       }
 
-      notified.push(key);
+      scheduled.push(key);
       updated = true;
     }
   }
 
   if (updated) {
-    fs.writeFileSync(STATE_FILE, JSON.stringify(notified.slice(-100), null, 2));
+    fs.writeFileSync(STATE_FILE, JSON.stringify(scheduled.slice(-100), null, 2));
   } else {
-    console.log('Sin sesiones próximas en ventana de aviso (5 a 60 min).');
+    console.log('No hay nuevas sesiones para programar en las próximas 72 horas.');
   }
 }
 
