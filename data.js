@@ -64,7 +64,7 @@ const CALENDAR = [
   { r: 18, id: 'usa',         name: 'GP de Estados Unidos',       date: '23 - 25 Oct',    start: '2026-10-23', sprint: true,  done: false, flag: '🇺🇸' },
   { r: 19, id: 'mexico',      name: 'GP de México',               date: '30 Oct - 01 Nov',start: '2026-10-30', sprint: false, done: false, flag: '🇲🇽' },
   { r: 20, id: 'brasil',      name: 'GP de São Paulo',            date: '06 - 08 Nov',    start: '2026-11-06', sprint: true,  done: false, flag: '🇧🇷' },
-  { r: 21, id: 'lasvegas',    name: 'GP de Las Vegas',            date: '19 - 21 Nov',    start: '2026-11-19', sprint: false, done: false, flag: '🇺🇸' },
+  { r: 21, id: 'lasvegas',    name: 'GP de Las Vegas',            date: '19 - 22 Nov',    start: '2026-11-19', sprint: false, done: false, flag: '🇺🇸' },  
   { r: 22, id: 'qatar',       name: 'GP de Catar',                date: '27 - 29 Nov',    start: '2026-11-27', sprint: true,  done: false, flag: '🇶🇦' },
   { r: 23, id: 'abudhabi',    name: 'GP de Abu Dabi',             date: '04 - 06 Dic',    start: '2026-12-04', sprint: false, done: false, flag: '🇦🇪' }
 ];
