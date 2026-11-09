@@ -893,7 +893,7 @@
     [2008,'Ferrari'],[2009,'Brawn GP'],[2010,'Red Bull'],[2011,'Red Bull'],[2012,'Red Bull'],
     [2013,'Red Bull'],[2014,'Mercedes'],[2015,'Mercedes'],[2016,'Mercedes'],[2017,'Mercedes'],
     [2018,'Mercedes'],[2019,'Mercedes'],[2020,'Mercedes'],[2021,'Mercedes'],[2022,'Red Bull'],
-    [2023,'Red Bull'],[2024,'McLaren'],[2025,'McLaren']
+    [2023,'Red Bull'],[2024,'McLaren'],[2025,'McLaren'],[2026,'Mercedes']
   ];
 
   const HOF_META = {
