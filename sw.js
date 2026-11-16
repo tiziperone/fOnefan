@@ -1,14 +1,15 @@
 importScripts('OneSignalSDKWorker.js');
 
-const CACHE = 'fonefan-v9';
+const CACHE = 'fonefan-v10';
 
-self.addEventListener('install', () => self.skipWaiting());
+/* Sin skipWaiting ni clients.claim: una versión nueva se aplica en la próxima visita,
+   sin reemplazar la página mientras el usuario la está viendo. */
+self.addEventListener('install', () => {});
 
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
   );
 });
 

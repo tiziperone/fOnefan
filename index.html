@@ -9,6 +9,12 @@
 <title>fOnefan</title>
 
 <script>
+  /* Scroll manual y tipografía: evita el salto de letras y el scroll animado al recargar */
+  history.scrollRestoration = 'manual';
+  document.documentElement.classList.add('fonts-pending');
+</script>
+
+<script>
 /* Caché de la API histórica */
 (function () {
   'use strict';
@@ -61,7 +67,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800;1,900&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Titillium+Web:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css?v=20261107_2">
+<link rel="stylesheet" href="styles.css?v=20261116_3">
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
 <!-- OneSignal Web Push SDK v16 -->
@@ -91,6 +97,10 @@ h1,h2,h3{font-family:'Orbitron',sans-serif !important;letter-spacing:.05em;text-
 .display{font-family:'Barlow Condensed',sans-serif !important;font-style:italic;font-weight:800 !important;letter-spacing:.01em !important;text-transform:uppercase;line-height:.95}
 .sec-head h2.display{font-size:clamp(44px,6.2vw,72px);line-height:.95}
 .eyebrow,.tab,.mono-item,.part-card h4,.rec-table th{font-family:'Rajdhani',sans-serif !important;font-weight:700;letter-spacing:.08em}
+
+/*ESTADO DE CARGA DE FUENTES: el hero aparece recién cuando las fuentes están listas*/
+html.fonts-pending .hero{opacity:0}
+.hero{transition:opacity .25s ease}
 
 /*FRASE PRINCIPAL*/
 .hero .grad-word{display:inline;background:none;color:#fff;-webkit-text-fill-color:#fff;-webkit-background-clip:border-box;background-clip:border-box;animation:none;padding:0}
@@ -763,31 +773,11 @@ img{max-width:100%}
   });
 })();
 
+/* Service worker: solo registro. Sin recargas automáticas ni skipWaiting. */
 if ('serviceWorker' in navigator) {
-  const habiaControlador = !!navigator.serviceWorker.controller;
-  let recargando = false;
-
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!habiaControlador || recargando) return;
-    recargando = true;
-    location.reload();
-  });
-
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').then(reg => {
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) reg.update();
-      });
-
-      reg.addEventListener('updatefound', () => {
-        const nueva = reg.installing;
-        nueva.addEventListener('statechange', () => {
-          if (nueva.state === 'installed' && navigator.serviceWorker.controller) {
-            nueva.postMessage('SKIP_WAITING');
-          }
-        });
-      });
-    }).catch(err => console.warn('No se pudo registrar el service worker:', err));
+    navigator.serviceWorker.register('sw.js')
+      .catch(err => console.warn('No se pudo registrar el service worker:', err));
   });
 }
 
@@ -2000,7 +1990,7 @@ window.addEventListener('load', function () {
 })();
 </script>
 
-<script src="parche.js?v=20261015_37"></script>
+<script src="parche.js?v=20261015_39"></script>
 
 <script>
 /* Menú móvil */
@@ -2086,6 +2076,23 @@ window.addEventListener('load', function () {
       }
     });
   });
+})();
+</script>
+
+<script>
+/* Revela el hero cuando las fuentes ya están listas (con tope de 1,5 s) */
+(function () {
+  const quitar = () => document.documentElement.classList.remove('fonts-pending');
+  const familias = [
+    '700 20px "Barlow Condensed"',
+    '800 20px "Barlow Condensed"',
+    '400 16px "Barlow"',
+    '900 20px "Titillium Web"',
+    '700 16px "Rajdhani"'
+  ];
+  if (!document.fonts || !document.fonts.load) { quitar(); return; }
+  const cargas = familias.map(f => document.fonts.load(f).catch(() => null));
+  Promise.race([Promise.all(cargas), new Promise(r => setTimeout(r, 1500))]).then(quitar);
 })();
 </script>
 
