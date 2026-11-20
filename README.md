@@ -61,7 +61,6 @@ Funciona como **PWA**: se puede instalar en el celular o en la computadora y seg
 
 ### 🔔 9. Avisos Push
 - **Notificaciones 30 minutos antes de cada sesión:** Prácticas, clasificaciones, sprints y carreras. Se activan o desactivan con un botón desde la página.
-- **Programación automática:** Un flujo de GitHub Actions revisa el calendario cada 6 horas y programa los avisos con OneSignal.
 
 ### 📱 10. Instalación y uso sin conexión
 - **Instalable como app:** Se puede agregar a la pantalla de inicio desde el celular (descargar como appWeb) o la computadora.
