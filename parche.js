@@ -2060,6 +2060,192 @@
     syncTop();
   });
 
+  /* ==========================================================
+   CLIMA DE LA PRÓXIMA SESIÓN (Open-Meteo)
+   ========================================================== */
+const CLIMA_COORDS = {
+  usa:      { lat: 30.1328, lon: -97.6411 },   // Austin (COTA)
+  mexico:   { lat: 19.4042, lon: -99.0907 },   // Ciudad de México
+  brasil:   { lat: -23.7036, lon: -46.6997 },  // Interlagos, São Paulo
+  lasvegas: { lat: 36.175, lon: -115.1364 },   // Las Vegas
+  qatar:    { lat: 25.49, lon: 51.4542 },      // Lusail
+  abudhabi: { lat: 24.4672, lon: 54.6031 }     // Yas Marina
+};
+const CLIMA_TTL = 45 * 60 * 1000;   // caché de 1 hora
+const CLIMA_MAX_DIAS = 10;              // más allá de esto, la previsión no es confiable
+const CLIMA_STYLE_ID = 'parcheClimaStyle';
+
+function injectClimaStyles() {
+  if (document.getElementById(CLIMA_STYLE_ID)) return;
+  const st = document.createElement('style');
+  st.id = CLIMA_STYLE_ID;
+  st.textContent = `
+    .clima-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .clima-ico{font-size:40px;line-height:1}
+    .clima-temp{font-family:'Barlow Condensed',sans-serif;font-style:italic;font-weight:900;font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+    .clima-estado{font-family:var(--f-nav);font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#b9b9c7;font-weight:700}
+    .clima-sesion{font-size:13px;color:var(--muted);margin-top:10px}
+    .clima-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .clima-alerta{margin-top:12px;font-size:14px;color:#ffd166;font-weight:600}
+    .clima-msg{font-size:14px;color:var(--muted)}
+  `;
+  document.head.appendChild(st);
+}
+
+function climaCoords(race) {
+  if (race.lat != null && race.lon != null) return { lat: +race.lat, lon: +race.lon };
+  return CLIMA_COORDS[race.id] || null;
+}
+
+function proximaSesion(race) {
+  const ahora = Date.now();
+  return (race.sessions || [])
+    .filter(s => !s.tbc && s.when && !isNaN(Date.parse(s.when)))
+    .map(s => ({ ...s, t: Date.parse(s.when) }))
+    .sort((a, b) => a.t - b.t)
+    .find(s => s.t + 2 * 3600000 >= ahora) || null;   // sigue visible 2 h después de empezar
+}
+
+function climaEstado(code) {
+  if (code === 0) return ['☀️', 'Despejado'];
+  if (code <= 2) return ['🌤️', 'Algo nublado'];
+  if (code === 3) return ['☁️', 'Nublado'];
+  if (code === 45 || code === 48) return ['🌫️', 'Niebla'];
+  if (code >= 51 && code <= 57) return ['🌦️', 'Llovizna'];
+  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return ['🌧️', 'Lluvia'];
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return ['🌨️', 'Nieve'];
+  if (code >= 95) return ['⛈️', 'Tormenta'];
+  return ['🌡️', 'Variable'];
+}
+
+async function climaFetch(c, raceId) {
+  const key = 'fo-clima:' + raceId + ':' + c.lat + ',' + c.lon;
+  try {
+    const g = JSON.parse(localStorage.getItem(key) || 'null');
+    if (g && Date.now() < g.exp && g.data) return g.data;
+  } catch (e) {}
+
+  const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + c.lat + '&longitude=' + c.lon +
+    '&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code,wind_speed_10m' +
+    '&timezone=UTC&forecast_days=16';
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('Open-Meteo ' + r.status);
+  const data = await r.json();
+  try {
+    localStorage.setItem(key, JSON.stringify({ exp: Date.now() + CLIMA_TTL, data }));
+  } catch (e) {}
+  return data;
+}
+
+function climaEnHora(data, t) {
+  const h = data && data.hourly;
+  if (!h || !h.time) return null;
+  // Con timezone=UTC, Open-Meteo devuelve horas en UTC ("2026-11-29T13:00")
+  const clave = new Date(t).toISOString().slice(0, 13) + ':00';
+  const i = h.time.indexOf(clave);
+  if (i < 0) return null;
+  return {
+    temp: h.temperature_2m[i],
+    hum: h.relative_humidity_2m[i],
+    lluvia: h.precipitation_probability[i],
+    viento: h.wind_speed_10m[i],
+    code: h.weather_code[i]
+  };
+}
+
+async function renderClimaCarrera(race) {
+  const cont = document.getElementById('parcheClima');
+  if (!cont) return;
+
+  const sesion = proximaSesion(race);
+  const c = climaCoords(race);
+  if (!sesion || !c) { cont.remove(); return; }
+
+  injectClimaStyles();
+  const nombre = etiquetaSesion(sesion.name);
+  const d = new Date(sesion.t);
+  const cuando = fmtDia(d) + ' · ' + fmtHora(d);
+  const cabecera = `<h4>🌤️ Clima previsto · ${esc(nombre)}</h4>`;
+
+  const dias = (sesion.t - Date.now()) / 86400000;
+  if (dias > CLIMA_MAX_DIAS) {
+    cont.innerHTML = cabecera +
+      `<p class="clima-msg">Pronóstico disponible pronto (faltan ${Math.ceil(dias)} días).</p>`;
+    return;
+  }
+
+  cont.innerHTML = cabecera + '<p class="clima-msg">Cargando pronóstico…</p>';
+
+  let data = null;
+  try { data = await climaFetch(c, race.id); }
+  catch (e) { console.warn('[fOnefan] clima:', e.message); }
+
+  if (!cont.isConnected) return;   // el usuario cerró el modal o cambió de carrera
+
+  const w = data ? climaEnHora(data, sesion.t) : null;
+  if (!w) { cont.remove(); return; }   // sin datos: ocultar el bloque
+
+  const [ico, estado] = climaEstado(w.code);
+  const alerta = w.lluvia >= 50
+    ? '<div class="clima-alerta">Lluvia probable en esta sesión.</div>'
+    : '';
+
+  cont.innerHTML = cabecera + `
+    <div class="clima-top">
+      <span class="clima-ico">${ico}</span>
+      <div>
+        <div class="clima-temp">${Math.round(w.temp)}°C</div>
+        <div class="clima-estado">${esc(estado)}</div>
+      </div>
+    </div>
+    <div class="clima-sesion">${esc(nombre)} · ${esc(cuando)}</div>
+    <div class="clima-chips">
+      <span class="tpill">💧 Lluvia ${Math.round(w.lluvia)}%</span>
+      <span class="tpill">💦 Humedad ${Math.round(w.hum)}%</span>
+      <span class="tpill">💨 Viento ${Math.round(w.viento)} km/h</span>
+    </div>
+    ${alerta}`;
+}
+
+function openHorarios(race) {
+  const b = $('#mBody');
+  const m = $('#modal');
+  if (!b || !m) return;
+
+  b.innerHTML = `
+    <span class="eyebrow">Ronda ${pad(race.round)} · ${esc(race.flag)}</span>
+    <h3 class="display m-title">${esc(race.name)}</h3>
+    <div class="box" id="parcheClima">
+      <h4>🌤️ Clima previsto</h4>
+      <p class="clima-msg">Cargando pronóstico…</p>
+    </div>
+    <div class="box" style="margin-top:18px">
+      <h4>🕒 Horarios (hora de Argentina)</h4>
+      ${horariosHTML(race)}
+    </div>
+    <div class="box" style="margin-top:18px">
+      <div class="line"><span>Fechas</span><strong>${esc(race.date)}</strong></div>
+      <div class="line"><span>Lugar</span><strong>${esc(race.place || '—')}</strong></div>
+      <div class="line"><span>Formato</span><strong>${race.sprint ? 'Con Sprint' : 'Estándar'}</strong></div>
+      <div class="line"><span>Estado</span><strong>Por correr</strong></div>
+    </div>
+    <div id="parcheTops"></div>`;
+
+  const panel = m.querySelector('.panel-m');
+  if (panel) panel.scrollTop = 0;
+  m.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  renderClimaCarrera(race).catch(err => console.warn('[fOnefan] clima', err));
+
+  bloqueResultados(race)
+    .then(html => {
+      const cont = document.getElementById('parcheTops');
+      if (cont && cont.isConnected) cont.innerHTML = html;
+    })
+    .catch(err => console.warn('[fOnefan] resultados de sesiones', err));
+}
+
   (function () {
     if (typeof INFO_SECTIONS === 'undefined') return;
     const sec = INFO_SECTIONS.find(s => /neum[aá]tic/i.test(s.title || ''));
