@@ -1137,16 +1137,34 @@
     return a0_0x7fb4d2(race.lat, race.lon);
   }
 
+  const TRACK_STORE = 'fo-track-svg:';
+
+  function guardarTrazado(key, svg) {
+    try { localStorage.setItem(TRACK_STORE + key, svg); } catch (e) {}
+  }
+
+  function leerTrazado(key) {
+    try { return localStorage.getItem(TRACK_STORE + key); } catch (e) { return null; }
+  }
+
   function trackFor(race) {
     if (!race || !race.circuitId) return null;
     const entry = trackEntryFor(race);
     if (!entry) return null;
     const key = entry.id;
+
     if (TRACK_CACHE[key]) return { key, svg: TRACK_CACHE[key] };
+
+    const guardado = leerTrazado(key);
+    if (guardado) { TRACK_CACHE[key] = guardado; return { key, svg: guardado }; }
 
     if (typeof a0_0x4ca195 !== 'undefined' && a0_0x4ca195[key] && typeof a0_0x2b37b3 === 'function') {
       const svg = cleanSvg(a0_0x2b37b3(entry));
-      if (svg) { TRACK_CACHE[key] = svg; return { key, svg }; }
+      if (svg) {
+        TRACK_CACHE[key] = svg;
+        guardarTrazado(key, svg);
+        return { key, svg };
+      }
     }
 
     if (!TRACK_PEND[key] && typeof a0_0x1f6c35 === 'function') {
@@ -2252,4 +2270,30 @@ function openHorarios(race) {
     if (!sec) return;
     sec.items = sec.items.filter(it => !(it.type === 'card' && /undercut/i.test(it.title || '')));
   })();
+    document.addEventListener('DOMContentLoaded', () => {
+    const esperar = setInterval(() => {
+      const hay = document.querySelector('#calGrid [data-race]') || document.querySelector('#upList [data-race]');
+      if (hay) {
+        clearInterval(esperar);
+        addTracksToCalendar();
+        addTracksToUpcoming();
+        marcarCarreraEnCurso();
+      }
+    }, 50);
+    setTimeout(() => clearInterval(esperar), 5000);
+  });
+
+  function engancharContenedor(id, fn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let pendiente = false;
+    new MutationObserver(() => {
+      if (pendiente) return;
+      pendiente = true;
+      requestAnimationFrame(() => { pendiente = false; fn(); });
+    }).observe(el, { childList: true });
+  }
+
+  engancharContenedor('calGrid', () => { addTracksToCalendar(); marcarCarreraEnCurso(); });
+  engancharContenedor('upList', () => { addTracksToUpcoming(); marcarCarreraEnCurso(); });
 })();
