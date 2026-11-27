@@ -614,7 +614,7 @@
 
     const teams = getTeams();
     const list = getDrivers()
-  .filter(d => helmSrc(d) || !/hirakawa/i.test(d.name))
+  .filter(d => !!helmSrc(d))
   .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
     CARDS.drv = list;
 
