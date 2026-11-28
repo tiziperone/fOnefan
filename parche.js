@@ -2106,6 +2106,10 @@ function injectClimaStyles() {
     .clima-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
     .clima-alerta{margin-top:12px;font-size:14px;color:#ffd166;font-weight:600}
     .clima-msg{font-size:14px;color:var(--muted)}
+    .clima-combo{position:relative;display:inline-block;width:1.4em;height:1em;line-height:1}
+.clima-combo span{position:absolute;top:0}
+.c-luna{left:0;font-size:.85em;top:.05em}
+.c-nube{left:.45em;top:.25em;font-size:.9em;z-index:1}
   `;
   document.head.appendChild(st);
 }
@@ -2124,11 +2128,10 @@ function proximaSesion(race) {
     .find(s => s.t + 2 * 3600000 >= ahora) || null;   // sigue visible 2 h después de empezar
 }
 
-function climaEstado(code) {
-  if (code === 0) return ['☀️', 'Despejado'];
-  if (code <= 2) return ['🌤️', 'Algo nublado'];
-  if (code === 3) return ['☁️', 'Nublado'];
-  if (code === 45 || code === 48) return ['🌫️', 'Niebla'];
+function climaEstado(code, dia) {
+  if (code === 0) return dia ? ['☀️', 'Despejado'] : ['🌙', 'Despejado'];
+if (code === 1 || code === 2) return dia ? ['🌤️', 'Algo nublado'] : ['nocheNublada', 'Algo nublado'];
+if (code === 45 || code === 48) return ['🌫️', 'Niebla'];
   if (code >= 51 && code <= 57) return ['🌦️', 'Llovizna'];
   if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return ['🌧️', 'Lluvia'];
   if ((code >= 71 && code <= 77) || code === 85 || code === 86) return ['🌨️', 'Nieve'];
@@ -2137,14 +2140,14 @@ function climaEstado(code) {
 }
 
 async function climaFetch(c, raceId) {
-  const key = 'fo-clima:' + raceId + ':' + c.lat + ',' + c.lon;
+  const key = 'fo-clima2:' + raceId + ':' + c.lat + ',' + c.lon;
   try {
     const g = JSON.parse(localStorage.getItem(key) || 'null');
     if (g && Date.now() < g.exp && g.data) return g.data;
   } catch (e) {}
 
   const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + c.lat + '&longitude=' + c.lon +
-    '&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code,wind_speed_10m' +
+    '&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,weather_code,wind_speed_10m,is_day' +
     '&timezone=UTC&forecast_days=16';
   const r = await fetch(url);
   if (!r.ok) throw new Error('Open-Meteo ' + r.status);
@@ -2167,7 +2170,8 @@ function climaEnHora(data, t) {
     hum: h.relative_humidity_2m[i],
     lluvia: h.precipitation_probability[i],
     viento: h.wind_speed_10m[i],
-    code: h.weather_code[i]
+    code: h.weather_code[i],
+    dia: h.is_day[i] == 1
   };
 }
 
@@ -2203,18 +2207,20 @@ async function renderClimaCarrera(race) {
   const w = data ? climaEnHora(data, sesion.t) : null;
   if (!w) { cont.remove(); return; }   // sin datos: ocultar el bloque
 
-  const [ico, estado] = climaEstado(w.code);
+const [ico, estado] = climaEstado(w.code, w.dia);
+const iconoHtml = ico === 'nocheNublada'
+  ? '<span class="clima-combo"><span class="c-nube">☁️</span><span class="c-luna">🌙</span></span>'
+  : ico;
   const alerta = w.lluvia >= 50
     ? '<div class="clima-alerta">Lluvia probable en esta sesión.</div>'
     : '';
 
   cont.innerHTML = cabecera + `
     <div class="clima-top">
-      <span class="clima-ico">${ico}</span>
-      <div>
-        <div class="clima-temp">${Math.round(w.temp)}°C</div>
-        <div class="clima-estado">${esc(estado)}</div>
-      </div>
+<span class="clima-ico">${iconoHtml}</span>
+      <div>        
+      <div class="clima-temp">${Math.round(w.temp)}°C</div>
+<div class="clima-estado">${esc(estado)} · ${w.dia ? 'Día' : 'Noche'}</div>      </div>
     </div>
     <div class="clima-sesion">${esc(nombre)} · ${esc(cuando)}</div>
     <div class="clima-chips">
